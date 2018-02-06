@@ -1,0 +1,18 @@
+{
+  "namespace": "aikuma",
+  "fsNamespace": "aikuma",
+  "loader": "../aikuma.js",
+  "core": "aikuma.core.js",
+  "corePolyfilled": "es5-build-disabled.js",
+  "components": {
+    "gestate-component": {
+      "$": "gestate-component"
+    },
+    "image-gesture-voice-component": {
+      "$": "gestate-component"
+    },
+    "slide-show-component": {
+      "$": "slide-show-component"
+    }
+  }
+}
