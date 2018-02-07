@@ -29,7 +29,7 @@ declare global {
   }
   namespace JSXElements {
     export interface AikumaGestateAttributes extends HTMLAttributes {
-      size?: {x: number, y: number};
+      size?: DOMRect;
     }
   }
 }

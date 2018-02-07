@@ -14,15 +14,14 @@ export interface Gesture {
 })
 export class Gestate {
   @Element() el: HTMLElement
-  @Prop() size: {x: number, y: number}
+  @Prop() size: DOMRect
   @Watch('size')
-  watchHandler(newsize: {x: number, y: number}) {
-    console.log('gestate size change', newsize)
+  watchHandler(newsize: DOMRect) {
     if (newsize && this.overlay) {
-      this.overlay.style.setProperty('width', newsize.x.toString()+'px')
-      this.overlay.style.setProperty('height', newsize.y.toString()+'px')
-      let offset = (this.el.clientWidth - newsize.x) / 2
-      this.overlay.style.setProperty('left', offset+'px')
+      this.overlay.style.setProperty('width', newsize.width.toString()+'px')
+      this.overlay.style.setProperty('height', newsize.height.toString()+'px')
+      let offset = ((this.el.clientWidth - newsize.width) / 2) 
+      this.overlay.style.setProperty('left', offset.toString()+'px')
     }
   }
 
@@ -58,10 +57,6 @@ export class Gestate {
     console.log('... and got overlay', this.overlay)
     this.init()
   }
-
-  
-  
-
   init() {
 
   }
