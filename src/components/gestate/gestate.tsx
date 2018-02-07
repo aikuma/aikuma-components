@@ -13,15 +13,19 @@ export interface Gesture {
   shadow: true
 })
 export class Gestate {
-
   @Element() el: HTMLElement
-  @Prop() element: HTMLElement
-  @Watch('element')
-  watchHandler(newValue: HTMLElement) {
-    if (newValue) {
-
+  @Prop() size: {x: number, y: number}
+  @Watch('size')
+  watchHandler(newsize: {x: number, y: number}) {
+    console.log('gestate size change', newsize)
+    if (newsize && this.overlay) {
+      this.overlay.style.setProperty('width', newsize.x.toString()+'px')
+      this.overlay.style.setProperty('height', newsize.y.toString()+'px')
+      let offset = (this.el.clientWidth - newsize.x) / 2
+      this.overlay.style.setProperty('left', offset+'px')
     }
   }
+
   canvas: HTMLCanvasElement
   context: CanvasRenderingContext2D
   gestures: Gesture[] = []
@@ -40,12 +44,18 @@ export class Gestate {
   overlayHeight: string
   slowDevice: boolean = false
 
+  overlay: HTMLElement
+
+  
+
   componentWillLoad() {
-    console.log('Gestate will render elwl', this.element)
+    
   }
 
   componentDidLoad() {
-    console.log('Gestate did  render eldl', this.element)
+    console.log('gestate did load')
+    this.overlay = this.el.shadowRoot.querySelector('.overlay')
+    console.log('... and got overlay', this.overlay)
     this.init()
   }
 
@@ -58,7 +68,7 @@ export class Gestate {
 
   render() {
     return (
-      <div>
+      <div class="overlay">
         Gestate
       </div>
     )

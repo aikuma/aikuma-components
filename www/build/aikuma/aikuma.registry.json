@@ -5,14 +5,17 @@
   "core": "aikuma.core.js",
   "corePolyfilled": "es5-build-disabled.js",
   "components": {
-    "gestate-component": {
-      "$": "gestate-component"
+    "aikuma-gestate": {
+      "$": "aikuma-gestate"
     },
-    "image-gesture-voice-component": {
-      "$": "gestate-component"
+    "aikuma-image-gesture-voice": {
+      "$": "aikuma-gestate"
     },
-    "slide-show-component": {
-      "$": "slide-show-component"
+    "aikuma-slide-show": {
+      "$": "aikuma-gestate"
+    },
+    "aikuma-translate-igv": {
+      "$": "aikuma-gestate"
     }
   }
 }

@@ -6,59 +6,59 @@
 
 
 import {
-  Gestate as GestateComponent
+  Gestate as AikumaGestate
 } from './components/gestate/gestate';
 
 declare global {
-  interface HTMLGestateComponentElement extends GestateComponent, HTMLElement {
+  interface HTMLAikumaGestateElement extends AikumaGestate, HTMLElement {
   }
-  var HTMLGestateComponentElement: {
-    prototype: HTMLGestateComponentElement;
-    new (): HTMLGestateComponentElement;
+  var HTMLAikumaGestateElement: {
+    prototype: HTMLAikumaGestateElement;
+    new (): HTMLAikumaGestateElement;
   };
   interface HTMLElementTagNameMap {
-    "gestate-component": HTMLGestateComponentElement;
+    "aikuma-gestate": HTMLAikumaGestateElement;
   }
   interface ElementTagNameMap {
-    "gestate-component": HTMLGestateComponentElement;
+    "aikuma-gestate": HTMLAikumaGestateElement;
   }
   namespace JSX {
     interface IntrinsicElements {
-      "gestate-component": JSXElements.GestateComponentAttributes;
+      "aikuma-gestate": JSXElements.AikumaGestateAttributes;
     }
   }
   namespace JSXElements {
-    export interface GestateComponentAttributes extends HTMLAttributes {
-      element?: HTMLElement;
+    export interface AikumaGestateAttributes extends HTMLAttributes {
+      size?: {x: number, y: number};
     }
   }
 }
 
 
 import {
-  ImageGestureVoice as ImageGestureVoiceComponent
+  ImageGestureVoice as AikumaImageGestureVoice
 } from './components/image-gesture-voice/image-gesture-voice';
 
 declare global {
-  interface HTMLImageGestureVoiceComponentElement extends ImageGestureVoiceComponent, HTMLElement {
+  interface HTMLAikumaImageGestureVoiceElement extends AikumaImageGestureVoice, HTMLElement {
   }
-  var HTMLImageGestureVoiceComponentElement: {
-    prototype: HTMLImageGestureVoiceComponentElement;
-    new (): HTMLImageGestureVoiceComponentElement;
+  var HTMLAikumaImageGestureVoiceElement: {
+    prototype: HTMLAikumaImageGestureVoiceElement;
+    new (): HTMLAikumaImageGestureVoiceElement;
   };
   interface HTMLElementTagNameMap {
-    "image-gesture-voice-component": HTMLImageGestureVoiceComponentElement;
+    "aikuma-image-gesture-voice": HTMLAikumaImageGestureVoiceElement;
   }
   interface ElementTagNameMap {
-    "image-gesture-voice-component": HTMLImageGestureVoiceComponentElement;
+    "aikuma-image-gesture-voice": HTMLAikumaImageGestureVoiceElement;
   }
   namespace JSX {
     interface IntrinsicElements {
-      "image-gesture-voice-component": JSXElements.ImageGestureVoiceComponentAttributes;
+      "aikuma-image-gesture-voice": JSXElements.AikumaImageGestureVoiceAttributes;
     }
   }
   namespace JSXElements {
-    export interface ImageGestureVoiceComponentAttributes extends HTMLAttributes {
+    export interface AikumaImageGestureVoiceAttributes extends HTMLAttributes {
       
     }
   }
@@ -66,31 +66,60 @@ declare global {
 
 
 import {
-  SlideShow as SlideShowComponent
+  SlideShow as AikumaSlideShow
 } from './components/slide-show/slide-show';
 
 declare global {
-  interface HTMLSlideShowComponentElement extends SlideShowComponent, HTMLElement {
+  interface HTMLAikumaSlideShowElement extends AikumaSlideShow, HTMLElement {
   }
-  var HTMLSlideShowComponentElement: {
-    prototype: HTMLSlideShowComponentElement;
-    new (): HTMLSlideShowComponentElement;
+  var HTMLAikumaSlideShowElement: {
+    prototype: HTMLAikumaSlideShowElement;
+    new (): HTMLAikumaSlideShowElement;
   };
   interface HTMLElementTagNameMap {
-    "slide-show-component": HTMLSlideShowComponentElement;
+    "aikuma-slide-show": HTMLAikumaSlideShowElement;
   }
   interface ElementTagNameMap {
-    "slide-show-component": HTMLSlideShowComponentElement;
+    "aikuma-slide-show": HTMLAikumaSlideShowElement;
   }
   namespace JSX {
     interface IntrinsicElements {
-      "slide-show-component": JSXElements.SlideShowComponentAttributes;
+      "aikuma-slide-show": JSXElements.AikumaSlideShowAttributes;
     }
   }
   namespace JSXElements {
-    export interface SlideShowComponentAttributes extends HTMLAttributes {
-      first?: string;
-      last?: string;
+    export interface AikumaSlideShowAttributes extends HTMLAttributes {
+      
+    }
+  }
+}
+
+
+import {
+  TranslateIGV as AikumaTranslateIgv
+} from './components/translate-igv/translate-igv';
+
+declare global {
+  interface HTMLAikumaTranslateIgvElement extends AikumaTranslateIgv, HTMLElement {
+  }
+  var HTMLAikumaTranslateIgvElement: {
+    prototype: HTMLAikumaTranslateIgvElement;
+    new (): HTMLAikumaTranslateIgvElement;
+  };
+  interface HTMLElementTagNameMap {
+    "aikuma-translate-igv": HTMLAikumaTranslateIgvElement;
+  }
+  interface ElementTagNameMap {
+    "aikuma-translate-igv": HTMLAikumaTranslateIgvElement;
+  }
+  namespace JSX {
+    interface IntrinsicElements {
+      "aikuma-translate-igv": JSXElements.AikumaTranslateIgvAttributes;
+    }
+  }
+  namespace JSXElements {
+    export interface AikumaTranslateIgvAttributes extends HTMLAttributes {
+      
     }
   }
 }

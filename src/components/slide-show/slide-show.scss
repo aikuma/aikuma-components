@@ -2,21 +2,68 @@
 
 .swiper-container {
   width: 100%;
-  height: 200px;
   border: 1px solid red;
   position: relative;
 }
-.swiper-wrapper {
-  border: 1px solid green;
-  
-}
+
 .swiper-slide {
   border: 1px solid blue;
   width: 50vw;
   height: 37.5vw;
+  background-color: rgba(0,0,0,0.7);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center center;
+
+
 }
 
-gestate-component {
+.swiper-container.main {
+  //height: 200px;
+  .swiper-slide {
+    width: 50vw;
+    height: 100%;
+    max-height: 50vw;
+    .swiper-lazy {
+      height: 100%;
+    }
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    .image-wrapper {
+      height: 100%;
+      img {
+        object-fit: contain;
+      }
+    }
+  }
+}
+
+.swiper-container.thumb {
+  height: 25vw;
+  position: relative;
+  .swiper-slide {
+      width: 33vw;
+      height: 100%;
+      opacity: 0.5;
+      box-shadow: 1px 1px 6px 2px rgba(40, 0, 0, 0.6);
+  }
+  .swiper-slide-active {
+      opacity: 1;
+      box-shadow: 1px 1px 3px 2px rgba(40, 0, 0, 0.3);
+  }
+  .navbutton {
+    font-size: 62px;
+    height: 62px;
+    width: 40px;
+  }
+}
+.swiper-wrapper {
+  border: 1px solid green;
+}
+
+aikuma-gestate {
   position: absolute;
   top: 0;
   left: 0;
@@ -33,3 +80,31 @@ gestate-component {
     z-index: 12;
   } 
 }
+
+@media all and (orientation: landscape) {
+  .swiper-container.main {
+    .swiper-slide {
+      width: 50vw;
+      height: 37.5vw;
+    }
+  }
+  
+  .swiper-container.thumb {
+    display: none
+  }
+
+}
+
+@media all and (orientation: portrait) {
+  .swiper-container.main {
+    .swiper-button-next, .swiper-button-prev {
+      display: none;
+    }
+    .swiper-slide {
+      width: 100%;
+      height: 75vw;
+    }
+  }
+
+}
+

@@ -61,4 +61,4 @@ function supportsCssVariables(win) {
 
 init(win, doc, appNamespace, urlNamespace, publicPath, appCore, appCoreSsr, appCorePolyfilled, hydratedCssClass, components);
 
-})(window, document, "aikuma","aikuma","/build/aikuma/","aikuma.core.js","es5-build-disabled.js","hydrated",[["gestate-component","gestate-component",1,[["el",7],["element",1]],1],["image-gesture-voice-component","gestate-component",1,0,1],["slide-show-component","slide-show-component",1,[["el",7],["first",1,1,2],["last",1,1,2],["slideSize",5],["slides",5]],1]]);
+})(window, document, "aikuma","aikuma","/build/aikuma/","aikuma.core.js","es5-build-disabled.js","hydrated",[["aikuma-gestate","aikuma-gestate",1,[["el",7],["size",1]],1],["aikuma-image-gesture-voice","aikuma-gestate",1,[["el",7]],1],["aikuma-slide-show","aikuma-gestate",1,[["el",7],["loadImages",6],["slideSize",5],["slides",5]],1],["aikuma-translate-igv","aikuma-gestate",1,0,1]]);
