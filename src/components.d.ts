@@ -5,12 +5,21 @@
  */
 
 
+declare global {
+  interface HTMLStencilElement extends HTMLElement {
+    componentOnReady(): Promise<this>;
+    componentOnReady(done: (ele?: this) => void): void;
+  }
+}
+
+
+
 import {
   Gestate as AikumaGestate
 } from './components/gestate/gestate';
 
 declare global {
-  interface HTMLAikumaGestateElement extends AikumaGestate, HTMLElement {
+  interface HTMLAikumaGestateElement extends AikumaGestate, HTMLStencilElement {
   }
   var HTMLAikumaGestateElement: {
     prototype: HTMLAikumaGestateElement;
@@ -40,7 +49,7 @@ import {
 } from './components/image-gesture-voice/image-gesture-voice';
 
 declare global {
-  interface HTMLAikumaImageGestureVoiceElement extends AikumaImageGestureVoice, HTMLElement {
+  interface HTMLAikumaImageGestureVoiceElement extends AikumaImageGestureVoice, HTMLStencilElement {
   }
   var HTMLAikumaImageGestureVoiceElement: {
     prototype: HTMLAikumaImageGestureVoiceElement;
@@ -70,7 +79,7 @@ import {
 } from './components/slide-show/slide-show';
 
 declare global {
-  interface HTMLAikumaSlideShowElement extends AikumaSlideShow, HTMLElement {
+  interface HTMLAikumaSlideShowElement extends AikumaSlideShow, HTMLStencilElement {
   }
   var HTMLAikumaSlideShowElement: {
     prototype: HTMLAikumaSlideShowElement;
@@ -100,7 +109,7 @@ import {
 } from './components/translate-igv/translate-igv';
 
 declare global {
-  interface HTMLAikumaTranslateIgvElement extends AikumaTranslateIgv, HTMLElement {
+  interface HTMLAikumaTranslateIgvElement extends AikumaTranslateIgv, HTMLStencilElement {
   }
   var HTMLAikumaTranslateIgvElement: {
     prototype: HTMLAikumaTranslateIgvElement;

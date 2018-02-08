@@ -1,8 +1,8 @@
-import { Component, Element, Prop, Method, State } from '@stencil/core'
-//import Swiper from 'swiper'
-import { Swiper, Navigation, Lazy, Pagination, Controller, EffectCoverflow } from 'swiper/dist/js/swiper.esm.js'
+import { Component, Element, Method, State, Event, EventEmitter } from '@stencil/core'
+import Swiper from 'swiper'
+//import { Swiper, Navigation, Lazy, Pagination, Controller, EffectCoverflow } from 'swiper/dist/js/swiper.esm.js'
 
-Swiper.use([Navigation, Lazy, Pagination, Controller, EffectCoverflow])
+//Swiper.use([Navigation, Lazy, Pagination, Controller, EffectCoverflow])
 
 export interface Slide {
   imageId?: string
@@ -23,8 +23,9 @@ export interface SlideShowElement extends HTMLElement, SlideShow {}
 })
 export class SlideShow {
   @Element() el: HTMLElement
-  @State() slideSize: DOMRect
   @State() slides: Slide[] = []
+  @Event() slideSize: EventEmitter<DOMRect>;
+  @Event() slideEvent: EventEmitter<{type: string, val: any}>;
 
   swiper: {
     main: Swiper,
@@ -93,41 +94,53 @@ export class SlideShow {
         nextEl: this.el.shadowRoot.querySelector('.swiper-container.thumb .swiper-button-next'),
         prevEl: this.el.shadowRoot.querySelector('.swiper-container.thumb .swiper-button-prev')
       },
-      allowTouchMove: false
-      // controller: {
-      //   control: smainctrl
-      // }
+      allowTouchMove: false,
+      controller: {
+        control: smainctrl
+      }
     })
     this.swiper = {
       main: smainctrl,
       thumb: sthumbctrl
     }
 
-
-
     console.log('thumb swipr', sthumbctrl)
     
-    this.swiper.main.on('slideChange', () => {
-      //console.log('slideChange')
+    // this.swiper.main.on('slideChange', () => {
+    //   //console.log('slideChange')
 
+    //})
+    this.swiper.main.on('slideChangeTransitionStart', (x) => {
+      console.log('slideChangeTransitionStart',x)
+      this.slideEvent.emit({type:'start', val: this.swiper.main.activeIndex})
     })
     this.swiper.main.on('slideChangeTransitionEnd', () => {
-      //console.log('slideChangeTransitionEnd')
       this.calculateSlideSize()
+      this.slideEvent.emit({type:'end', val: this.swiper.main.activeIndex})
     })
     this.swiper.main.on('lazyImageReady', () => {
-      //console.log('lazyImageReady')
       this.calculateSlideSize()
     })
     this.swiper.main.on('resize', () => {
       this.calculateSlideSize()
     })
+    this.swiper.main.on('init', () => {
+      this.slideEvent.emit({type:'init', val: this.swiper})
+    })
   
   }
-
+  @Method()
+  getCurrent(): number {
+    return this.swiper.main.activeIndex
+  }
+  @Method()
   slideTo(idx: number) {
+    if (idx === this.swiper.main.activeIndex) {
+      return
+    }
     this.swiper.thumb.slideTo(idx)
     this.swiper.main.slideTo(idx)
+    this.slideEvent.emit({type:'start', val: idx})
   }
 
   @Method()
@@ -160,7 +173,7 @@ export class SlideShow {
     let slideEl = this.el.shadowRoot.querySelector('.swiper-container.main .swiper-slide.swiper-slide-active .image-wrapper')
     let rect = slideEl.getBoundingClientRect() as DOMRect
     if (rect.width) {
-      this.slideSize = rect
+      this.slideSize.emit(rect)
     }
   }
 
@@ -179,7 +192,6 @@ export class SlideShow {
     }
     return (
 <div>
-  IGV
   <div class="swiper-container main">
     <div class="swiper-wrapper">
 
@@ -195,7 +207,6 @@ export class SlideShow {
     <div class="swiper-pagination"></div>
     <div class="swiper-button-prev"></div>
     <div class="swiper-button-next"></div>
-    <aikuma-gestate size={this.slideSize}></aikuma-gestate>
   </div>
   <div class="swiper-container thumb">
     <div class="swiper-wrapper">

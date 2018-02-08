@@ -18,8 +18,9 @@
     "test.watch": "jest --watch --no-cache"
   },
   "dependencies": {
-    "@stencil/core": "0.3.0",
-    "aikumic": "^0.0.3",
+    "@stencil/core": "0.4.0-1",
+    "aikumic": "^0.1.0",
+    "prettyprint": "^1.1.1",
     "randomcolor": "^0.5.3",
     "sketch-js": "^1.1.3",
     "swiper": "^4.1.0"
@@ -28,7 +29,8 @@
     "@stencil/dev-server": "latest",
     "@stencil/utils": "latest",
     "@types/jest": "^21.1.1",
-    "jest": "^21.2.1"
+    "jest": "^21.2.1",
+    "tslib": "^1.9.0"
   },
   "repository": {
     "type": "git",
@@ -44,6 +46,9 @@
     "transform": {
       "^.+\\.(ts|tsx)$": "<rootDir>/node_modules/@stencil/core/testing/jest.preprocessor.js"
     },
+    "transformIgnorePatterns": [
+      "<rootDir>/node_modules/(?!aikumic)"
+    ],
     "testRegex": "(/__tests__/.*|\\.(test|spec))\\.(tsx?|jsx?)$",
     "moduleFileExtensions": [
       "ts",

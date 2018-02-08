@@ -67,12 +67,12 @@ var s=document.querySelector("script[data-namespace='aikuma']");if(s){publicPath
      */
   /**
      * File names and value
-     */  function initStyleTemplate(domApi, cmpConstructor) {
+     */  function initStyleTemplate(domApi, cmpMeta, cmpConstructor) {
     const style = cmpConstructor.style;
     if (style) {
       // we got a style mode for this component, let's create an id for this style
       const styleModeId = cmpConstructor.is + (cmpConstructor.styleMode || DEFAULT_STYLE_MODE);
-      if (!cmpConstructor[styleModeId]) {
+      if (!cmpMeta[styleModeId]) {
         false;
         {
           // use <template> elements to clone styles
@@ -84,7 +84,7 @@ var s=document.querySelector("script[data-namespace='aikuma']");if(s){publicPath
           const templateElm = domApi.$createElement('template');
           // keep a reference to this template element within the
           // Constructor using the style mode id as the key
-                    cmpConstructor[styleModeId] = templateElm;
+                    cmpMeta[styleModeId] = templateElm;
           // add the style text to the template element's innerHTML
                     templateElm.innerHTML = `<style>${style}</style>`;
           // add our new template element to the head
@@ -94,15 +94,15 @@ var s=document.querySelector("script[data-namespace='aikuma']");if(s){publicPath
       }
     }
   }
-  function attachStyles(domApi, cmpConstructor, modeName, elm, customStyle, styleElm) {
+  function attachStyles(domApi, cmpMeta, modeName, elm, customStyle, styleElm) {
     // first see if we've got a style for a specific mode
-    let styleModeId = cmpConstructor.is + (modeName || DEFAULT_STYLE_MODE);
-    let styleTemplate = cmpConstructor[styleModeId];
+    let styleModeId = cmpMeta.tagNameMeta + (modeName || DEFAULT_STYLE_MODE);
+    let styleTemplate = cmpMeta[styleModeId];
     if (!styleTemplate) {
       // didn't find a style for this mode
       // now let's check if there's a default style for this component
-      styleModeId = cmpConstructor.is + DEFAULT_STYLE_MODE;
-      styleTemplate = cmpConstructor[styleModeId];
+      styleModeId = cmpMeta.tagNameMeta + DEFAULT_STYLE_MODE;
+      styleTemplate = cmpMeta[styleModeId];
     }
     if (styleTemplate) {
       // cool, we found a style template element for this component
@@ -110,7 +110,7 @@ var s=document.querySelector("script[data-namespace='aikuma']");if(s){publicPath
       // if this browser supports shadow dom, then let's climb up
       // the dom and see if we're within a shadow dom
             if (domApi.$supportsShadowDom) {
-        if ('shadow' === cmpConstructor.encapsulation) {
+        if (1 /* ShadowDom */ === cmpMeta.encapsulation) {
           // we already know we're in a shadow dom
           // so shadow root is the container for these styles
           styleContainerNode = elm.shadowRoot;
@@ -163,7 +163,9 @@ var s=document.querySelector("script[data-namespace='aikuma']");if(s){publicPath
       $createTextNode: text => doc.createTextNode(text),
       $createComment: data => doc.createComment(data),
       $insertBefore: (parentNode, childNode, referenceNode) => parentNode.insertBefore(childNode, referenceNode),
-      $removeChild: (parentNode, childNode) => parentNode.removeChild(childNode),
+      // https://developer.mozilla.org/en-US/docs/Web/API/ChildNode/remove
+      // and it's polyfilled in es5 builds
+      $remove: node => node.remove(),
       $appendChild: (parentNode, childNode) => parentNode.appendChild(childNode),
       $childNodes: node => node.childNodes,
       $parentNode: node => node.parentNode,
@@ -282,8 +284,16 @@ var s=document.querySelector("script[data-namespace='aikuma']");if(s){publicPath
     true;
     domApi.$attachShadow = ((elm, shadowRootInit) => elm.attachShadow(shadowRootInit));
     domApi.$supportsShadowDom = !!domApi.$documentElement.attachShadow;
+    true;
     false;
-    false, false;
+    domApi.$dispatchEvent = ((elm, eventName, data) => elm && elm.dispatchEvent(new win.CustomEvent(eventName, data)));
+    true;
+    // test if this browser supports event options or not
+    try {
+      win.addEventListener('e', null, Object.defineProperty({}, 'passive', {
+        get: () => domApi.$supportsEventOptions = true
+      }));
+    } catch (e) {}
     domApi.$parentElement = ((elm, parentNode) => {
       // if the parent node is a document fragment (shadow root)
       // then use the "host" property on it
@@ -360,6 +370,91 @@ var s=document.querySelector("script[data-namespace='aikuma']");if(s){publicPath
     // so no need to change to a different type
         return propValue;
   }
+  function initEventEmitters(plt, cmpEvents, instance) {
+    cmpEvents && cmpEvents.forEach(eventMeta => {
+      instance[eventMeta.method] = {
+        emit: data => {
+          plt.emitEvent(instance.__el, eventMeta.name, {
+            bubbles: eventMeta.bubbles,
+            composed: eventMeta.composed,
+            cancelable: eventMeta.cancelable,
+            detail: data
+          });
+        }
+      };
+    });
+  }
+  function initElementListeners(plt, elm) {
+    // so the element was just connected, which means it's in the DOM
+    // however, the component instance hasn't been created yet
+    // but what if an event it should be listening to get emitted right now??
+    // let's add our listeners right now to our element, and if it happens
+    // to receive events between now and the instance being created let's
+    // queue up all of the event data and fire it off on the instance when it's ready
+    const cmpMeta = plt.getComponentMeta(elm);
+    cmpMeta.listenersMeta && 
+    // we've got listens
+    cmpMeta.listenersMeta.forEach(listenMeta => {
+      // go through each listener
+      listenMeta.eventDisabled || 
+      // only add ones that are not already disabled
+      plt.domApi.$addEventListener(elm, listenMeta.eventName, createListenerCallback(elm, listenMeta.eventMethodName), listenMeta.eventCapture, listenMeta.eventPassive);
+    });
+  }
+  function createListenerCallback(elm, eventMethodName) {
+    // create the function that gets called when the element receives
+    // an event which it should be listening for
+    return ev => {
+      elm._instance ? 
+      // instance is ready, let's call it's member method for this event
+      elm._instance[eventMethodName](ev) : 
+      // instance is not ready!!
+      // let's queue up this event data and replay it later
+      // when the instance is ready
+      (elm._queuedEvents = elm._queuedEvents || []).push(eventMethodName, ev);
+    };
+  }
+  function enableEventListener(plt, instance, eventName, shouldEnable, attachTo, passive) {
+    if (instance) {
+      // cool, we've got an instance, it's get the element it's on
+      const elm = instance.__el;
+      const cmpMeta = plt.getComponentMeta(elm);
+      if (cmpMeta && cmpMeta.listenersMeta) {
+        // alrighty, so this cmp has listener meta
+        if (shouldEnable) {
+          // we want to enable this event
+          // find which listen meta we're talking about
+          const listenMeta = cmpMeta.listenersMeta.find(l => l.eventName === eventName);
+          listenMeta && 
+          // found the listen meta, so let's add the listener
+          plt.domApi.$addEventListener(elm, eventName, ev => instance[listenMeta.eventMethodName](ev), listenMeta.eventCapture, void 0 === passive ? listenMeta.eventPassive : !!passive, attachTo);
+        } else {
+          // we're disabling the event listener
+          // so let's just remove it entirely
+          plt.domApi.$removeEventListener(elm, eventName);
+        }
+      }
+    }
+  }
+  function replayQueuedEventsOnInstance(elm, i) {
+    // the element has an instance now and
+    // we already added the event listeners to the element
+    const queuedEvents = elm._queuedEvents;
+    if (queuedEvents) {
+      // events may have already fired before the instance was even ready
+      // now that the instance is ready, let's replay all of the events that
+      // we queued up earlier that were originally meant for the instance
+      for (i = 0; i < queuedEvents.length; i += 2) {
+        // data was added in sets of two
+        // first item the eventMethodName
+        // second item is the event data
+        // take a look at initElementListener()
+        elm._instance[queuedEvents[i]](queuedEvents[i + 1]);
+      }
+      // no longer need this data, be gone with you
+            elm._queuedEvents = null;
+    }
+  }
   function proxyComponentInstance(plt, cmpConstructor, elm, instance, properties, memberName) {
     // at this point we've got a specific node of a host element, and created a component class instance
     // and we've already created getters/setters on both the host element and component class prototypes
@@ -396,8 +491,19 @@ var s=document.querySelector("script[data-namespace='aikuma']");if(s){publicPath
       // let's upgrade the data on the host element
       // and let the getters/setters do their jobs
             proxyComponentInstance(plt, componentConstructor, elm, elm._instance);
-      false;
-      false;
+      true;
+      // add each of the event emitters which wire up instance methods
+      // to fire off dom events from the host element
+      initEventEmitters(plt, componentConstructor.events, elm._instance);
+      true;
+      try {
+        // replay any event listeners on the instance that
+        // were queued up between the time the element was
+        // connected and before the instance was ready
+        replayQueuedEventsOnInstance(elm);
+      } catch (e) {
+        plt.onError(e, 2 /* QueueEventsError */ , elm);
+      }
     } catch (e) {
       // something done went wrong trying to create a component instance
       // create a dumby instance so other stuff can load
@@ -522,13 +628,13 @@ var s=document.querySelector("script[data-namespace='aikuma']");if(s){publicPath
     vnode.vtext = textValue;
     return vnode;
   }
-  function render(plt, elm, cmpConstructor, isUpdateRender) {
+  function render(plt, elm, cmpMeta, isUpdateRender) {
     try {
       const instance = elm._instance;
       // if this component has a render function, let's fire
       // it off and generate the child vnodes for this host element
       // note that we do not create the host element cuz it already exists
-            const hostMeta = cmpConstructor.host;
+            const hostMeta = cmpMeta.componentConstructor.host;
       if (instance.render || instance.hostData || hostMeta) {
         // tell the platform we're actively rendering
         // if a value is changed within a render() then
@@ -550,13 +656,13 @@ var s=document.querySelector("script[data-namespace='aikuma']");if(s){publicPath
         // each patch always gets a new vnode
         // the host element itself isn't patched because it already exists
         // kick off the actual render and any DOM updates
-                elm._vnode = plt.render(oldVNode, h(null, vnodeHostData, vnodeChildren), isUpdateRender, elm._hostContentNodes, cmpConstructor.encapsulation);
+                elm._vnode = plt.render(oldVNode, h(null, vnodeHostData, vnodeChildren), isUpdateRender, elm._hostContentNodes, cmpMeta.componentConstructor.encapsulation);
       }
       true;
       // attach the styles this component needs, if any
       // this fn figures out if the styles should go in a
       // shadow root or if they should be global
-      plt.attachStyles(plt.domApi, cmpConstructor, instance.mode, elm);
+      plt.attachStyles(plt.domApi, cmpMeta, instance.mode, elm);
       // it's official, this element has rendered
       elm.$rendered = true;
       if (elm.$onRender) {
@@ -633,7 +739,7 @@ var s=document.querySelector("script[data-namespace='aikuma']");if(s){publicPath
   function renderUpdate(plt, elm, isInitialLoad) {
     // if this component has a render function, let's fire
     // it off and generate a vnode for this
-    render(plt, elm, plt.getComponentMeta(elm).componentConstructor, !isInitialLoad);
+    render(plt, elm, plt.getComponentMeta(elm), !isInitialLoad);
     // _hasRendered was just set
     // _onRenderCallbacks were all just fired off
         try {
@@ -909,7 +1015,8 @@ var s=document.querySelector("script[data-namespace='aikuma']");if(s){publicPath
             for (;i < slotNodes.length; i++) {
               // remove the host content node from it's original parent node
               // then relocate the host content node to its new slotted home
-              domApi.$appendChild(parentElm, domApi.$removeChild(domApi.$parentNode(slotNodes[i]), slotNodes[i]));
+              domApi.$remove(slotNodes[i]);
+              domApi.$appendChild(parentElm, slotNodes[i]);
             }
             // done moving nodes around
             // allow the disconnect callback to work again
@@ -949,7 +1056,8 @@ var s=document.querySelector("script[data-namespace='aikuma']");if(s){publicPath
             }
           }
         }
-        isSvgMode = false;
+        // Only reset the SVG context when we're exiting SVG element
+                'svg' === vnode.vtag && (isSvgMode = false);
       }
       return vnode.elm;
     }
@@ -966,9 +1074,9 @@ var s=document.querySelector("script[data-namespace='aikuma']");if(s){publicPath
         }
       }
     }
-    function removeVnodes(parentElm, vnodes, startIdx, endIdx) {
+    function removeVnodes(vnodes, startIdx, endIdx) {
       for (;startIdx <= endIdx; ++startIdx) {
-        isDef(vnodes[startIdx]) && domApi.$removeChild(parentElm, vnodes[startIdx].elm);
+        isDef(vnodes[startIdx]) && domApi.$remove(vnodes[startIdx].elm);
       }
     }
     function updateChildren(parentElm, oldCh, newCh) {
@@ -1029,10 +1137,10 @@ var s=document.querySelector("script[data-namespace='aikuma']");if(s){publicPath
             }
             newStartVnode = newCh[++newStartIdx];
           }
-          node && domApi.$insertBefore(parentElm, node, oldStartVnode.elm);
+          node && domApi.$insertBefore(oldStartVnode.elm && oldStartVnode.elm.parentNode || parentElm, node, oldStartVnode.elm);
         }
       }
-      oldStartIdx > oldEndIdx ? addVnodes(parentElm, null == newCh[newEndIdx + 1] ? null : newCh[newEndIdx + 1].elm, newCh, newStartIdx, newEndIdx) : newStartIdx > newEndIdx && removeVnodes(parentElm, oldCh, oldStartIdx, oldEndIdx);
+      oldStartIdx > oldEndIdx ? addVnodes(parentElm, null == newCh[newEndIdx + 1] ? null : newCh[newEndIdx + 1].elm, newCh, newStartIdx, newEndIdx) : newStartIdx > newEndIdx && removeVnodes(oldCh, oldStartIdx, oldEndIdx);
     }
     function isSameVnode(vnode1, vnode2) {
       // compare if two vnode to see if they're "technically" the same
@@ -1076,7 +1184,7 @@ var s=document.querySelector("script[data-namespace='aikuma']");if(s){publicPath
         } else {
           isDef(oldChildren) && 
           // no new child vnodes, but there are old child vnodes to remove
-          removeVnodes(elm, oldChildren, 0, oldChildren.length - 1);
+          removeVnodes(oldChildren, 0, oldChildren.length - 1);
         }
       } else if (elm._hostContentNodes && elm._hostContentNodes.defaultSlot) {
         // this element has slotted content
@@ -1267,7 +1375,11 @@ var s=document.querySelector("script[data-namespace='aikuma']");if(s){publicPath
       elm.$connected = true;
       // if somehow this node was reused, ensure we've removed this property
             elm._hasDestroyed = null;
-      false;
+      true;
+      // initialize our event listeners on the host element
+      // we do this now so that we can listening to events that may
+      // have fired even before the instance is ready
+      initElementListeners(plt, elm);
       // register this component as an actively
       // loading child to its parent component
       registerWithParentComponent(plt, elm);
@@ -1455,8 +1567,10 @@ var s=document.querySelector("script[data-namespace='aikuma']");if(s){publicPath
     Context.location = win.location;
     Context.document = doc;
     Context.publicPath = publicPath;
-    false;
-    false;
+    true;
+    Context.enableListener = ((instance, eventName, enabled, attachTo, passive) => enableEventListener(plt, instance, eventName, enabled, attachTo, passive));
+    true;
+    Context.emit = ((elm, eventName, data) => domApi.$dispatchEvent(elm, Context.eventNameFn ? Context.eventNameFn(eventName) : eventName, data));
     // add the h() fn to the app's global namespace
     App.h = h;
     App.Context = Context;
@@ -1529,15 +1643,13 @@ var s=document.querySelector("script[data-namespace='aikuma']");if(s){publicPath
         const url = publicPath + bundleId + (useScopedCss(domApi.$supportsShadowDom, cmpMeta) ? '.sc' : '') + '.js';
         // dynamic es module import() => woot!
                 import(url).then(importedModule => {
+          // async loading of the module is done
           try {
-            // async loading of the module is done
-            cmpMeta.componentConstructor || (
-            // we haven't initialized the component module yet
             // get the component constructor from the module
-            cmpMeta.componentConstructor = importedModule[dashToPascalCase(cmpMeta.tagNameMeta)]);
-            // initialize this components styles
+            cmpMeta.componentConstructor = importedModule[dashToPascalCase(cmpMeta.tagNameMeta)];
+            // initialize this component constructor's styles
             // it is possible for the same component to have difficult styles applied in the same app
-                        initStyleTemplate(domApi, cmpMeta.componentConstructor);
+                        initStyleTemplate(domApi, cmpMeta, cmpMeta.componentConstructor);
           } catch (e) {
             // oh man, something's up
             console.error(e);

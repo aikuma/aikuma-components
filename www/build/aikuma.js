@@ -61,4 +61,4 @@ function supportsCssVariables(win) {
 
 init(win, doc, appNamespace, urlNamespace, publicPath, appCore, appCoreSsr, appCorePolyfilled, hydratedCssClass, components);
 
-})(window, document, "aikuma","aikuma","/build/aikuma/","aikuma.core.js","es5-build-disabled.js","hydrated",[["aikuma-gestate","aikuma-gestate",1,[["el",7],["size",1]],1],["aikuma-image-gesture-voice","aikuma-gestate",1,[["el",7]],1],["aikuma-slide-show","aikuma-gestate",1,[["el",7],["loadImages",6],["slideSize",5],["slides",5]],1],["aikuma-translate-igv","aikuma-gestate",1,0,1]]);
+})(window, document, "aikuma","aikuma","/build/aikuma/","aikuma.core.js","es5-build-disabled.js","hydrated",[["aikuma-gestate","aikuma-gestate",1,[["clearAll",6],["el",7],["getGestures",6],["loadGestures",6],["playGestures",6],["record",6],["size",1],["stopPlay",6],["stopRecord",6]],1],["aikuma-image-gesture-voice","aikuma-gestate",1,[["el",7],["state",5]],1,[["slideSize","slideSizeHandler"],["slideEvent","slideEvenHandler"]]],["aikuma-slide-show","aikuma-gestate",1,[["el",7],["getCurrent",6],["loadImages",6],["slideTo",6],["slides",5]],1],["aikuma-translate-igv","aikuma-gestate",1,0,1]]);
