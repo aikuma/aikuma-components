@@ -1080,30 +1080,37 @@ var sketch = createCommonjsModule(function (module, exports) {
 });
 
 class Particle {
-    constructor(that, x, y, radius, colors) {
-        this.color = that.randomPick(colors);
+    constructor(x, y, radius, colors, lvec = null) {
         this.alive = true;
-        this.radius = radius || 10;
         this.wander = 0.15;
-        this.theta = Math.random() * Math.PI * 2;
         this.drag = 0.92;
+        this.color = this.randomPick(colors);
+        this.radius = radius || 10;
+        this.theta = Math.random() * Math.PI * 2;
         this.x = x || 0.0;
         this.y = y || 0.0;
-        this.that = that;
-        this.wander = this.that.random(0.5, 2.0);
+        this.wander = this.random(0.5, 2.0);
         //this.color = this.that.randomPick( this.COLOURS )
-        this.drag = this.that.random(0.9, 0.99);
-        let force = this.that.random(0.5, 1.5);
+        this.drag = this.random(0.85, 0.99);
+        let force = this.random(0.3, 0.6);
         //let force = this.that.random( 1, 2.5 )
         this.vx = Math.sin(this.theta) * force;
         this.vy = Math.cos(this.theta) * force;
+        if (lvec) {
+            let af = Math.min(15, lvec.lt) / 15;
+            let lvx = lvec.lx / 4 * af;
+            let lvy = lvec.ly / 4 * af;
+            //console.log(this.vx, lvx, this.vy, lvy, af)
+            this.vx += lvx;
+            this.vy += lvy;
+        }
     }
     move() {
         this.x += this.vx;
         this.y += this.vy;
         this.vx *= this.drag;
         this.vy *= this.drag;
-        this.theta += this.that.random(-0.5, 0.5) * this.wander;
+        this.theta += this.random(-0.5, 0.5) * this.wander;
         this.vx += Math.sin(this.theta) * 0.1;
         this.vy += Math.cos(this.theta) * 0.1;
         this.radius *= 0.91;
@@ -1115,45 +1122,61 @@ class Particle {
         ctx.fillStyle = this.color;
         ctx.fill();
     }
+    random(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+    randomPick(array) {
+        return array[Math.floor(Math.random() * array.length)];
+    }
 }
 class Particles {
     constructor(htmlElement) {
-        this.MAX_PARTICLES = 100;
-        this.FAST_PARTICLES = 25;
+        this.MAX_PARTICLES = 250;
+        this.FAST_PARTICLES = 250;
+        this.SPAWN_MIN = 3;
+        this.SPAWN_MAX = 5;
         this.particles = [];
         this.times = [];
+        this.lastParp = null;
         this.sketchActive = false;
         this.recordMode = false;
+        this.lastSpawn = null;
         this.htmlelement = htmlElement;
-        this.colors = randomColor_1({ count: 10, luminosity: 'light' });
+        //this.colors = randomColor({count: 10, luminosity: 'dark'})
+        this.colors = randomColor_1({ count: 20 });
+        //this.init()
     }
-    resize(width, height) {
-        this.width = width;
-        this.height = height;
-    }
-    start(recordMode = false) {
+    init(recordMode = false) {
         this.recordMode = recordMode;
+        this.width = this.htmlelement.clientWidth;
+        this.height = this.htmlelement.clientHeight;
+        this.lastParp = null;
+        if (this.sketchActive) {
+            return;
+        }
         this.sketch = sketch.create({
             globals: false,
             container: this.htmlelement,
             eventTarget: this.htmlelement,
             retina: false,
             fullscreen: false,
-            autopause: false,
-            interval: recordMode ? 2 : 1,
+            autopause: true,
+            //interval: recordMode ? 2 : 1,
             width: this.width,
-            height: this.height
+            height: this.height,
+            autoclear: false
         });
-        this.sketch.globalCompositeOperation = 'lighten';
-        this.sketch.spawn = (x, y) => {
+        console.log('particles create size', this.htmlelement.clientWidth, this.htmlelement.clientHeight);
+        this.sketch.globalCompositeOperation = 'color';
+        this.sketch.spawn = (x, y, lvec = null) => {
             let mp = recordMode ? this.FAST_PARTICLES : this.MAX_PARTICLES;
             if (this.particles.length >= mp) {
                 this.particles.shift();
             }
-            let particle = new Particle(this, x, y, this.random(6, 12), this.colors);
-            this.particles.push(particle);
+            this.particles.push(new Particle(x, y, this.random(4, 8), this.colors, lvec));
         };
         this.sketch.update = () => {
+            this.sketch.clear();
             let lp = [];
             for (let p of this.particles) {
                 p.move();
@@ -1172,12 +1195,28 @@ class Particles {
         };
         this.sketchActive = true;
     }
+    resize(rect) {
+        let cv = this.htmlelement.querySelector('canvas');
+        if (!cv) {
+            return;
+        }
+        this.width = Math.floor(rect.width);
+        this.height = Math.floor(rect.height);
+        cv.setAttribute('width', this.width.toString() + 'px');
+        cv.setAttribute('height', this.height.toString() + 'px');
+        //cv.style.setProperty('width', this.width.toString()+'px')
+        //cv.style.setProperty('height', this.height.toString()+'px')
+        cv.style.setProperty('left', Math.floor(rect.left).toString() + 'px');
+        cv.style.setProperty('right', Math.floor(rect.right).toString() + 'px');
+    }
+    start() {
+    }
     stop() {
         let total = this.times.reduce((sum, value) => sum + value, 1);
         console.log('sketch fps', Math.round(1000 / (total / this.times.length)));
-        this.lastPaaaaarp = null;
-        this.sketch.destroy();
-        this.sketchActive = false;
+        this.lastParp = null;
+        //this.sketch.destroy()
+        //this.sketchActive = false
     }
     random(min, max) {
         return Math.random() * (max - min) + min;
@@ -1191,7 +1230,8 @@ class Particles {
         return Math.floor(Math.random() * (max - min + 1)) + min;
     }
     // pttoooooey paaaaaaarp ptweeeeee!!!!
-    paaaaarp(x, y) {
+    parp(x, y) {
+        let fx = ~~(this.width * x), fy = ~~(this.height * y);
         const interpolate = (x1, y1, x2, y2, steps) => {
             let dx = ((x2 - x1) / steps), dy = ((y2 - y1) / steps);
             let res = [];
@@ -1203,38 +1243,67 @@ class Particles {
             }
             return res;
         };
-        let fx = ~~(this.width * x), fy = ~~(this.height * y);
+        const spawn = (x, y, min = null, max = null) => {
+            let lvec = this.lastSpawn ?
+                {
+                    lx: fx - this.lastSpawn.x,
+                    ly: fy - this.lastSpawn.y,
+                    lt: new Date().valueOf() - this.lastSpawn.d.valueOf()
+                } : null;
+            if (!min) {
+                this.sketch.spawn(fx, fy, lvec);
+            }
+            else {
+                let mv = this.lastSpawn
+                    ? Math.min(Math.sqrt(Math.pow(lvec.lx, 2) + Math.pow(lvec.ly, 2)), 10)
+                    : 0;
+                let af = ((mv + 2) / 6);
+                let smin = ~~(min * af);
+                let smax = ~~(max * af);
+                for (let x = 0; x < this.getRandomIntInclusive(smin, smax); ++x) {
+                    this.sketch.spawn(fx, fy, lvec);
+                }
+            }
+        };
         if (this.recordMode) {
-            this.sketch.spawn(fx, fy);
-            return;
-        }
-        // if playback, then interpolate between last update
-        let fc = this.getRandomIntInclusive(1, 4);
-        if (this.lastPaaaaarp) {
-            let elT = new Date().valueOf() - this.lastPaaaaarp.time;
-            //let tpP = ~~(elT / this.lastPaaaaarp.particles)
-            //console.log('el:',elT, tpP)
-            if (elT > 50) {
-                console.log('particle: elT > 50, throttling interpolate');
-                fc = 1;
-            }
-            // have move so let's interpolate
-            let steps = interpolate(this.lastPaaaaarp.x, this.lastPaaaaarp.y, x, y, fc);
-            for (let s of steps) {
-                let px = ~~(this.width * s.x), py = ~~(this.height * s.y);
-                this.sketch.spawn(px, py);
-            }
+            spawn(fx, fy, this.SPAWN_MIN, this.SPAWN_MAX);
         }
         else {
-            // no last move
-            for (let i = 0; i < fc; ++i) {
-                this.sketch.spawn(fx, fy);
+            // if playback, then interpolate between last update
+            let fc = this.getRandomIntInclusive(this.SPAWN_MIN, this.SPAWN_MAX);
+            if (this.lastParp) {
+                let elT = new Date().valueOf() - this.lastParp.time;
+                //let tpP = ~~(elT / this.lastParp.particles)
+                //console.log('el:',elT, tpP)
+                if (elT > 50) {
+                    console.log('particle: elT > 50, throttling interpolate', elT);
+                    fc = 1;
+                }
+                // have move so let's interpolate
+                let steps = interpolate(this.lastParp.x, this.lastParp.y, x, y, fc);
+                for (let s of steps) {
+                    let px = ~~(this.width * s.x), py = ~~(this.height * s.y);
+                    //this.sketch.spawn(px, py)
+                    spawn(px, py);
+                }
             }
+            else {
+                // no last move
+                spawn(fx, fy, this.SPAWN_MIN, this.SPAWN_MAX);
+            }
+            this.lastParp = { time: new Date().valueOf(), particles: fc, x: x, y: y };
         }
-        this.lastPaaaaarp = { time: new Date().valueOf(), particles: fc, x: x, y: y };
+        this.lastSpawn = {
+            x: fx,
+            y: fy,
+            d: new Date()
+        };
     }
-    clearLastPaaaaarp() {
-        this.lastPaaaaarp = null;
+    endParp() {
+        this.lastSpawn = null;
+    }
+    clearLastParp() {
+        this.lastParp = null;
     }
     destroy() {
         if (this.sketchActive) {
@@ -1259,12 +1328,14 @@ class Gestate {
     }
     watchHandler(newsize) {
         if (newsize && this.overlay) {
-            console.log('got size', newsize);
+            //console.log('got size', newsize)
             this.overlay.style.setProperty('width', newsize.width.toString() + 'px');
             this.overlay.style.setProperty('height', newsize.height.toString() + 'px');
             let offset = ((this.el.clientWidth - newsize.width) / 2);
             this.overlay.style.setProperty('left', offset.toString() + 'px');
-            console.log('offset', offset.toString() + 'px');
+            if (this.particles) {
+                this.particles.resize(newsize);
+            }
         }
     }
     // 
@@ -1277,6 +1348,7 @@ class Gestate {
         this.init();
     }
     init() {
+        console.log('gestate init particles');
         this.particles = new Particles(this.overlay);
     }
     componentDidUnload() {
@@ -1289,6 +1361,7 @@ class Gestate {
     // Logic
     //
     record(gtype, time) {
+        console.log('gestate start()');
         this.state = {
             isPlaying: false,
             isRecording: true
@@ -1303,12 +1376,13 @@ class Gestate {
             movingPos: null,
             trackTouchIdentifier: null
         };
-        this.particles.start(true);
+        this.particles.init(true);
         this.recordTick();
     }
     stopRecord() {
+        console.log('gestate stop()');
         this.state.isRecording = false;
-        this.particles.stop();
+        //this.particles.stop()
         if (this.currentGesture) {
             this.finishCurrentGesture();
         }
@@ -1358,13 +1432,13 @@ class Gestate {
             let oldt = this.currentRecording.lastElapsed - pGest.timeOffset;
             for (let frame of pGest.timeLine) {
                 if (frame.t > oldt && frame.t <= tt) {
-                    this.particles.paaaaarp(frame.x, frame.y);
+                    this.particles.parp(frame.x, frame.y);
                 }
             }
             this.currentRecording.lastElapsed = elapsed;
         }
         else {
-            this.particles.clearLastPaaaaarp();
+            this.particles.clearLastParp();
         }
         if (this.state.isPlaying) {
             window.requestAnimationFrame(this.playTick.bind(this));
@@ -1372,7 +1446,7 @@ class Gestate {
     }
     recordTick() {
         if (this.currentTouch.movingPos) {
-            this.particles.paaaaarp(this.currentTouch.movingPos.x, this.currentTouch.movingPos.y);
+            this.particles.parp(this.currentTouch.movingPos.x, this.currentTouch.movingPos.y);
         }
         if (this.state.isRecording) {
             window.requestAnimationFrame(this.recordTick.bind(this));
@@ -1423,6 +1497,7 @@ class Gestate {
         }
         else if (ttype === 'end') {
             if (this.state.isRecording && this.currentGesture.gesture) {
+                this.particles.endParp();
                 let fidx = Array.from(evt.changedTouches).findIndex(x => x.identifier === this.currentTouch.trackTouchIdentifier);
                 if (fidx !== -1) {
                     this.finishCurrentGesture();
@@ -1440,7 +1515,7 @@ class Gestate {
         return (thisTime.valueOf() - this.currentRecording.startTime.valueOf());
     }
     render() {
-        return (h("div", { class: "overlay" }));
+        return (h("div", { class: "overlay", onTouchStart: (e) => this.handleTouch('start', e), onTouchMove: (e) => this.handleTouch('move', e), onTouchEnd: (e) => this.handleTouch('end', e) }));
     }
     static get is() { return "aikuma-gestate"; }
     static get encapsulation() { return "shadow"; }
@@ -8566,7 +8641,7 @@ class SlideShow {
                 type: 'bullets'
             },
             preloadImages: false,
-            lazy: true,
+            lazy: false,
             centeredSlides: true,
             grabCursor: true,
             slideToClickedSlide: false,
@@ -8599,10 +8674,6 @@ class SlideShow {
             spaceBetween: 5,
             touchRatio: 0.3,
             slideToClickedSlide: false,
-            navigation: {
-                nextEl: this.el.shadowRoot.querySelector('.swiper-container.thumb .swiper-button-next'),
-                prevEl: this.el.shadowRoot.querySelector('.swiper-container.thumb .swiper-button-prev')
-            },
             allowTouchMove: false,
             controller: {
                 control: smainctrl
@@ -8616,17 +8687,12 @@ class SlideShow {
         // this.swiper.main.on('slideChange', () => {
         //   //console.log('slideChange')
         //})
-        this.swiper.main.on('slideChangeTransitionStart', (x) => {
-            console.log('slideChangeTransitionStart', x);
-            this.slideEvent.emit({ type: 'start', val: this.swiper.main.activeIndex });
-        });
         this.swiper.main.on('slideChangeTransitionEnd', () => {
-            this.calculateSlideSize();
-            this.slideEvent.emit({ type: 'end', val: this.swiper.main.activeIndex });
+            this.slideEvent.emit({ type: 'end', val: this.getSlideSize() });
         });
-        this.swiper.main.on('lazyImageReady', () => {
-            this.calculateSlideSize();
-        });
+        // this.swiper.main.on('lazyImageReady', () => {
+        //   this.calculateSlideSize()
+        // })
         this.swiper.main.on('resize', () => {
             this.calculateSlideSize();
         });
@@ -8641,9 +8707,13 @@ class SlideShow {
         if (idx === this.swiper.main.activeIndex) {
             return;
         }
+        this.slideEvent.emit({ type: 'start', val: {
+                from: this.swiper.main.activeIndex,
+                to: idx
+            }
+        });
         this.swiper.thumb.slideTo(idx);
         this.swiper.main.slideTo(idx);
-        this.slideEvent.emit({ type: 'start', val: idx });
     }
     loadImages(images) {
         console.log('SlideShow loading images', images);
@@ -8673,11 +8743,13 @@ class SlideShow {
             this.slideSize.emit(rect);
         }
     }
+    getSlideSize() {
+        let slideEl = this.el.shadowRoot.querySelector('.swiper-container.main .swiper-slide.swiper-slide-active .image-wrapper');
+        return slideEl.getBoundingClientRect();
+    }
     handleClick(evt, idx) {
         console.log('clicked slide', idx, this.swiper.main.activeIndex);
-        if (this.swiper.main.activeIndex !== idx) {
-            this.slideTo(idx);
-        }
+        this.slideTo(idx);
     }
     render() {
         const getSlideStyle = (bg) => {
@@ -8689,21 +8761,18 @@ class SlideShow {
             h("div", { class: "swiper-container main" },
                 h("div", { class: "swiper-wrapper" }, this.slides.map((slide, index) => h("div", { class: "swiper-slide", onClick: (event) => this.handleClick(event, index) },
                     h("div", { class: "image-wrapper" },
-                        h("img", { "data-src": slide.url, class: "swiper-lazy" }),
-                        h("div", { class: "swiper-lazy-preloader" }))))),
+                        h("img", { src: slide.url }))))),
                 h("div", { class: "swiper-pagination" }),
                 h("div", { class: "swiper-button-prev" }),
                 h("div", { class: "swiper-button-next" })),
             h("div", { class: "swiper-container thumb" },
-                h("div", { class: "swiper-wrapper" }, this.slides.map((slide, index) => h("div", { class: "swiper-slide", onClick: (event) => this.handleClick(event, index), style: getSlideStyle(slide.bg) }))),
-                h("div", { class: "swiper-button-prev" }),
-                h("div", { class: "swiper-button-next" }))));
+                h("div", { class: "swiper-wrapper" }, this.slides.map((slide, index) => h("div", { class: "swiper-slide", onClick: (event) => this.handleClick(event, index), style: getSlideStyle(slide.bg) }))))));
     }
     static get is() { return "aikuma-slide-show"; }
     static get encapsulation() { return "shadow"; }
     static get properties() { return { "el": { "elementRef": true }, "getCurrent": { "method": true }, "loadImages": { "method": true }, "slides": { "state": true }, "slideTo": { "method": true } }; }
     static get events() { return [{ "name": "slideSize", "method": "slideSize", "bubbles": true, "cancelable": true, "composed": true }, { "name": "slideEvent", "method": "slideEvent", "bubbles": true, "cancelable": true, "composed": true }]; }
-    static get style() { return ".swiper-container[data-aikuma-slide-show] {\n  margin: 0 auto;\n  position: relative;\n  overflow: hidden;\n  list-style: none;\n  padding: 0;\n  \n  z-index: 1;\n}\n.swiper-container-no-flexbox[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show] {\n  float: left;\n}\n.swiper-container-vertical[data-aikuma-slide-show]    > .swiper-wrapper[data-aikuma-slide-show] {\n  -webkit-box-orient: vertical;\n  -webkit-box-direction: normal;\n  -webkit-flex-direction: column;\n  -ms-flex-direction: column;\n  flex-direction: column;\n}\n.swiper-wrapper[data-aikuma-slide-show] {\n  position: relative;\n  width: 100%;\n  height: 100%;\n  z-index: 1;\n  display: -webkit-box;\n  display: -webkit-flex;\n  display: -ms-flexbox;\n  display: flex;\n  -webkit-transition-property: -webkit-transform;\n  transition-property: -webkit-transform;\n  -o-transition-property: transform;\n  transition-property: transform;\n  transition-property: transform, -webkit-transform;\n  -webkit-box-sizing: content-box;\n  box-sizing: content-box;\n}\n.swiper-container-android[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show], .swiper-wrapper[data-aikuma-slide-show] {\n  -webkit-transform: translate3d(0px, 0, 0);\n  transform: translate3d(0px, 0, 0);\n}\n.swiper-container-multirow[data-aikuma-slide-show]    > .swiper-wrapper[data-aikuma-slide-show] {\n  -webkit-flex-wrap: wrap;\n  -ms-flex-wrap: wrap;\n  flex-wrap: wrap;\n}\n.swiper-container-free-mode[data-aikuma-slide-show]    > .swiper-wrapper[data-aikuma-slide-show] {\n  -webkit-transition-timing-function: ease-out;\n  -o-transition-timing-function: ease-out;\n  transition-timing-function: ease-out;\n  margin: 0 auto;\n}\n.swiper-slide[data-aikuma-slide-show] {\n  -webkit-flex-shrink: 0;\n  -ms-flex-negative: 0;\n  flex-shrink: 0;\n  width: 100%;\n  height: 100%;\n  position: relative;\n  -webkit-transition-property: -webkit-transform;\n  transition-property: -webkit-transform;\n  -o-transition-property: transform;\n  transition-property: transform;\n  transition-property: transform, -webkit-transform;\n}\n.swiper-invisible-blank-slide[data-aikuma-slide-show] {\n  visibility: hidden;\n}\n\n.swiper-container-autoheight[data-aikuma-slide-show], .swiper-container-autoheight[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show] {\n  height: auto;\n}\n.swiper-container-autoheight[data-aikuma-slide-show]   .swiper-wrapper[data-aikuma-slide-show] {\n  -webkit-box-align: start;\n  -webkit-align-items: flex-start;\n  -ms-flex-align: start;\n  align-items: flex-start;\n  -webkit-transition-property: height, -webkit-transform;\n  transition-property: height, -webkit-transform;\n  -o-transition-property: transform, height;\n  transition-property: transform, height;\n  transition-property: transform, height, -webkit-transform;\n}\n\n.swiper-container-3d[data-aikuma-slide-show] {\n  -webkit-perspective: 1200px;\n  perspective: 1200px;\n}\n.swiper-container-3d[data-aikuma-slide-show]   .swiper-wrapper[data-aikuma-slide-show], .swiper-container-3d[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show], .swiper-container-3d[data-aikuma-slide-show]   .swiper-slide-shadow-left[data-aikuma-slide-show], .swiper-container-3d[data-aikuma-slide-show]   .swiper-slide-shadow-right[data-aikuma-slide-show], .swiper-container-3d[data-aikuma-slide-show]   .swiper-slide-shadow-top[data-aikuma-slide-show], .swiper-container-3d[data-aikuma-slide-show]   .swiper-slide-shadow-bottom[data-aikuma-slide-show], .swiper-container-3d[data-aikuma-slide-show]   .swiper-cube-shadow[data-aikuma-slide-show] {\n  -webkit-transform-style: preserve-3d;\n  transform-style: preserve-3d;\n}\n.swiper-container-3d[data-aikuma-slide-show]   .swiper-slide-shadow-left[data-aikuma-slide-show], .swiper-container-3d[data-aikuma-slide-show]   .swiper-slide-shadow-right[data-aikuma-slide-show], .swiper-container-3d[data-aikuma-slide-show]   .swiper-slide-shadow-top[data-aikuma-slide-show], .swiper-container-3d[data-aikuma-slide-show]   .swiper-slide-shadow-bottom[data-aikuma-slide-show] {\n  position: absolute;\n  left: 0;\n  top: 0;\n  width: 100%;\n  height: 100%;\n  pointer-events: none;\n  z-index: 10;\n}\n.swiper-container-3d[data-aikuma-slide-show]   .swiper-slide-shadow-left[data-aikuma-slide-show] {\n  background-image: -webkit-gradient(linear, right top, left top, from(rgba(0, 0, 0, 0.5)), to(rgba(0, 0, 0, 0)));\n  background-image: -webkit-linear-gradient(right, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n  background-image: -o-linear-gradient(right, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n  background-image: linear-gradient(to left, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n}\n.swiper-container-3d[data-aikuma-slide-show]   .swiper-slide-shadow-right[data-aikuma-slide-show] {\n  background-image: -webkit-gradient(linear, left top, right top, from(rgba(0, 0, 0, 0.5)), to(rgba(0, 0, 0, 0)));\n  background-image: -webkit-linear-gradient(left, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n  background-image: -o-linear-gradient(left, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n  background-image: linear-gradient(to right, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n}\n.swiper-container-3d[data-aikuma-slide-show]   .swiper-slide-shadow-top[data-aikuma-slide-show] {\n  background-image: -webkit-gradient(linear, left bottom, left top, from(rgba(0, 0, 0, 0.5)), to(rgba(0, 0, 0, 0)));\n  background-image: -webkit-linear-gradient(bottom, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n  background-image: -o-linear-gradient(bottom, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n  background-image: linear-gradient(to top, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n}\n.swiper-container-3d[data-aikuma-slide-show]   .swiper-slide-shadow-bottom[data-aikuma-slide-show] {\n  background-image: -webkit-gradient(linear, left top, left bottom, from(rgba(0, 0, 0, 0.5)), to(rgba(0, 0, 0, 0)));\n  background-image: -webkit-linear-gradient(top, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n  background-image: -o-linear-gradient(top, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n  background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n}\n\n.swiper-container-wp8-horizontal[data-aikuma-slide-show], .swiper-container-wp8-horizontal[data-aikuma-slide-show]    > .swiper-wrapper[data-aikuma-slide-show] {\n  -ms-touch-action: pan-y;\n  touch-action: pan-y;\n}\n.swiper-container-wp8-vertical[data-aikuma-slide-show], .swiper-container-wp8-vertical[data-aikuma-slide-show]    > .swiper-wrapper[data-aikuma-slide-show] {\n  -ms-touch-action: pan-x;\n  touch-action: pan-x;\n}\n.swiper-button-prev[data-aikuma-slide-show], .swiper-button-next[data-aikuma-slide-show] {\n  position: absolute;\n  top: 50%;\n  width: 27px;\n  height: 44px;\n  margin-top: -22px;\n  z-index: 10;\n  cursor: pointer;\n  background-size: 27px 44px;\n  background-position: center;\n  background-repeat: no-repeat;\n}\n.swiper-button-prev.swiper-button-disabled[data-aikuma-slide-show], .swiper-button-next.swiper-button-disabled[data-aikuma-slide-show] {\n  opacity: 0.35;\n  cursor: auto;\n  pointer-events: none;\n}\n.swiper-button-prev[data-aikuma-slide-show], .swiper-container-rtl[data-aikuma-slide-show]   .swiper-button-next[data-aikuma-slide-show] {\n  background-image: url(\"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2027%2044'%3E%3Cpath%20d%3D'M0%2C22L22%2C0l2.1%2C2.1L4.2%2C22l19.9%2C19.9L22%2C44L0%2C22L0%2C22L0%2C22z'%20fill%3D'%23007aff'%2F%3E%3C%2Fsvg%3E\");\n  left: 10px;\n  right: auto;\n}\n.swiper-button-next[data-aikuma-slide-show], .swiper-container-rtl[data-aikuma-slide-show]   .swiper-button-prev[data-aikuma-slide-show] {\n  background-image: url(\"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2027%2044'%3E%3Cpath%20d%3D'M27%2C22L27%2C22L5%2C44l-2.1-2.1L22.8%2C22L2.9%2C2.1L5%2C0L27%2C22L27%2C22z'%20fill%3D'%23007aff'%2F%3E%3C%2Fsvg%3E\");\n  right: 10px;\n  left: auto;\n}\n.swiper-button-prev.swiper-button-white[data-aikuma-slide-show], .swiper-container-rtl[data-aikuma-slide-show]   .swiper-button-next.swiper-button-white[data-aikuma-slide-show] {\n  background-image: url(\"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2027%2044'%3E%3Cpath%20d%3D'M0%2C22L22%2C0l2.1%2C2.1L4.2%2C22l19.9%2C19.9L22%2C44L0%2C22L0%2C22L0%2C22z'%20fill%3D'%23ffffff'%2F%3E%3C%2Fsvg%3E\");\n}\n.swiper-button-next.swiper-button-white[data-aikuma-slide-show], .swiper-container-rtl[data-aikuma-slide-show]   .swiper-button-prev.swiper-button-white[data-aikuma-slide-show] {\n  background-image: url(\"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2027%2044'%3E%3Cpath%20d%3D'M27%2C22L27%2C22L5%2C44l-2.1-2.1L22.8%2C22L2.9%2C2.1L5%2C0L27%2C22L27%2C22z'%20fill%3D'%23ffffff'%2F%3E%3C%2Fsvg%3E\");\n}\n.swiper-button-prev.swiper-button-black[data-aikuma-slide-show], .swiper-container-rtl[data-aikuma-slide-show]   .swiper-button-next.swiper-button-black[data-aikuma-slide-show] {\n  background-image: url(\"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2027%2044'%3E%3Cpath%20d%3D'M0%2C22L22%2C0l2.1%2C2.1L4.2%2C22l19.9%2C19.9L22%2C44L0%2C22L0%2C22L0%2C22z'%20fill%3D'%23000000'%2F%3E%3C%2Fsvg%3E\");\n}\n.swiper-button-next.swiper-button-black[data-aikuma-slide-show], .swiper-container-rtl[data-aikuma-slide-show]   .swiper-button-prev.swiper-button-black[data-aikuma-slide-show] {\n  background-image: url(\"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2027%2044'%3E%3Cpath%20d%3D'M27%2C22L27%2C22L5%2C44l-2.1-2.1L22.8%2C22L2.9%2C2.1L5%2C0L27%2C22L27%2C22z'%20fill%3D'%23000000'%2F%3E%3C%2Fsvg%3E\");\n}\n.swiper-button-lock[data-aikuma-slide-show] {\n  display: none;\n}\n.swiper-pagination[data-aikuma-slide-show] {\n  position: absolute;\n  text-align: center;\n  -webkit-transition: 300ms opacity;\n  -o-transition: 300ms opacity;\n  transition: 300ms opacity;\n  -webkit-transform: translate3d(0, 0, 0);\n  transform: translate3d(0, 0, 0);\n  z-index: 10;\n}\n.swiper-pagination.swiper-pagination-hidden[data-aikuma-slide-show] {\n  opacity: 0;\n}\n\n.swiper-pagination-fraction[data-aikuma-slide-show], .swiper-pagination-custom[data-aikuma-slide-show], .swiper-container-horizontal[data-aikuma-slide-show]    > .swiper-pagination-bullets[data-aikuma-slide-show] {\n  bottom: 10px;\n  left: 0;\n  width: 100%;\n}\n\n.swiper-pagination-bullets-dynamic[data-aikuma-slide-show] {\n  overflow: hidden;\n  font-size: 0;\n}\n.swiper-pagination-bullets-dynamic[data-aikuma-slide-show]   .swiper-pagination-bullet[data-aikuma-slide-show] {\n  -webkit-transform: scale(0.33);\n  -ms-transform: scale(0.33);\n  transform: scale(0.33);\n  position: relative;\n}\n.swiper-pagination-bullets-dynamic[data-aikuma-slide-show]   .swiper-pagination-bullet-active[data-aikuma-slide-show] {\n  -webkit-transform: scale(1);\n  -ms-transform: scale(1);\n  transform: scale(1);\n}\n.swiper-pagination-bullets-dynamic[data-aikuma-slide-show]   .swiper-pagination-bullet-active-prev[data-aikuma-slide-show] {\n  -webkit-transform: scale(0.66);\n  -ms-transform: scale(0.66);\n  transform: scale(0.66);\n}\n.swiper-pagination-bullets-dynamic[data-aikuma-slide-show]   .swiper-pagination-bullet-active-prev-prev[data-aikuma-slide-show] {\n  -webkit-transform: scale(0.33);\n  -ms-transform: scale(0.33);\n  transform: scale(0.33);\n}\n.swiper-pagination-bullets-dynamic[data-aikuma-slide-show]   .swiper-pagination-bullet-active-next[data-aikuma-slide-show] {\n  -webkit-transform: scale(0.66);\n  -ms-transform: scale(0.66);\n  transform: scale(0.66);\n}\n.swiper-pagination-bullets-dynamic[data-aikuma-slide-show]   .swiper-pagination-bullet-active-next-next[data-aikuma-slide-show] {\n  -webkit-transform: scale(0.33);\n  -ms-transform: scale(0.33);\n  transform: scale(0.33);\n}\n.swiper-pagination-bullet[data-aikuma-slide-show] {\n  width: 8px;\n  height: 8px;\n  display: inline-block;\n  border-radius: 100%;\n  background: #000;\n  opacity: 0.2;\n}\nbutton.swiper-pagination-bullet[data-aikuma-slide-show] {\n  border: none;\n  margin: 0;\n  padding: 0;\n  -webkit-box-shadow: none;\n  box-shadow: none;\n  -webkit-appearance: none;\n  -moz-appearance: none;\n  appearance: none;\n}\n.swiper-pagination-clickable[data-aikuma-slide-show]   .swiper-pagination-bullet[data-aikuma-slide-show] {\n  cursor: pointer;\n}\n.swiper-pagination-bullet-active[data-aikuma-slide-show] {\n  opacity: 1;\n  background: #007aff;\n}\n.swiper-container-vertical[data-aikuma-slide-show]    > .swiper-pagination-bullets[data-aikuma-slide-show] {\n  right: 10px;\n  top: 50%;\n  -webkit-transform: translate3d(0px, -50%, 0);\n  transform: translate3d(0px, -50%, 0);\n}\n.swiper-container-vertical[data-aikuma-slide-show]    > .swiper-pagination-bullets[data-aikuma-slide-show]   .swiper-pagination-bullet[data-aikuma-slide-show] {\n  margin: 6px 0;\n  display: block;\n}\n.swiper-container-vertical[data-aikuma-slide-show]    > .swiper-pagination-bullets.swiper-pagination-bullets-dynamic[data-aikuma-slide-show] {\n  top: 50%;\n  -webkit-transform: translateY(-50%);\n  -ms-transform: translateY(-50%);\n  transform: translateY(-50%);\n  width: 8px;\n}\n.swiper-container-vertical[data-aikuma-slide-show]    > .swiper-pagination-bullets.swiper-pagination-bullets-dynamic[data-aikuma-slide-show]   .swiper-pagination-bullet[data-aikuma-slide-show] {\n  display: inline-block;\n  -webkit-transition: 200ms top, 200ms -webkit-transform;\n  transition: 200ms top, 200ms -webkit-transform;\n  -o-transition: 200ms transform, 200ms top;\n  transition: 200ms transform, 200ms top;\n  transition: 200ms transform, 200ms top, 200ms -webkit-transform;\n}\n.swiper-container-horizontal[data-aikuma-slide-show]    > .swiper-pagination-bullets[data-aikuma-slide-show]   .swiper-pagination-bullet[data-aikuma-slide-show] {\n  margin: 0 4px;\n}\n.swiper-container-horizontal[data-aikuma-slide-show]    > .swiper-pagination-bullets.swiper-pagination-bullets-dynamic[data-aikuma-slide-show] {\n  left: 50%;\n  -webkit-transform: translateX(-50%);\n  -ms-transform: translateX(-50%);\n  transform: translateX(-50%);\n  white-space: nowrap;\n}\n.swiper-container-horizontal[data-aikuma-slide-show]    > .swiper-pagination-bullets.swiper-pagination-bullets-dynamic[data-aikuma-slide-show]   .swiper-pagination-bullet[data-aikuma-slide-show] {\n  -webkit-transition: 200ms left, 200ms -webkit-transform;\n  transition: 200ms left, 200ms -webkit-transform;\n  -o-transition: 200ms transform, 200ms left;\n  transition: 200ms transform, 200ms left;\n  transition: 200ms transform, 200ms left, 200ms -webkit-transform;\n}\n.swiper-container-horizontal.swiper-container-rtl[data-aikuma-slide-show]    > .swiper-pagination-bullets-dynamic[data-aikuma-slide-show]   .swiper-pagination-bullet[data-aikuma-slide-show] {\n  -webkit-transition: 200ms right, 200ms -webkit-transform;\n  transition: 200ms right, 200ms -webkit-transform;\n  -o-transition: 200ms transform, 200ms right;\n  transition: 200ms transform, 200ms right;\n  transition: 200ms transform, 200ms right, 200ms -webkit-transform;\n}\n\n.swiper-pagination-progressbar[data-aikuma-slide-show] {\n  background: rgba(0, 0, 0, 0.25);\n  position: absolute;\n}\n.swiper-pagination-progressbar[data-aikuma-slide-show]   .swiper-pagination-progressbar-fill[data-aikuma-slide-show] {\n  background: #007aff;\n  position: absolute;\n  left: 0;\n  top: 0;\n  width: 100%;\n  height: 100%;\n  -webkit-transform: scale(0);\n  -ms-transform: scale(0);\n  transform: scale(0);\n  -webkit-transform-origin: left top;\n  -ms-transform-origin: left top;\n  transform-origin: left top;\n}\n.swiper-container-rtl[data-aikuma-slide-show]   .swiper-pagination-progressbar[data-aikuma-slide-show]   .swiper-pagination-progressbar-fill[data-aikuma-slide-show] {\n  -webkit-transform-origin: right top;\n  -ms-transform-origin: right top;\n  transform-origin: right top;\n}\n.swiper-container-horizontal[data-aikuma-slide-show]    > .swiper-pagination-progressbar[data-aikuma-slide-show] {\n  width: 100%;\n  height: 4px;\n  left: 0;\n  top: 0;\n}\n.swiper-container-vertical[data-aikuma-slide-show]    > .swiper-pagination-progressbar[data-aikuma-slide-show] {\n  width: 4px;\n  height: 100%;\n  left: 0;\n  top: 0;\n}\n.swiper-pagination-white[data-aikuma-slide-show]   .swiper-pagination-bullet-active[data-aikuma-slide-show] {\n  background: #ffffff;\n}\n.swiper-pagination-progressbar.swiper-pagination-white[data-aikuma-slide-show] {\n  background: rgba(255, 255, 255, 0.25);\n}\n.swiper-pagination-progressbar.swiper-pagination-white[data-aikuma-slide-show]   .swiper-pagination-progressbar-fill[data-aikuma-slide-show] {\n  background: #ffffff;\n}\n.swiper-pagination-black[data-aikuma-slide-show]   .swiper-pagination-bullet-active[data-aikuma-slide-show] {\n  background: #000000;\n}\n.swiper-pagination-progressbar.swiper-pagination-black[data-aikuma-slide-show] {\n  background: rgba(0, 0, 0, 0.25);\n}\n.swiper-pagination-progressbar.swiper-pagination-black[data-aikuma-slide-show]   .swiper-pagination-progressbar-fill[data-aikuma-slide-show] {\n  background: #000000;\n}\n.swiper-pagination-lock[data-aikuma-slide-show] {\n  display: none;\n}\n\n.swiper-scrollbar[data-aikuma-slide-show] {\n  border-radius: 10px;\n  position: relative;\n  -ms-touch-action: none;\n  background: rgba(0, 0, 0, 0.1);\n}\n.swiper-container-horizontal[data-aikuma-slide-show]    > .swiper-scrollbar[data-aikuma-slide-show] {\n  position: absolute;\n  left: 1%;\n  bottom: 3px;\n  z-index: 50;\n  height: 5px;\n  width: 98%;\n}\n.swiper-container-vertical[data-aikuma-slide-show]    > .swiper-scrollbar[data-aikuma-slide-show] {\n  position: absolute;\n  right: 3px;\n  top: 1%;\n  z-index: 50;\n  width: 5px;\n  height: 98%;\n}\n.swiper-scrollbar-drag[data-aikuma-slide-show] {\n  height: 100%;\n  width: 100%;\n  position: relative;\n  background: rgba(0, 0, 0, 0.5);\n  border-radius: 10px;\n  left: 0;\n  top: 0;\n}\n.swiper-scrollbar-cursor-drag[data-aikuma-slide-show] {\n  cursor: move;\n}\n.swiper-scrollbar-lock[data-aikuma-slide-show] {\n  display: none;\n}\n.swiper-zoom-container[data-aikuma-slide-show] {\n  width: 100%;\n  height: 100%;\n  display: -webkit-box;\n  display: -webkit-flex;\n  display: -ms-flexbox;\n  display: flex;\n  -webkit-box-pack: center;\n  -webkit-justify-content: center;\n  -ms-flex-pack: center;\n  justify-content: center;\n  -webkit-box-align: center;\n  -webkit-align-items: center;\n  -ms-flex-align: center;\n  align-items: center;\n  text-align: center;\n}\n.swiper-zoom-container[data-aikuma-slide-show]    > img[data-aikuma-slide-show], .swiper-zoom-container[data-aikuma-slide-show]    > svg[data-aikuma-slide-show], .swiper-zoom-container[data-aikuma-slide-show]    > canvas[data-aikuma-slide-show] {\n  max-width: 100%;\n  max-height: 100%;\n  -o-object-fit: contain;\n  object-fit: contain;\n}\n.swiper-slide-zoomed[data-aikuma-slide-show] {\n  cursor: move;\n}\n\n.swiper-lazy-preloader[data-aikuma-slide-show] {\n  width: 42px;\n  height: 42px;\n  position: absolute;\n  left: 50%;\n  top: 50%;\n  margin-left: -21px;\n  margin-top: -21px;\n  z-index: 10;\n  -webkit-transform-origin: 50%;\n  -ms-transform-origin: 50%;\n  transform-origin: 50%;\n  -webkit-animation: swiper-preloader-spin 1s steps(12, end) infinite;\n  animation: swiper-preloader-spin 1s steps(12, end) infinite;\n}\n.swiper-lazy-preloader[data-aikuma-slide-show]:after {\n  display: block;\n  content: '';\n  width: 100%;\n  height: 100%;\n  background-image: url(\"data:image/svg+xml;charset=utf-8,%3Csvg%20viewBox%3D'0%200%20120%20120'%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20xmlns%3Axlink%3D'http%3A%2F%2Fwww.w3.org%2F1999%2Fxlink'%3E%3Cdefs%3E%3Cline%20id%3D'l'%20x1%3D'60'%20x2%3D'60'%20y1%3D'7'%20y2%3D'27'%20stroke%3D'%236c6c6c'%20stroke-width%3D'11'%20stroke-linecap%3D'round'%2F%3E%3C%2Fdefs%3E%3Cg%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(30%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(60%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(90%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(120%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(150%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.37'%20transform%3D'rotate(180%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.46'%20transform%3D'rotate(210%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.56'%20transform%3D'rotate(240%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.66'%20transform%3D'rotate(270%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.75'%20transform%3D'rotate(300%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.85'%20transform%3D'rotate(330%2060%2C60)'%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E\");\n  background-position: 50%;\n  background-size: 100%;\n  background-repeat: no-repeat;\n}\n.swiper-lazy-preloader-white[data-aikuma-slide-show]:after {\n  background-image: url(\"data:image/svg+xml;charset=utf-8,%3Csvg%20viewBox%3D'0%200%20120%20120'%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20xmlns%3Axlink%3D'http%3A%2F%2Fwww.w3.org%2F1999%2Fxlink'%3E%3Cdefs%3E%3Cline%20id%3D'l'%20x1%3D'60'%20x2%3D'60'%20y1%3D'7'%20y2%3D'27'%20stroke%3D'%23fff'%20stroke-width%3D'11'%20stroke-linecap%3D'round'%2F%3E%3C%2Fdefs%3E%3Cg%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(30%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(60%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(90%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(120%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(150%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.37'%20transform%3D'rotate(180%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.46'%20transform%3D'rotate(210%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.56'%20transform%3D'rotate(240%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.66'%20transform%3D'rotate(270%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.75'%20transform%3D'rotate(300%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.85'%20transform%3D'rotate(330%2060%2C60)'%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E\");\n}\n\@-webkit-keyframes swiper-preloader-spin {\n  100% {\n    -webkit-transform: rotate(360deg);\n    transform: rotate(360deg);\n  }\n}\n\@keyframes swiper-preloader-spin {\n  100% {\n    -webkit-transform: rotate(360deg);\n    transform: rotate(360deg);\n  }\n}\n\n.swiper-container[data-aikuma-slide-show]   .swiper-notification[data-aikuma-slide-show] {\n  position: absolute;\n  left: 0;\n  top: 0;\n  pointer-events: none;\n  opacity: 0;\n  z-index: -1000;\n}\n.swiper-container-fade.swiper-container-free-mode[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show] {\n  -webkit-transition-timing-function: ease-out;\n  -o-transition-timing-function: ease-out;\n  transition-timing-function: ease-out;\n}\n.swiper-container-fade[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show] {\n  pointer-events: none;\n  -webkit-transition-property: opacity;\n  -o-transition-property: opacity;\n  transition-property: opacity;\n}\n.swiper-container-fade[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show] {\n  pointer-events: none;\n}\n.swiper-container-fade[data-aikuma-slide-show]   .swiper-slide-active[data-aikuma-slide-show], .swiper-container-fade[data-aikuma-slide-show]   .swiper-slide-active[data-aikuma-slide-show]   .swiper-slide-active[data-aikuma-slide-show] {\n  pointer-events: auto;\n}\n.swiper-container-cube[data-aikuma-slide-show] {\n  overflow: visible;\n}\n.swiper-container-cube[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show] {\n  pointer-events: none;\n  -webkit-backface-visibility: hidden;\n  backface-visibility: hidden;\n  z-index: 1;\n  visibility: hidden;\n  -webkit-transform-origin: 0 0;\n  -ms-transform-origin: 0 0;\n  transform-origin: 0 0;\n  width: 100%;\n  height: 100%;\n}\n.swiper-container-cube[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show] {\n  pointer-events: none;\n}\n.swiper-container-cube.swiper-container-rtl[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show] {\n  -webkit-transform-origin: 100% 0;\n  -ms-transform-origin: 100% 0;\n  transform-origin: 100% 0;\n}\n.swiper-container-cube[data-aikuma-slide-show]   .swiper-slide-active[data-aikuma-slide-show], .swiper-container-cube[data-aikuma-slide-show]   .swiper-slide-active[data-aikuma-slide-show]   .swiper-slide-active[data-aikuma-slide-show] {\n  pointer-events: auto;\n}\n.swiper-container-cube[data-aikuma-slide-show]   .swiper-slide-active[data-aikuma-slide-show], .swiper-container-cube[data-aikuma-slide-show]   .swiper-slide-next[data-aikuma-slide-show], .swiper-container-cube[data-aikuma-slide-show]   .swiper-slide-prev[data-aikuma-slide-show], .swiper-container-cube[data-aikuma-slide-show]   .swiper-slide-next[data-aikuma-slide-show]    + .swiper-slide[data-aikuma-slide-show] {\n  pointer-events: auto;\n  visibility: visible;\n}\n.swiper-container-cube[data-aikuma-slide-show]   .swiper-slide-shadow-top[data-aikuma-slide-show], .swiper-container-cube[data-aikuma-slide-show]   .swiper-slide-shadow-bottom[data-aikuma-slide-show], .swiper-container-cube[data-aikuma-slide-show]   .swiper-slide-shadow-left[data-aikuma-slide-show], .swiper-container-cube[data-aikuma-slide-show]   .swiper-slide-shadow-right[data-aikuma-slide-show] {\n  z-index: 0;\n  -webkit-backface-visibility: hidden;\n  backface-visibility: hidden;\n}\n.swiper-container-cube[data-aikuma-slide-show]   .swiper-cube-shadow[data-aikuma-slide-show] {\n  position: absolute;\n  left: 0;\n  bottom: 0px;\n  width: 100%;\n  height: 100%;\n  background: #000;\n  opacity: 0.6;\n  -webkit-filter: blur(50px);\n  filter: blur(50px);\n  z-index: 0;\n}\n.swiper-container-flip[data-aikuma-slide-show] {\n  overflow: visible;\n}\n.swiper-container-flip[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show] {\n  pointer-events: none;\n  -webkit-backface-visibility: hidden;\n  backface-visibility: hidden;\n  z-index: 1;\n}\n.swiper-container-flip[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show] {\n  pointer-events: none;\n}\n.swiper-container-flip[data-aikuma-slide-show]   .swiper-slide-active[data-aikuma-slide-show], .swiper-container-flip[data-aikuma-slide-show]   .swiper-slide-active[data-aikuma-slide-show]   .swiper-slide-active[data-aikuma-slide-show] {\n  pointer-events: auto;\n}\n.swiper-container-flip[data-aikuma-slide-show]   .swiper-slide-shadow-top[data-aikuma-slide-show], .swiper-container-flip[data-aikuma-slide-show]   .swiper-slide-shadow-bottom[data-aikuma-slide-show], .swiper-container-flip[data-aikuma-slide-show]   .swiper-slide-shadow-left[data-aikuma-slide-show], .swiper-container-flip[data-aikuma-slide-show]   .swiper-slide-shadow-right[data-aikuma-slide-show] {\n  z-index: 0;\n  -webkit-backface-visibility: hidden;\n  backface-visibility: hidden;\n}\n.swiper-container-coverflow[data-aikuma-slide-show]   .swiper-wrapper[data-aikuma-slide-show] {\n  \n  -ms-perspective: 1200px;\n}\n\n\n.swiper-container[data-aikuma-slide-show] {\n  width: 100%;\n  position: relative;\n}\n\n.swiper-slide[data-aikuma-slide-show] {\n  width: 50vw;\n  height: 37.5vw;\n  background-color: rgba(0, 0, 0, 0.2);\n  background-size: contain;\n  background-repeat: no-repeat;\n  background-position: center center;\n}\n\n.swiper-container.main[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show] {\n  width: 50vw;\n  height: 100%;\n  max-height: 50vw;\n  display: flex;\n  flex-direction: column;\n  justify-content: center;\n  align-items: center;\n}\n\n.swiper-container.main[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show]   .swiper-lazy[data-aikuma-slide-show] {\n  height: 100%;\n}\n\n.swiper-container.main[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show]   .image-wrapper[data-aikuma-slide-show] {\n  height: 100%;\n}\n\n.swiper-container.main[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show]   .image-wrapper[data-aikuma-slide-show]   img[data-aikuma-slide-show] {\n  object-fit: contain;\n}\n\n.swiper-container.thumb[data-aikuma-slide-show] {\n  height: 25vw;\n  position: relative;\n  padding: 5px;\n}\n\n.swiper-container.thumb[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show] {\n  width: 33vw;\n  height: 100%;\n  opacity: 0.5;\n  box-shadow: 1px 1px 6px 2px rgba(40, 0, 0, 0.6);\n}\n\n.swiper-container.thumb[data-aikuma-slide-show]   .swiper-slide-active[data-aikuma-slide-show] {\n  opacity: 1;\n  box-shadow: 1px 1px 3px 2px rgba(40, 0, 0, 0.3);\n}\n\n.swiper-container.thumb[data-aikuma-slide-show]   .navbutton[data-aikuma-slide-show] {\n  font-size: 62px;\n  height: 62px;\n  width: 40px;\n}\n\naikuma-gestate[data-aikuma-slide-show] {\n  position: absolute;\n  top: 0;\n  left: 0;\n  right: 0;\n  margin: 0 auto;\n  z-index: 10;\n}\n\naikuma-gestate[data-aikuma-slide-show]   canvas.sketch[data-aikuma-slide-show] {\n  position: absolute;\n  pointer-events: none;\n  width: 100%;\n  height: 100%;\n  top: 0;\n  left: 0;\n  z-index: 12;\n}\n\n\@media all and (orientation: landscape) {\n  .swiper-container.main[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show] {\n    width: 50vw;\n    height: 37.5vw;\n  }\n  .swiper-container.thumb[data-aikuma-slide-show] {\n    display: none;\n  }\n}\n\n\@media all and (orientation: portrait) {\n  .swiper-container.main[data-aikuma-slide-show]   .swiper-button-next[data-aikuma-slide-show], .swiper-container.main[data-aikuma-slide-show]   .swiper-button-prev[data-aikuma-slide-show] {\n    display: none;\n  }\n  .swiper-container.main[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show] {\n    width: 100%;\n    height: 75vw;\n  }\n}"; }
+    static get style() { return ".swiper-container[data-aikuma-slide-show] {\n  margin: 0 auto;\n  position: relative;\n  overflow: hidden;\n  list-style: none;\n  padding: 0;\n  \n  z-index: 1;\n}\n.swiper-container-no-flexbox[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show] {\n  float: left;\n}\n.swiper-container-vertical[data-aikuma-slide-show]    > .swiper-wrapper[data-aikuma-slide-show] {\n  -webkit-box-orient: vertical;\n  -webkit-box-direction: normal;\n  -webkit-flex-direction: column;\n  -ms-flex-direction: column;\n  flex-direction: column;\n}\n.swiper-wrapper[data-aikuma-slide-show] {\n  position: relative;\n  width: 100%;\n  height: 100%;\n  z-index: 1;\n  display: -webkit-box;\n  display: -webkit-flex;\n  display: -ms-flexbox;\n  display: flex;\n  -webkit-transition-property: -webkit-transform;\n  transition-property: -webkit-transform;\n  -o-transition-property: transform;\n  transition-property: transform;\n  transition-property: transform, -webkit-transform;\n  -webkit-box-sizing: content-box;\n  box-sizing: content-box;\n}\n.swiper-container-android[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show], .swiper-wrapper[data-aikuma-slide-show] {\n  -webkit-transform: translate3d(0px, 0, 0);\n  transform: translate3d(0px, 0, 0);\n}\n.swiper-container-multirow[data-aikuma-slide-show]    > .swiper-wrapper[data-aikuma-slide-show] {\n  -webkit-flex-wrap: wrap;\n  -ms-flex-wrap: wrap;\n  flex-wrap: wrap;\n}\n.swiper-container-free-mode[data-aikuma-slide-show]    > .swiper-wrapper[data-aikuma-slide-show] {\n  -webkit-transition-timing-function: ease-out;\n  -o-transition-timing-function: ease-out;\n  transition-timing-function: ease-out;\n  margin: 0 auto;\n}\n.swiper-slide[data-aikuma-slide-show] {\n  -webkit-flex-shrink: 0;\n  -ms-flex-negative: 0;\n  flex-shrink: 0;\n  width: 100%;\n  height: 100%;\n  position: relative;\n  -webkit-transition-property: -webkit-transform;\n  transition-property: -webkit-transform;\n  -o-transition-property: transform;\n  transition-property: transform;\n  transition-property: transform, -webkit-transform;\n}\n.swiper-invisible-blank-slide[data-aikuma-slide-show] {\n  visibility: hidden;\n}\n\n.swiper-container-autoheight[data-aikuma-slide-show], .swiper-container-autoheight[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show] {\n  height: auto;\n}\n.swiper-container-autoheight[data-aikuma-slide-show]   .swiper-wrapper[data-aikuma-slide-show] {\n  -webkit-box-align: start;\n  -webkit-align-items: flex-start;\n  -ms-flex-align: start;\n  align-items: flex-start;\n  -webkit-transition-property: height, -webkit-transform;\n  transition-property: height, -webkit-transform;\n  -o-transition-property: transform, height;\n  transition-property: transform, height;\n  transition-property: transform, height, -webkit-transform;\n}\n\n.swiper-container-3d[data-aikuma-slide-show] {\n  -webkit-perspective: 1200px;\n  perspective: 1200px;\n}\n.swiper-container-3d[data-aikuma-slide-show]   .swiper-wrapper[data-aikuma-slide-show], .swiper-container-3d[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show], .swiper-container-3d[data-aikuma-slide-show]   .swiper-slide-shadow-left[data-aikuma-slide-show], .swiper-container-3d[data-aikuma-slide-show]   .swiper-slide-shadow-right[data-aikuma-slide-show], .swiper-container-3d[data-aikuma-slide-show]   .swiper-slide-shadow-top[data-aikuma-slide-show], .swiper-container-3d[data-aikuma-slide-show]   .swiper-slide-shadow-bottom[data-aikuma-slide-show], .swiper-container-3d[data-aikuma-slide-show]   .swiper-cube-shadow[data-aikuma-slide-show] {\n  -webkit-transform-style: preserve-3d;\n  transform-style: preserve-3d;\n}\n.swiper-container-3d[data-aikuma-slide-show]   .swiper-slide-shadow-left[data-aikuma-slide-show], .swiper-container-3d[data-aikuma-slide-show]   .swiper-slide-shadow-right[data-aikuma-slide-show], .swiper-container-3d[data-aikuma-slide-show]   .swiper-slide-shadow-top[data-aikuma-slide-show], .swiper-container-3d[data-aikuma-slide-show]   .swiper-slide-shadow-bottom[data-aikuma-slide-show] {\n  position: absolute;\n  left: 0;\n  top: 0;\n  width: 100%;\n  height: 100%;\n  pointer-events: none;\n  z-index: 10;\n}\n.swiper-container-3d[data-aikuma-slide-show]   .swiper-slide-shadow-left[data-aikuma-slide-show] {\n  background-image: -webkit-gradient(linear, right top, left top, from(rgba(0, 0, 0, 0.5)), to(rgba(0, 0, 0, 0)));\n  background-image: -webkit-linear-gradient(right, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n  background-image: -o-linear-gradient(right, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n  background-image: linear-gradient(to left, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n}\n.swiper-container-3d[data-aikuma-slide-show]   .swiper-slide-shadow-right[data-aikuma-slide-show] {\n  background-image: -webkit-gradient(linear, left top, right top, from(rgba(0, 0, 0, 0.5)), to(rgba(0, 0, 0, 0)));\n  background-image: -webkit-linear-gradient(left, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n  background-image: -o-linear-gradient(left, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n  background-image: linear-gradient(to right, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n}\n.swiper-container-3d[data-aikuma-slide-show]   .swiper-slide-shadow-top[data-aikuma-slide-show] {\n  background-image: -webkit-gradient(linear, left bottom, left top, from(rgba(0, 0, 0, 0.5)), to(rgba(0, 0, 0, 0)));\n  background-image: -webkit-linear-gradient(bottom, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n  background-image: -o-linear-gradient(bottom, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n  background-image: linear-gradient(to top, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n}\n.swiper-container-3d[data-aikuma-slide-show]   .swiper-slide-shadow-bottom[data-aikuma-slide-show] {\n  background-image: -webkit-gradient(linear, left top, left bottom, from(rgba(0, 0, 0, 0.5)), to(rgba(0, 0, 0, 0)));\n  background-image: -webkit-linear-gradient(top, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n  background-image: -o-linear-gradient(top, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n  background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n}\n\n.swiper-container-wp8-horizontal[data-aikuma-slide-show], .swiper-container-wp8-horizontal[data-aikuma-slide-show]    > .swiper-wrapper[data-aikuma-slide-show] {\n  -ms-touch-action: pan-y;\n  touch-action: pan-y;\n}\n.swiper-container-wp8-vertical[data-aikuma-slide-show], .swiper-container-wp8-vertical[data-aikuma-slide-show]    > .swiper-wrapper[data-aikuma-slide-show] {\n  -ms-touch-action: pan-x;\n  touch-action: pan-x;\n}\n.swiper-button-prev[data-aikuma-slide-show], .swiper-button-next[data-aikuma-slide-show] {\n  position: absolute;\n  top: 50%;\n  width: 27px;\n  height: 44px;\n  margin-top: -22px;\n  z-index: 10;\n  cursor: pointer;\n  background-size: 27px 44px;\n  background-position: center;\n  background-repeat: no-repeat;\n}\n.swiper-button-prev.swiper-button-disabled[data-aikuma-slide-show], .swiper-button-next.swiper-button-disabled[data-aikuma-slide-show] {\n  opacity: 0.35;\n  cursor: auto;\n  pointer-events: none;\n}\n.swiper-button-prev[data-aikuma-slide-show], .swiper-container-rtl[data-aikuma-slide-show]   .swiper-button-next[data-aikuma-slide-show] {\n  background-image: url(\"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2027%2044'%3E%3Cpath%20d%3D'M0%2C22L22%2C0l2.1%2C2.1L4.2%2C22l19.9%2C19.9L22%2C44L0%2C22L0%2C22L0%2C22z'%20fill%3D'%23007aff'%2F%3E%3C%2Fsvg%3E\");\n  left: 10px;\n  right: auto;\n}\n.swiper-button-next[data-aikuma-slide-show], .swiper-container-rtl[data-aikuma-slide-show]   .swiper-button-prev[data-aikuma-slide-show] {\n  background-image: url(\"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2027%2044'%3E%3Cpath%20d%3D'M27%2C22L27%2C22L5%2C44l-2.1-2.1L22.8%2C22L2.9%2C2.1L5%2C0L27%2C22L27%2C22z'%20fill%3D'%23007aff'%2F%3E%3C%2Fsvg%3E\");\n  right: 10px;\n  left: auto;\n}\n.swiper-button-prev.swiper-button-white[data-aikuma-slide-show], .swiper-container-rtl[data-aikuma-slide-show]   .swiper-button-next.swiper-button-white[data-aikuma-slide-show] {\n  background-image: url(\"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2027%2044'%3E%3Cpath%20d%3D'M0%2C22L22%2C0l2.1%2C2.1L4.2%2C22l19.9%2C19.9L22%2C44L0%2C22L0%2C22L0%2C22z'%20fill%3D'%23ffffff'%2F%3E%3C%2Fsvg%3E\");\n}\n.swiper-button-next.swiper-button-white[data-aikuma-slide-show], .swiper-container-rtl[data-aikuma-slide-show]   .swiper-button-prev.swiper-button-white[data-aikuma-slide-show] {\n  background-image: url(\"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2027%2044'%3E%3Cpath%20d%3D'M27%2C22L27%2C22L5%2C44l-2.1-2.1L22.8%2C22L2.9%2C2.1L5%2C0L27%2C22L27%2C22z'%20fill%3D'%23ffffff'%2F%3E%3C%2Fsvg%3E\");\n}\n.swiper-button-prev.swiper-button-black[data-aikuma-slide-show], .swiper-container-rtl[data-aikuma-slide-show]   .swiper-button-next.swiper-button-black[data-aikuma-slide-show] {\n  background-image: url(\"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2027%2044'%3E%3Cpath%20d%3D'M0%2C22L22%2C0l2.1%2C2.1L4.2%2C22l19.9%2C19.9L22%2C44L0%2C22L0%2C22L0%2C22z'%20fill%3D'%23000000'%2F%3E%3C%2Fsvg%3E\");\n}\n.swiper-button-next.swiper-button-black[data-aikuma-slide-show], .swiper-container-rtl[data-aikuma-slide-show]   .swiper-button-prev.swiper-button-black[data-aikuma-slide-show] {\n  background-image: url(\"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2027%2044'%3E%3Cpath%20d%3D'M27%2C22L27%2C22L5%2C44l-2.1-2.1L22.8%2C22L2.9%2C2.1L5%2C0L27%2C22L27%2C22z'%20fill%3D'%23000000'%2F%3E%3C%2Fsvg%3E\");\n}\n.swiper-button-lock[data-aikuma-slide-show] {\n  display: none;\n}\n.swiper-pagination[data-aikuma-slide-show] {\n  position: absolute;\n  text-align: center;\n  -webkit-transition: 300ms opacity;\n  -o-transition: 300ms opacity;\n  transition: 300ms opacity;\n  -webkit-transform: translate3d(0, 0, 0);\n  transform: translate3d(0, 0, 0);\n  z-index: 10;\n}\n.swiper-pagination.swiper-pagination-hidden[data-aikuma-slide-show] {\n  opacity: 0;\n}\n\n.swiper-pagination-fraction[data-aikuma-slide-show], .swiper-pagination-custom[data-aikuma-slide-show], .swiper-container-horizontal[data-aikuma-slide-show]    > .swiper-pagination-bullets[data-aikuma-slide-show] {\n  bottom: 10px;\n  left: 0;\n  width: 100%;\n}\n\n.swiper-pagination-bullets-dynamic[data-aikuma-slide-show] {\n  overflow: hidden;\n  font-size: 0;\n}\n.swiper-pagination-bullets-dynamic[data-aikuma-slide-show]   .swiper-pagination-bullet[data-aikuma-slide-show] {\n  -webkit-transform: scale(0.33);\n  -ms-transform: scale(0.33);\n  transform: scale(0.33);\n  position: relative;\n}\n.swiper-pagination-bullets-dynamic[data-aikuma-slide-show]   .swiper-pagination-bullet-active[data-aikuma-slide-show] {\n  -webkit-transform: scale(1);\n  -ms-transform: scale(1);\n  transform: scale(1);\n}\n.swiper-pagination-bullets-dynamic[data-aikuma-slide-show]   .swiper-pagination-bullet-active-prev[data-aikuma-slide-show] {\n  -webkit-transform: scale(0.66);\n  -ms-transform: scale(0.66);\n  transform: scale(0.66);\n}\n.swiper-pagination-bullets-dynamic[data-aikuma-slide-show]   .swiper-pagination-bullet-active-prev-prev[data-aikuma-slide-show] {\n  -webkit-transform: scale(0.33);\n  -ms-transform: scale(0.33);\n  transform: scale(0.33);\n}\n.swiper-pagination-bullets-dynamic[data-aikuma-slide-show]   .swiper-pagination-bullet-active-next[data-aikuma-slide-show] {\n  -webkit-transform: scale(0.66);\n  -ms-transform: scale(0.66);\n  transform: scale(0.66);\n}\n.swiper-pagination-bullets-dynamic[data-aikuma-slide-show]   .swiper-pagination-bullet-active-next-next[data-aikuma-slide-show] {\n  -webkit-transform: scale(0.33);\n  -ms-transform: scale(0.33);\n  transform: scale(0.33);\n}\n.swiper-pagination-bullet[data-aikuma-slide-show] {\n  width: 8px;\n  height: 8px;\n  display: inline-block;\n  border-radius: 100%;\n  background: #000;\n  opacity: 0.2;\n}\nbutton.swiper-pagination-bullet[data-aikuma-slide-show] {\n  border: none;\n  margin: 0;\n  padding: 0;\n  -webkit-box-shadow: none;\n  box-shadow: none;\n  -webkit-appearance: none;\n  -moz-appearance: none;\n  appearance: none;\n}\n.swiper-pagination-clickable[data-aikuma-slide-show]   .swiper-pagination-bullet[data-aikuma-slide-show] {\n  cursor: pointer;\n}\n.swiper-pagination-bullet-active[data-aikuma-slide-show] {\n  opacity: 1;\n  background: #007aff;\n}\n.swiper-container-vertical[data-aikuma-slide-show]    > .swiper-pagination-bullets[data-aikuma-slide-show] {\n  right: 10px;\n  top: 50%;\n  -webkit-transform: translate3d(0px, -50%, 0);\n  transform: translate3d(0px, -50%, 0);\n}\n.swiper-container-vertical[data-aikuma-slide-show]    > .swiper-pagination-bullets[data-aikuma-slide-show]   .swiper-pagination-bullet[data-aikuma-slide-show] {\n  margin: 6px 0;\n  display: block;\n}\n.swiper-container-vertical[data-aikuma-slide-show]    > .swiper-pagination-bullets.swiper-pagination-bullets-dynamic[data-aikuma-slide-show] {\n  top: 50%;\n  -webkit-transform: translateY(-50%);\n  -ms-transform: translateY(-50%);\n  transform: translateY(-50%);\n  width: 8px;\n}\n.swiper-container-vertical[data-aikuma-slide-show]    > .swiper-pagination-bullets.swiper-pagination-bullets-dynamic[data-aikuma-slide-show]   .swiper-pagination-bullet[data-aikuma-slide-show] {\n  display: inline-block;\n  -webkit-transition: 200ms top, 200ms -webkit-transform;\n  transition: 200ms top, 200ms -webkit-transform;\n  -o-transition: 200ms transform, 200ms top;\n  transition: 200ms transform, 200ms top;\n  transition: 200ms transform, 200ms top, 200ms -webkit-transform;\n}\n.swiper-container-horizontal[data-aikuma-slide-show]    > .swiper-pagination-bullets[data-aikuma-slide-show]   .swiper-pagination-bullet[data-aikuma-slide-show] {\n  margin: 0 4px;\n}\n.swiper-container-horizontal[data-aikuma-slide-show]    > .swiper-pagination-bullets.swiper-pagination-bullets-dynamic[data-aikuma-slide-show] {\n  left: 50%;\n  -webkit-transform: translateX(-50%);\n  -ms-transform: translateX(-50%);\n  transform: translateX(-50%);\n  white-space: nowrap;\n}\n.swiper-container-horizontal[data-aikuma-slide-show]    > .swiper-pagination-bullets.swiper-pagination-bullets-dynamic[data-aikuma-slide-show]   .swiper-pagination-bullet[data-aikuma-slide-show] {\n  -webkit-transition: 200ms left, 200ms -webkit-transform;\n  transition: 200ms left, 200ms -webkit-transform;\n  -o-transition: 200ms transform, 200ms left;\n  transition: 200ms transform, 200ms left;\n  transition: 200ms transform, 200ms left, 200ms -webkit-transform;\n}\n.swiper-container-horizontal.swiper-container-rtl[data-aikuma-slide-show]    > .swiper-pagination-bullets-dynamic[data-aikuma-slide-show]   .swiper-pagination-bullet[data-aikuma-slide-show] {\n  -webkit-transition: 200ms right, 200ms -webkit-transform;\n  transition: 200ms right, 200ms -webkit-transform;\n  -o-transition: 200ms transform, 200ms right;\n  transition: 200ms transform, 200ms right;\n  transition: 200ms transform, 200ms right, 200ms -webkit-transform;\n}\n\n.swiper-pagination-progressbar[data-aikuma-slide-show] {\n  background: rgba(0, 0, 0, 0.25);\n  position: absolute;\n}\n.swiper-pagination-progressbar[data-aikuma-slide-show]   .swiper-pagination-progressbar-fill[data-aikuma-slide-show] {\n  background: #007aff;\n  position: absolute;\n  left: 0;\n  top: 0;\n  width: 100%;\n  height: 100%;\n  -webkit-transform: scale(0);\n  -ms-transform: scale(0);\n  transform: scale(0);\n  -webkit-transform-origin: left top;\n  -ms-transform-origin: left top;\n  transform-origin: left top;\n}\n.swiper-container-rtl[data-aikuma-slide-show]   .swiper-pagination-progressbar[data-aikuma-slide-show]   .swiper-pagination-progressbar-fill[data-aikuma-slide-show] {\n  -webkit-transform-origin: right top;\n  -ms-transform-origin: right top;\n  transform-origin: right top;\n}\n.swiper-container-horizontal[data-aikuma-slide-show]    > .swiper-pagination-progressbar[data-aikuma-slide-show] {\n  width: 100%;\n  height: 4px;\n  left: 0;\n  top: 0;\n}\n.swiper-container-vertical[data-aikuma-slide-show]    > .swiper-pagination-progressbar[data-aikuma-slide-show] {\n  width: 4px;\n  height: 100%;\n  left: 0;\n  top: 0;\n}\n.swiper-pagination-white[data-aikuma-slide-show]   .swiper-pagination-bullet-active[data-aikuma-slide-show] {\n  background: #ffffff;\n}\n.swiper-pagination-progressbar.swiper-pagination-white[data-aikuma-slide-show] {\n  background: rgba(255, 255, 255, 0.25);\n}\n.swiper-pagination-progressbar.swiper-pagination-white[data-aikuma-slide-show]   .swiper-pagination-progressbar-fill[data-aikuma-slide-show] {\n  background: #ffffff;\n}\n.swiper-pagination-black[data-aikuma-slide-show]   .swiper-pagination-bullet-active[data-aikuma-slide-show] {\n  background: #000000;\n}\n.swiper-pagination-progressbar.swiper-pagination-black[data-aikuma-slide-show] {\n  background: rgba(0, 0, 0, 0.25);\n}\n.swiper-pagination-progressbar.swiper-pagination-black[data-aikuma-slide-show]   .swiper-pagination-progressbar-fill[data-aikuma-slide-show] {\n  background: #000000;\n}\n.swiper-pagination-lock[data-aikuma-slide-show] {\n  display: none;\n}\n\n.swiper-scrollbar[data-aikuma-slide-show] {\n  border-radius: 10px;\n  position: relative;\n  -ms-touch-action: none;\n  background: rgba(0, 0, 0, 0.1);\n}\n.swiper-container-horizontal[data-aikuma-slide-show]    > .swiper-scrollbar[data-aikuma-slide-show] {\n  position: absolute;\n  left: 1%;\n  bottom: 3px;\n  z-index: 50;\n  height: 5px;\n  width: 98%;\n}\n.swiper-container-vertical[data-aikuma-slide-show]    > .swiper-scrollbar[data-aikuma-slide-show] {\n  position: absolute;\n  right: 3px;\n  top: 1%;\n  z-index: 50;\n  width: 5px;\n  height: 98%;\n}\n.swiper-scrollbar-drag[data-aikuma-slide-show] {\n  height: 100%;\n  width: 100%;\n  position: relative;\n  background: rgba(0, 0, 0, 0.5);\n  border-radius: 10px;\n  left: 0;\n  top: 0;\n}\n.swiper-scrollbar-cursor-drag[data-aikuma-slide-show] {\n  cursor: move;\n}\n.swiper-scrollbar-lock[data-aikuma-slide-show] {\n  display: none;\n}\n.swiper-zoom-container[data-aikuma-slide-show] {\n  width: 100%;\n  height: 100%;\n  display: -webkit-box;\n  display: -webkit-flex;\n  display: -ms-flexbox;\n  display: flex;\n  -webkit-box-pack: center;\n  -webkit-justify-content: center;\n  -ms-flex-pack: center;\n  justify-content: center;\n  -webkit-box-align: center;\n  -webkit-align-items: center;\n  -ms-flex-align: center;\n  align-items: center;\n  text-align: center;\n}\n.swiper-zoom-container[data-aikuma-slide-show]    > img[data-aikuma-slide-show], .swiper-zoom-container[data-aikuma-slide-show]    > svg[data-aikuma-slide-show], .swiper-zoom-container[data-aikuma-slide-show]    > canvas[data-aikuma-slide-show] {\n  max-width: 100%;\n  max-height: 100%;\n  -o-object-fit: contain;\n  object-fit: contain;\n}\n.swiper-slide-zoomed[data-aikuma-slide-show] {\n  cursor: move;\n}\n\n.swiper-lazy-preloader[data-aikuma-slide-show] {\n  width: 42px;\n  height: 42px;\n  position: absolute;\n  left: 50%;\n  top: 50%;\n  margin-left: -21px;\n  margin-top: -21px;\n  z-index: 10;\n  -webkit-transform-origin: 50%;\n  -ms-transform-origin: 50%;\n  transform-origin: 50%;\n  -webkit-animation: swiper-preloader-spin 1s steps(12, end) infinite;\n  animation: swiper-preloader-spin 1s steps(12, end) infinite;\n}\n.swiper-lazy-preloader[data-aikuma-slide-show]:after {\n  display: block;\n  content: '';\n  width: 100%;\n  height: 100%;\n  background-image: url(\"data:image/svg+xml;charset=utf-8,%3Csvg%20viewBox%3D'0%200%20120%20120'%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20xmlns%3Axlink%3D'http%3A%2F%2Fwww.w3.org%2F1999%2Fxlink'%3E%3Cdefs%3E%3Cline%20id%3D'l'%20x1%3D'60'%20x2%3D'60'%20y1%3D'7'%20y2%3D'27'%20stroke%3D'%236c6c6c'%20stroke-width%3D'11'%20stroke-linecap%3D'round'%2F%3E%3C%2Fdefs%3E%3Cg%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(30%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(60%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(90%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(120%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(150%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.37'%20transform%3D'rotate(180%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.46'%20transform%3D'rotate(210%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.56'%20transform%3D'rotate(240%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.66'%20transform%3D'rotate(270%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.75'%20transform%3D'rotate(300%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.85'%20transform%3D'rotate(330%2060%2C60)'%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E\");\n  background-position: 50%;\n  background-size: 100%;\n  background-repeat: no-repeat;\n}\n.swiper-lazy-preloader-white[data-aikuma-slide-show]:after {\n  background-image: url(\"data:image/svg+xml;charset=utf-8,%3Csvg%20viewBox%3D'0%200%20120%20120'%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20xmlns%3Axlink%3D'http%3A%2F%2Fwww.w3.org%2F1999%2Fxlink'%3E%3Cdefs%3E%3Cline%20id%3D'l'%20x1%3D'60'%20x2%3D'60'%20y1%3D'7'%20y2%3D'27'%20stroke%3D'%23fff'%20stroke-width%3D'11'%20stroke-linecap%3D'round'%2F%3E%3C%2Fdefs%3E%3Cg%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(30%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(60%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(90%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(120%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(150%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.37'%20transform%3D'rotate(180%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.46'%20transform%3D'rotate(210%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.56'%20transform%3D'rotate(240%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.66'%20transform%3D'rotate(270%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.75'%20transform%3D'rotate(300%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.85'%20transform%3D'rotate(330%2060%2C60)'%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E\");\n}\n\@-webkit-keyframes swiper-preloader-spin {\n  100% {\n    -webkit-transform: rotate(360deg);\n    transform: rotate(360deg);\n  }\n}\n\@keyframes swiper-preloader-spin {\n  100% {\n    -webkit-transform: rotate(360deg);\n    transform: rotate(360deg);\n  }\n}\n\n.swiper-container[data-aikuma-slide-show]   .swiper-notification[data-aikuma-slide-show] {\n  position: absolute;\n  left: 0;\n  top: 0;\n  pointer-events: none;\n  opacity: 0;\n  z-index: -1000;\n}\n.swiper-container-fade.swiper-container-free-mode[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show] {\n  -webkit-transition-timing-function: ease-out;\n  -o-transition-timing-function: ease-out;\n  transition-timing-function: ease-out;\n}\n.swiper-container-fade[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show] {\n  pointer-events: none;\n  -webkit-transition-property: opacity;\n  -o-transition-property: opacity;\n  transition-property: opacity;\n}\n.swiper-container-fade[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show] {\n  pointer-events: none;\n}\n.swiper-container-fade[data-aikuma-slide-show]   .swiper-slide-active[data-aikuma-slide-show], .swiper-container-fade[data-aikuma-slide-show]   .swiper-slide-active[data-aikuma-slide-show]   .swiper-slide-active[data-aikuma-slide-show] {\n  pointer-events: auto;\n}\n.swiper-container-cube[data-aikuma-slide-show] {\n  overflow: visible;\n}\n.swiper-container-cube[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show] {\n  pointer-events: none;\n  -webkit-backface-visibility: hidden;\n  backface-visibility: hidden;\n  z-index: 1;\n  visibility: hidden;\n  -webkit-transform-origin: 0 0;\n  -ms-transform-origin: 0 0;\n  transform-origin: 0 0;\n  width: 100%;\n  height: 100%;\n}\n.swiper-container-cube[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show] {\n  pointer-events: none;\n}\n.swiper-container-cube.swiper-container-rtl[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show] {\n  -webkit-transform-origin: 100% 0;\n  -ms-transform-origin: 100% 0;\n  transform-origin: 100% 0;\n}\n.swiper-container-cube[data-aikuma-slide-show]   .swiper-slide-active[data-aikuma-slide-show], .swiper-container-cube[data-aikuma-slide-show]   .swiper-slide-active[data-aikuma-slide-show]   .swiper-slide-active[data-aikuma-slide-show] {\n  pointer-events: auto;\n}\n.swiper-container-cube[data-aikuma-slide-show]   .swiper-slide-active[data-aikuma-slide-show], .swiper-container-cube[data-aikuma-slide-show]   .swiper-slide-next[data-aikuma-slide-show], .swiper-container-cube[data-aikuma-slide-show]   .swiper-slide-prev[data-aikuma-slide-show], .swiper-container-cube[data-aikuma-slide-show]   .swiper-slide-next[data-aikuma-slide-show]    + .swiper-slide[data-aikuma-slide-show] {\n  pointer-events: auto;\n  visibility: visible;\n}\n.swiper-container-cube[data-aikuma-slide-show]   .swiper-slide-shadow-top[data-aikuma-slide-show], .swiper-container-cube[data-aikuma-slide-show]   .swiper-slide-shadow-bottom[data-aikuma-slide-show], .swiper-container-cube[data-aikuma-slide-show]   .swiper-slide-shadow-left[data-aikuma-slide-show], .swiper-container-cube[data-aikuma-slide-show]   .swiper-slide-shadow-right[data-aikuma-slide-show] {\n  z-index: 0;\n  -webkit-backface-visibility: hidden;\n  backface-visibility: hidden;\n}\n.swiper-container-cube[data-aikuma-slide-show]   .swiper-cube-shadow[data-aikuma-slide-show] {\n  position: absolute;\n  left: 0;\n  bottom: 0px;\n  width: 100%;\n  height: 100%;\n  background: #000;\n  opacity: 0.6;\n  -webkit-filter: blur(50px);\n  filter: blur(50px);\n  z-index: 0;\n}\n.swiper-container-flip[data-aikuma-slide-show] {\n  overflow: visible;\n}\n.swiper-container-flip[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show] {\n  pointer-events: none;\n  -webkit-backface-visibility: hidden;\n  backface-visibility: hidden;\n  z-index: 1;\n}\n.swiper-container-flip[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show] {\n  pointer-events: none;\n}\n.swiper-container-flip[data-aikuma-slide-show]   .swiper-slide-active[data-aikuma-slide-show], .swiper-container-flip[data-aikuma-slide-show]   .swiper-slide-active[data-aikuma-slide-show]   .swiper-slide-active[data-aikuma-slide-show] {\n  pointer-events: auto;\n}\n.swiper-container-flip[data-aikuma-slide-show]   .swiper-slide-shadow-top[data-aikuma-slide-show], .swiper-container-flip[data-aikuma-slide-show]   .swiper-slide-shadow-bottom[data-aikuma-slide-show], .swiper-container-flip[data-aikuma-slide-show]   .swiper-slide-shadow-left[data-aikuma-slide-show], .swiper-container-flip[data-aikuma-slide-show]   .swiper-slide-shadow-right[data-aikuma-slide-show] {\n  z-index: 0;\n  -webkit-backface-visibility: hidden;\n  backface-visibility: hidden;\n}\n.swiper-container-coverflow[data-aikuma-slide-show]   .swiper-wrapper[data-aikuma-slide-show] {\n  \n  -ms-perspective: 1200px;\n}\n\n\n.swiper-container[data-aikuma-slide-show] {\n  width: 100%;\n  position: relative;\n}\n\n.swiper-slide[data-aikuma-slide-show] {\n  width: 50vw;\n  height: 37.5vw;\n  background-color: rgba(0, 0, 0, 0.2);\n  background-size: contain;\n  background-repeat: no-repeat;\n  background-position: center center;\n}\n\n.swiper-container.main[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show] {\n  width: 50vw;\n  height: 100%;\n  max-height: 50vw;\n  display: flex;\n  flex-direction: column;\n  justify-content: center;\n  align-items: center;\n}\n\n.swiper-container.main[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show]   .swiper-lazy[data-aikuma-slide-show] {\n  height: 100%;\n}\n\n.swiper-container.main[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show]   .image-wrapper[data-aikuma-slide-show] {\n  height: 100%;\n}\n\n.swiper-container.main[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show]   .image-wrapper[data-aikuma-slide-show]   img[data-aikuma-slide-show] {\n  max-width: 100%;\n  max-height: 100%;\n  vertical-align: middle;\n}\n\n.swiper-container.thumb[data-aikuma-slide-show] {\n  height: 25vw;\n  position: relative;\n  padding: 5px;\n}\n\n.swiper-container.thumb[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show] {\n  width: 33vw;\n  height: 100%;\n  opacity: 0.5;\n  box-shadow: 1px 1px 6px 2px rgba(40, 0, 0, 0.6);\n}\n\n.swiper-container.thumb[data-aikuma-slide-show]   .swiper-slide-active[data-aikuma-slide-show] {\n  opacity: 1;\n  box-shadow: 1px 1px 3px 2px rgba(40, 0, 0, 0.3);\n}\n\n.swiper-container.thumb[data-aikuma-slide-show]   .navbutton[data-aikuma-slide-show] {\n  font-size: 62px;\n  height: 62px;\n  width: 40px;\n}\n\naikuma-gestate[data-aikuma-slide-show] {\n  position: absolute;\n  top: 0;\n  left: 0;\n  right: 0;\n  margin: 0 auto;\n  z-index: 10;\n}\n\naikuma-gestate[data-aikuma-slide-show]   canvas.sketch[data-aikuma-slide-show] {\n  position: absolute;\n  pointer-events: none;\n  width: 100%;\n  height: 100%;\n  top: 0;\n  left: 0;\n  z-index: 12;\n}\n\n\@media all and (orientation: landscape) {\n  .swiper-container.main[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show] {\n    width: 50vw;\n    height: 37.5vw;\n  }\n  .swiper-container.thumb[data-aikuma-slide-show] {\n    display: none;\n  }\n}\n\n\@media all and (orientation: portrait) {\n  .swiper-container.main[data-aikuma-slide-show]   .swiper-button-next[data-aikuma-slide-show], .swiper-container.main[data-aikuma-slide-show]   .swiper-button-prev[data-aikuma-slide-show] {\n    display: none;\n  }\n  .swiper-container.main[data-aikuma-slide-show]   .swiper-slide[data-aikuma-slide-show] {\n    width: 100vw;\n    height: 75vw;\n  }\n}"; }
 }
 // {this.slides.map((slide) => 
 //   <div class="swiper-slide" style={getSlideStyle(slide.bg)}></div>
@@ -23952,16 +24021,17 @@ class ImageGestureVoice {
             playing: false,
             mode: 'record',
             size: null,
-            currentIndex: 0,
             elapsed: '0.0',
             enableRecord: true,
             havePlayed: false
         };
+        this.currentIndex = 0;
         this.player = new WebAudioPlayer();
     }
     slideSizeHandler(event) {
+        console.log('igv got slide size notification');
         if (event.detail) {
-            this.state = Object.assign({}, this.state, { size: event.detail });
+            this.changeState({ size: event.detail });
         }
     }
     slideEvenHandler(event) {
@@ -23971,13 +24041,14 @@ class ImageGestureVoice {
             console.log('igv got slide init');
         }
         else if (t === 'start') {
-            console.log('slide change starting from', v);
+            //console.log('slide change',v)
             if (this.state.recording) {
                 this.gestate.stopRecord();
             }
         }
         else if (t === 'end') {
-            console.log('slide change ending at', v);
+            console.log('slide change ending', v);
+            this.changeState({ size: v });
             if (this.state.recording) {
                 this.gestate.record('attention', this.mic.getElapsed());
             }
@@ -24006,14 +24077,14 @@ class ImageGestureVoice {
     // Logic 
     //
     slideChange(slide) {
-        this.state.currentIndex = slide; // even if we are in transition
+        this.currentIndex = slide; // even if we are in transition
         if (this.state.mode === 'record') {
             if (this.state.recording) {
                 //this.registerSlideChange(this.mic_getElapsed(), this.slideList, this.currentIndex)
             }
             if (this.state.playing) {
                 //this.player.pause()
-                let timeMs = this.timeLine[this.state.currentIndex].t;
+                let timeMs = this.timeLine[this.currentIndex].t;
                 //this.player.playMs(timeMs)
                 this.gestate.playGestures(timeMs);
             }
@@ -24026,7 +24097,7 @@ class ImageGestureVoice {
                 this.gestate.playGestures(t);
             }
             else {
-                this.state.elapsed = this.getNiceTime(t);
+                this.changeState({ elapsed: this.getNiceTime(t) });
             }
         }
     }
@@ -24038,16 +24109,16 @@ class ImageGestureVoice {
     }
     stopRecording() {
         return __awaiter$2(this, void 0, void 0, function* () {
-            this.state = Object.assign({}, this.state, { enableRecord: false });
+            this.changeState({ enableRecord: false, recording: false });
             yield this.mic.stop();
-            this.state = Object.assign({}, this.state, { enableRecord: true });
+            this.changeState({ enableRecord: true });
             this.gestate.stopRecord();
         });
     }
     stopPlaying() {
         this.player.pause();
         this.gestate.stopPlay();
-        this.state.playing = false;
+        this.changeState({ playing: false });
     }
     slideTo(slide) {
         this.ssc.slideTo(slide);
@@ -24063,16 +24134,17 @@ class ImageGestureVoice {
         let ms = (d.getUTCMilliseconds() / 1000).toFixed(1).slice(1);
         return m + ':' + s + ms;
     }
+    changeState(newStates) {
+        let s = Object.assign({}, this.state);
+        Object.assign(s, newStates);
+        this.state = s;
+    }
     //
     // Template Logic
     //
     handleClick(btn, evt) {
         if (btn === 'record') {
-            if (this.state.recording) {
-            }
-            else {
-            }
-            this.state = Object.assign({}, this.state, { recording: !this.state.recording });
+            this.pressPlayRec();
         }
     }
     canPlay() {
@@ -24088,8 +24160,8 @@ class ImageGestureVoice {
                 // we were not recording
                 if (this.timeLine.length) {
                     // If we are somewhere other than the last slide, go back to the last slide
-                    this.state.currentIndex = this.timeLine.length - 1;
-                    this.slideTo(this.state.currentIndex);
+                    this.currentIndex = this.timeLine.length - 1;
+                    this.slideTo(this.currentIndex);
                 }
                 else {
                     // otherwise record first slide at 0
@@ -24098,6 +24170,8 @@ class ImageGestureVoice {
                 }
                 // Animate buttons out, begin microphone recording, start gesture recording
                 this.mic.record();
+                this.state.recording = true;
+                this.changeState({ recording: true });
                 this.gestate.record('attention', this.mic.getElapsed());
             }
         }
@@ -24107,8 +24181,7 @@ class ImageGestureVoice {
             }
             else {
                 // We were not playing
-                this.state.havePlayed = true;
-                this.state.playing = true;
+                this.changeState({ havePlayed: true, playing: true });
                 if (this.player.ended) {
                     // Playback had finished (end of slides)
                     this.slideTo(0);

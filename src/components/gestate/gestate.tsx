@@ -22,12 +22,14 @@ export class Gestate {
   @Watch('size')
   watchHandler(newsize: DOMRect) {
     if (newsize && this.overlay) {
-      console.log('got size', newsize)
+      //console.log('got size', newsize)
       this.overlay.style.setProperty('width', newsize.width.toString()+'px')
       this.overlay.style.setProperty('height', newsize.height.toString()+'px')
       let offset = ((this.el.clientWidth - newsize.width) / 2) 
       this.overlay.style.setProperty('left', offset.toString()+'px')
-      console.log('offset', offset.toString()+'px')
+      if (this.particles) {
+        this.particles.resize(newsize)
+      }
     }
   }
   // 
@@ -66,6 +68,7 @@ export class Gestate {
     this.init()
   }
   init() {
+    console.log('gestate init particles')
     this.particles = new Particles(this.overlay)
   }
   componentDidUnload() {
@@ -79,6 +82,7 @@ export class Gestate {
   //
   @Method()
   record(gtype: string, time: number): void {
+    console.log('gestate start()')
     this.state = {
       isPlaying: false,
       isRecording: true
@@ -93,13 +97,14 @@ export class Gestate {
       movingPos: null,
       trackTouchIdentifier: null
     }
-    this.particles.start(true)
+    this.particles.init(true)
     this.recordTick()
   }
   @Method()
   stopRecord(): void {
+    console.log('gestate stop()')
     this.state.isRecording = false
-    this.particles.stop()
+    //this.particles.stop()
     if (this.currentGesture) {
       this.finishCurrentGesture()
     }
@@ -155,12 +160,12 @@ export class Gestate {
       let oldt = this.currentRecording.lastElapsed - pGest.timeOffset
       for (let frame of pGest.timeLine) {
         if (frame.t > oldt && frame.t <= tt) {
-          this.particles.paaaaarp(frame.x, frame.y)
+          this.particles.parp(frame.x, frame.y)
         }
       }
       this.currentRecording.lastElapsed = elapsed
     } else {
-      this.particles.clearLastPaaaaarp() 
+      this.particles.clearLastParp() 
     }
     if (this.state.isPlaying) {
       window.requestAnimationFrame(this.playTick.bind(this))
@@ -169,7 +174,7 @@ export class Gestate {
 
   recordTick(): void {
     if (this.currentTouch.movingPos) {
-      this.particles.paaaaarp(this.currentTouch.movingPos.x, this.currentTouch.movingPos.y)
+      this.particles.parp(this.currentTouch.movingPos.x, this.currentTouch.movingPos.y)
     }
     if (this.state.isRecording) {
       window.requestAnimationFrame(this.recordTick.bind(this))
@@ -187,7 +192,6 @@ export class Gestate {
         y: ry / rect.height
       }
     }
-    
     if (ttype === 'start') {
       if (this.state.isRecording) {
         let thisTouch: Touch = evt.changedTouches[0]
@@ -220,6 +224,7 @@ export class Gestate {
       }
     } else if (ttype === 'end') {
       if (this.state.isRecording && this.currentGesture.gesture) {
+        this.particles.endParp()
         let fidx = Array.from(evt.changedTouches).findIndex(x => x.identifier === this.currentTouch.trackTouchIdentifier)
         if (fidx !== -1) {
           this.finishCurrentGesture()
@@ -241,8 +246,10 @@ export class Gestate {
 
   render() {
     return (
-      <div class="overlay">
-  
+      <div class="overlay"
+        onTouchStart={(e: TouchEvent) => this.handleTouch('start', e)}
+        onTouchMove={(e: TouchEvent) => this.handleTouch('move', e)}
+        onTouchEnd={(e: TouchEvent) => this.handleTouch('end', e)}>
       </div>
     )
   }

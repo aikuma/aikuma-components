@@ -6,6 +6,16 @@ import prettyprint from 'prettyprint'
 
 export interface TimeLine extends Array<{t: number}>{}
 
+interface State {
+  recording?: boolean,
+  playing?: boolean,
+  mode?: string,
+  size?: DOMRect,
+  elapsed?: string,
+  enableRecord?: boolean,
+  havePlayed?: boolean
+}
+
 @Component({
   tag: 'aikuma-image-gesture-voice',
   styleUrls: ['../../../node_modules/swiper/dist/css/swiper.css', 'image-gesture-voice.scss'],
@@ -18,30 +28,22 @@ export class ImageGestureVoice {
   mic: Microphone = new Microphone()
   timeLine: TimeLine = []
   slideList: Slide[] = []
-  @State() state: {
-    recording: boolean,
-    playing: boolean,
-    mode: string,
-    size: DOMRect,
-    currentIndex: number,
-    elapsed: string,
-    enableRecord: boolean,
-    havePlayed: boolean
-  } = {
+  @State() state: State = {
     recording: false,
     playing: false,
     mode: 'record',
     size: null,
-    currentIndex: 0,
     elapsed: '0.0',
     enableRecord: true,
     havePlayed: false
   }
+  currentIndex: number = 0
   player: WebAudioPlayer = new WebAudioPlayer()
   @Listen('slideSize')
   slideSizeHandler(event: CustomEvent) {
+    console.log('igv got slide size notification')
     if (event.detail) {
-      this.state = {...this.state, size: event.detail}
+      this.changeState({size: event.detail})
     }
   }
   @Listen('slideEvent')
@@ -51,12 +53,13 @@ export class ImageGestureVoice {
     if (t === 'init') {
       console.log('igv got slide init')
     } else if (t === 'start') {
-      console.log('slide change starting from',v)
+      //console.log('slide change',v)
       if (this.state.recording) {
         this.gestate.stopRecord()
       }
     } else if (t === 'end') {
-      console.log('slide change ending at',v)
+      console.log('slide change ending',v)
+      this.changeState({size: v})
       if (this.state.recording) {
         this.gestate.record('attention', this.mic.getElapsed())
       }
@@ -87,14 +90,14 @@ export class ImageGestureVoice {
   // Logic 
   //
   slideChange(slide: number) {
-    this.state.currentIndex = slide // even if we are in transition
+    this.currentIndex = slide // even if we are in transition
     if (this.state.mode === 'record') {
       if (this.state.recording) {
         //this.registerSlideChange(this.mic_getElapsed(), this.slideList, this.currentIndex)
       }
       if (this.state.playing) {
         //this.player.pause()
-        let timeMs = this.timeLine[this.state.currentIndex].t
+        let timeMs = this.timeLine[this.currentIndex].t
         //this.player.playMs(timeMs)
         this.gestate.playGestures(timeMs)
       }
@@ -105,7 +108,7 @@ export class ImageGestureVoice {
         //this.player.play(t/1000)
         this.gestate.playGestures(t)
       } else {
-        this.state.elapsed = this.getNiceTime(t)
+        this.changeState({elapsed: this.getNiceTime(t)})
       }
     }
   }
@@ -117,15 +120,15 @@ export class ImageGestureVoice {
     console.log('registerSlideChange, timeLine is', this.timeLine)
   }
   async stopRecording() {
-    this.state = {...this.state, enableRecord: false}
+    this.changeState({enableRecord: false, recording: false})
     await this.mic.stop()
-    this.state = {...this.state, enableRecord: true}
+    this.changeState({enableRecord: true})
     this.gestate.stopRecord()
   }
   stopPlaying() {
     this.player.pause()
     this.gestate.stopPlay()
-    this.state.playing = false
+    this.changeState({playing: false})
   }
   slideTo(slide: number): void {
     this.ssc.slideTo(slide)
@@ -142,6 +145,11 @@ export class ImageGestureVoice {
     let ms = (d.getUTCMilliseconds() / 1000).toFixed(1).slice(1)
     return m + ':' + s + ms
   }
+  changeState(newStates: State) {
+    let s = Object.assign({}, this.state)
+    Object.assign(s, newStates)
+    this.state = s
+  }
 
   //
   // Template Logic
@@ -149,12 +157,7 @@ export class ImageGestureVoice {
 
   handleClick(btn: string, evt: UIEvent) {
     if (btn === 'record') {
-      if (this.state.recording) {
-
-      } else {
-
-      }
-      this.state = {...this.state, recording: !this.state.recording}
+      this.pressPlayRec()
     }
   }
   canPlay(): boolean {
@@ -170,8 +173,8 @@ export class ImageGestureVoice {
         // we were not recording
         if (this.timeLine.length) {
           // If we are somewhere other than the last slide, go back to the last slide
-          this.state.currentIndex = this.timeLine.length - 1
-          this.slideTo(this.state.currentIndex)
+          this.currentIndex = this.timeLine.length - 1
+          this.slideTo(this.currentIndex)
         } else {
           // otherwise record first slide at 0
           this.slideTo(0)
@@ -179,6 +182,8 @@ export class ImageGestureVoice {
         }      
         // Animate buttons out, begin microphone recording, start gesture recording
         this.mic.record()
+        this.state.recording = true
+        this.changeState({recording: true})
         this.gestate.record('attention', this.mic.getElapsed())
       }
     } else {
@@ -186,8 +191,7 @@ export class ImageGestureVoice {
         this.stopPlaying()
       } else {
         // We were not playing
-        this.state.havePlayed = true
-        this.state.playing = true
+        this.changeState({havePlayed: true, playing: true})
         if (this.player.ended) {
           // Playback had finished (end of slides)
           this.slideTo(0)

@@ -57,7 +57,7 @@ export class SlideShow {
         type: 'bullets'
       },
       preloadImages: false,
-      lazy: true,
+      lazy: false,
       centeredSlides: true,
       grabCursor: true,
       slideToClickedSlide: false, // other sldes only visible in landscape mode
@@ -90,10 +90,6 @@ export class SlideShow {
       spaceBetween: 5,
       touchRatio: 0.3,
       slideToClickedSlide: false,
-      navigation: {
-        nextEl: this.el.shadowRoot.querySelector('.swiper-container.thumb .swiper-button-next'),
-        prevEl: this.el.shadowRoot.querySelector('.swiper-container.thumb .swiper-button-prev')
-      },
       allowTouchMove: false,
       controller: {
         control: smainctrl
@@ -110,24 +106,18 @@ export class SlideShow {
     //   //console.log('slideChange')
 
     //})
-    this.swiper.main.on('slideChangeTransitionStart', (x) => {
-      console.log('slideChangeTransitionStart',x)
-      this.slideEvent.emit({type:'start', val: this.swiper.main.activeIndex})
-    })
     this.swiper.main.on('slideChangeTransitionEnd', () => {
-      this.calculateSlideSize()
-      this.slideEvent.emit({type:'end', val: this.swiper.main.activeIndex})
+      this.slideEvent.emit({type:'end', val: this.getSlideSize()})
     })
-    this.swiper.main.on('lazyImageReady', () => {
-      this.calculateSlideSize()
-    })
+    // this.swiper.main.on('lazyImageReady', () => {
+    //   this.calculateSlideSize()
+    // })
     this.swiper.main.on('resize', () => {
       this.calculateSlideSize()
     })
     this.swiper.main.on('init', () => {
       this.slideEvent.emit({type:'init', val: this.swiper})
     })
-  
   }
   @Method()
   getCurrent(): number {
@@ -138,9 +128,13 @@ export class SlideShow {
     if (idx === this.swiper.main.activeIndex) {
       return
     }
+    this.slideEvent.emit({type:'start', val: {
+        from: this.swiper.main.activeIndex, 
+        to: idx
+      }
+    })
     this.swiper.thumb.slideTo(idx)
     this.swiper.main.slideTo(idx)
-    this.slideEvent.emit({type:'start', val: idx})
   }
 
   @Method()
@@ -177,11 +171,14 @@ export class SlideShow {
     }
   }
 
+  getSlideSize(): DOMRect {
+    let slideEl = this.el.shadowRoot.querySelector('.swiper-container.main .swiper-slide.swiper-slide-active .image-wrapper')
+    return slideEl.getBoundingClientRect() as DOMRect
+  }
+
   handleClick(evt: UIEvent, idx: number) {
     console.log('clicked slide', idx, this.swiper.main.activeIndex)
-    if (this.swiper.main.activeIndex !== idx) {
-      this.slideTo(idx)
-    }
+    this.slideTo(idx)
   }
 
   render() {
@@ -193,13 +190,12 @@ export class SlideShow {
     return (
 <div>
   <div class="swiper-container main">
-    <div class="swiper-wrapper">
+    <div  class="swiper-wrapper">
 
       {this.slides.map((slide, index) => 
         <div class="swiper-slide" onClick={ (event: UIEvent) => this.handleClick(event, index)}>
           <div class="image-wrapper">
-            <img data-src={slide.url} class="swiper-lazy"/>
-            <div class="swiper-lazy-preloader"></div>
+            <img src={slide.url}/>
           </div>
         </div>
       )}
@@ -215,8 +211,6 @@ export class SlideShow {
           style={getSlideStyle(slide.bg)}></div>
       )}
     </div>
-    <div class="swiper-button-prev"></div>
-    <div class="swiper-button-next"></div>
   </div>
 </div>
     )
