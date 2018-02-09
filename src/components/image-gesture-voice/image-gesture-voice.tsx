@@ -10,7 +10,8 @@ interface State {
   recording?: boolean,
   playing?: boolean,
   mode?: string,
-  size?: DOMRect,
+  contentSize?: DOMRect,
+  frameSize?: DOMRect,
   elapsed?: string,
   enableRecord?: boolean,
   havePlayed?: boolean
@@ -32,7 +33,8 @@ export class ImageGestureVoice {
     recording: false,
     playing: false,
     mode: 'record',
-    size: null,
+    contentSize: null,
+    frameSize: null,
     elapsed: '0.0',
     enableRecord: true,
     havePlayed: false
@@ -43,7 +45,7 @@ export class ImageGestureVoice {
   slideSizeHandler(event: CustomEvent) {
     console.log('igv got slide size notification')
     if (event.detail) {
-      this.changeState({size: event.detail})
+      this.changeState({contentSize: event.detail.content, frameSize: event.detail.frame})
     }
   }
   @Listen('slideEvent')
@@ -59,7 +61,7 @@ export class ImageGestureVoice {
       }
     } else if (t === 'end') {
       console.log('slide change ending',v)
-      this.changeState({size: v})
+      this.changeState({contentSize: v})
       if (this.state.recording) {
         this.gestate.record('attention', this.mic.getElapsed())
       }
@@ -80,7 +82,7 @@ export class ImageGestureVoice {
   }
 
   init() {
-    let pics = [1,2,3].map((i) => {
+    let pics = [1,2,4,5].map((i) => {
       return 'http://localhost:8000/som-hand'+i.toString()+'.jpg'
     })
     this.ssc.loadImages(pics)
@@ -212,7 +214,7 @@ export class ImageGestureVoice {
 <div class="igv">
   <div class="slidewrapper">
     <aikuma-slide-show></aikuma-slide-show>
-    <aikuma-gestate size={this.state.size}></aikuma-gestate>
+    <aikuma-gestate size={{content: this.state.contentSize, frame: this.state.frameSize}}></aikuma-gestate>
   </div>
   <div class="controls"></div>
   <button type="button" 

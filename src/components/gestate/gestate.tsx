@@ -18,15 +18,17 @@ export interface GestateElement extends HTMLElement, Gestate {}
 })
 export class Gestate {
   @Element() el: HTMLElement
-  @Prop() size: DOMRect
+  @Prop() size: {content: DOMRect, frame: DOMRect}
   @Watch('size')
-  watchHandler(newsize: DOMRect) {
-    if (newsize && this.overlay) {
-      //console.log('got size', newsize)
+  watchHandler(size: {content: DOMRect, frame: DOMRect}) {
+    if (size && this.overlay) {
+      let newsize = size.content
       this.overlay.style.setProperty('width', newsize.width.toString()+'px')
       this.overlay.style.setProperty('height', newsize.height.toString()+'px')
-      let offset = ((this.el.clientWidth - newsize.width) / 2) 
-      this.overlay.style.setProperty('left', offset.toString()+'px')
+      let offsetx = ((this.el.clientWidth - newsize.width) / 2) 
+      let offsety = ((size.frame.height  - newsize.height) / 2) 
+      this.overlay.style.setProperty('left', offsetx.toString()+'px')
+      this.overlay.style.setProperty('top', offsety.toString()+'px')
       if (this.particles) {
         this.particles.resize(newsize)
       }

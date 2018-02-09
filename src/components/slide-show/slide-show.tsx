@@ -24,7 +24,7 @@ export interface SlideShowElement extends HTMLElement, SlideShow {}
 export class SlideShow {
   @Element() el: HTMLElement
   @State() slides: Slide[] = []
-  @Event() slideSize: EventEmitter<DOMRect>;
+  @Event() slideSize: EventEmitter<{content: DOMRect, frame: DOMRect}>;
   @Event() slideEvent: EventEmitter<{type: string, val: any}>;
 
   swiper: {
@@ -33,6 +33,7 @@ export class SlideShow {
   }
   updating: boolean = false
   initialized: boolean = false
+  @State() imagesizes: {width: number, height: number}[] = []
 
   componentWillLoad() {
     console.log('SlideShow is about to be rendered')
@@ -99,24 +100,25 @@ export class SlideShow {
       main: smainctrl,
       thumb: sthumbctrl
     }
-
-    console.log('thumb swipr', sthumbctrl)
     
-    // this.swiper.main.on('slideChange', () => {
-    //   //console.log('slideChange')
-
-    //})
     this.swiper.main.on('slideChangeTransitionEnd', () => {
-      this.slideEvent.emit({type:'end', val: this.getSlideSize()})
+      this.slideEvent.emit({type:'end', val: this.getSlideContentSize()})
+      this.checkAspectRatio(this.swiper.main.activeIndex)
     })
-    // this.swiper.main.on('lazyImageReady', () => {
-    //   this.calculateSlideSize()
-    // })
+    const emitResize = () => {
+      this.slideSize.emit( {
+        content: this.getSlideContentSize(),
+        frame: this.getSlideFrameSize()
+      })
+    }
     this.swiper.main.on('resize', () => {
-      this.calculateSlideSize()
+      emitResize()
     })
     this.swiper.main.on('init', () => {
       this.slideEvent.emit({type:'init', val: this.swiper})
+      setTimeout(() => {
+        emitResize()
+      },100)
     })
   }
   @Method()
@@ -163,16 +165,13 @@ export class SlideShow {
 
   // }
 
-  calculateSlideSize() {
-    let slideEl = this.el.shadowRoot.querySelector('.swiper-container.main .swiper-slide.swiper-slide-active .image-wrapper')
-    let rect = slideEl.getBoundingClientRect() as DOMRect
-    if (rect.width) {
-      this.slideSize.emit(rect)
-    }
+  getSlideContentSize(): DOMRect {
+    let slideEl = this.el.shadowRoot.querySelector('.swiper-container.main .swiper-slide.swiper-slide-active img')
+    return slideEl.getBoundingClientRect() as DOMRect
   }
 
-  getSlideSize(): DOMRect {
-    let slideEl = this.el.shadowRoot.querySelector('.swiper-container.main .swiper-slide.swiper-slide-active .image-wrapper')
+  getSlideFrameSize(): DOMRect {
+    let slideEl = this.el.shadowRoot.querySelector('.swiper-container.main .swiper-slide.swiper-slide-active')
     return slideEl.getBoundingClientRect() as DOMRect
   }
 
@@ -181,22 +180,48 @@ export class SlideShow {
     this.slideTo(idx)
   }
 
+  checkAspectRatio (idx: number) {
+    if (!this.imagesizes[idx]) {
+      return false
+    }
+    let frame = this.getSlideFrameSize()
+    let ar_slide = frame.width / frame.height 
+    let ar_img = this.imagesizes[idx].width / this.imagesizes[idx].height
+    console.log(idx, ar_slide, ar_img)
+  }
+
   render() {
     const getSlideStyle = (bg: string) => {
       return {
         backgroundImage: bg
       }
     }
+    const imageLoad = (idx: number) => {
+      let img = this.el.shadowRoot.querySelector('.swiper-container.main #i'+idx) as HTMLImageElement
+      console.log('index', idx, img.naturalWidth, img.naturalHeight)
+      let nis = this.imagesizes.slice()
+      nis[idx] = {width: img.naturalWidth, height: img.naturalHeight}
+      this.imagesizes = nis
+    }
+    const higherAspectRatio = (idx: number) => {
+      if (!this.imagesizes[idx]) {
+        return false
+      }
+      let frame = this.getSlideFrameSize()
+      let ar_slide = frame.width / frame.height 
+      let ar_img = this.imagesizes[idx].width / this.imagesizes[idx].height
+      console.log(idx, ar_slide, ar_img)
+      return ar_img > ar_slide
+    }
     return (
 <div>
   <div class="swiper-container main">
     <div  class="swiper-wrapper">
-
       {this.slides.map((slide, index) => 
-        <div class="swiper-slide" onClick={ (event: UIEvent) => this.handleClick(event, index)}>
-          <div class="image-wrapper">
-            <img src={slide.url}/>
-          </div>
+        <div class="swiper-slide" 
+            onClick={ (event: UIEvent) => this.handleClick(event, index)}
+            >
+          <img class={higherAspectRatio(index) ? 'fitwidth' : 'fitheight'} onLoad={() => imageLoad(index)} id={'i'+index.toString()} src={slide.url}/>
         </div>
       )}
     </div>
@@ -219,4 +244,13 @@ export class SlideShow {
 
 // {this.slides.map((slide) => 
 //   <div class="swiper-slide" style={getSlideStyle(slide.bg)}></div>
+// )}
+
+// {this.slides.map((slide, index) => 
+//   <div class="swiper-slide" onClick={ (event: UIEvent) => this.handleClick(event, index)}>
+//     {/* <div class="image-wrapper"> */}
+//       <div class="imgdiv" onClick={ (event: UIEvent) => this.handleClick(event, index)}
+//         style={getSlideStyle(slide.bg)}></div>
+//     {/* </div> */}
+//   </div>
 // )}
