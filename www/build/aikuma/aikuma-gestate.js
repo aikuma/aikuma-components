@@ -1327,7 +1327,8 @@ class Gestate {
         this.gestures = [];
     }
     watchHandler(size) {
-        if (size && this.overlay) {
+        if (size && this.overlay && size.content && size.frame) {
+            console.log('gestate size', size);
             let newsize = size.content;
             this.overlay.style.setProperty('width', newsize.width.toString() + 'px');
             this.overlay.style.setProperty('height', newsize.height.toString() + 'px');
@@ -1454,7 +1455,17 @@ class Gestate {
             window.requestAnimationFrame(this.recordTick.bind(this));
         }
     }
-    handleTouch(ttype, evt) {
+    finishCurrentGesture() {
+        this.gestures.push(this.currentGesture.gesture);
+        this.currentGesture.gesture = null;
+        this.currentTouch.movingPos = null;
+        this.particles.endParp();
+    }
+    getElapsed() {
+        let thisTime = new Date();
+        return (thisTime.valueOf() - this.currentRecording.startTime.valueOf());
+    }
+    touchEvent(e) {
         const getXYFromTouch = (touch) => {
             let target = touch.target;
             let rect = target.getBoundingClientRect();
@@ -1465,59 +1476,101 @@ class Gestate {
                 y: ry / rect.height
             };
         };
-        if (ttype === 'start') {
-            if (this.state.isRecording) {
-                let thisTouch = evt.changedTouches[0];
-                this.currentTouch.trackTouchIdentifier = thisTouch.identifier;
-                let touchPos = getXYFromTouch(thisTouch);
-                this.currentGesture.gesture = {
-                    type: this.currentGesture.type,
-                    timeOffset: this.currentRecording.recTimeOffset + this.getElapsed(),
-                    timeLine: [{
-                            t: 0,
-                            x: touchPos.x,
-                            y: touchPos.y
-                        }]
-                };
+        if (!this.state.isRecording) {
+            return;
+        }
+        if (e.type === 'touchstart') {
+            console.log('touch start');
+            let thisTouch = e.changedTouches[0];
+            this.currentTouch.trackTouchIdentifier = thisTouch.identifier;
+            let touchPos = getXYFromTouch(thisTouch);
+            this.currentGesture.gesture = {
+                type: this.currentGesture.type,
+                timeOffset: this.currentRecording.recTimeOffset + this.getElapsed(),
+                timeLine: [{
+                        t: 0,
+                        x: touchPos.x,
+                        y: touchPos.y
+                    }]
+            };
+            this.currentTouch.movingPos = { x: touchPos.x, y: touchPos.y };
+        }
+        else if (e.type === 'touchmove') {
+            console.log(e.target);
+            let moveTouch = Array.from(e.changedTouches).find(x => x.identifier === this.currentTouch.trackTouchIdentifier);
+            if (moveTouch) {
+                let touchPos = getXYFromTouch(moveTouch);
+                this.currentGesture.gesture.timeLine.push({
+                    t: this.currentRecording.recTimeOffset + this.getElapsed() - this.currentGesture.gesture.timeOffset,
+                    x: touchPos.x,
+                    y: touchPos.y
+                });
                 this.currentTouch.movingPos = { x: touchPos.x, y: touchPos.y };
             }
         }
-        else if (ttype === 'move') {
-            if (this.state.isRecording && this.currentGesture.gesture) {
-                let moveTouch = Array.from(evt.changedTouches).find(x => x.identifier === this.currentTouch.trackTouchIdentifier);
-                if (moveTouch) {
-                    let touchPos = getXYFromTouch(moveTouch);
-                    //this.paaaaarp(touchPos.x, touchPos.y)
-                    this.currentGesture.gesture.timeLine.push({
-                        t: this.currentRecording.recTimeOffset + this.getElapsed() - this.currentGesture.gesture.timeOffset,
-                        x: touchPos.x,
-                        y: touchPos.y
-                    });
-                    this.currentTouch.movingPos = { x: touchPos.x, y: touchPos.y };
-                }
-            }
-        }
-        else if (ttype === 'end') {
-            if (this.state.isRecording && this.currentGesture.gesture) {
-                this.particles.endParp();
-                let fidx = Array.from(evt.changedTouches).findIndex(x => x.identifier === this.currentTouch.trackTouchIdentifier);
+        else if (e.type === 'touchend') {
+            if (this.currentGesture.gesture) {
+                let fidx = Array.from(e.changedTouches).findIndex(x => x.identifier === this.currentTouch.trackTouchIdentifier);
                 if (fidx !== -1) {
                     this.finishCurrentGesture();
                 }
             }
         }
     }
-    finishCurrentGesture() {
-        this.gestures.push(this.currentGesture.gesture);
-        this.currentGesture.gesture = null;
-        this.currentTouch.movingPos = null;
-    }
-    getElapsed() {
-        let thisTime = new Date();
-        return (thisTime.valueOf() - this.currentRecording.startTime.valueOf());
+    mouseEvent(e) {
+        const getXYFromMouse = (me) => {
+            let target = me.target;
+            let rect = target.getBoundingClientRect();
+            let rx = me.clientX - rect.left;
+            let ry = me.clientY - rect.top;
+            return {
+                x: rx / rect.width,
+                y: ry / rect.height
+            };
+        };
+        const mouseUp = () => {
+            console.log('mouse up');
+            this.finishCurrentGesture();
+        };
+        if (!this.state.isRecording) {
+            return;
+        }
+        if ((e.type === 'mousedown' || e.type === 'mouseenter') && (e.buttons & 1)) {
+            console.log('mouse down');
+            let mPos = getXYFromMouse(e);
+            this.currentGesture.gesture = {
+                type: this.currentGesture.type,
+                timeOffset: this.currentRecording.recTimeOffset + this.getElapsed(),
+                timeLine: [{
+                        t: 0,
+                        x: mPos.x,
+                        y: mPos.y
+                    }]
+            };
+            this.currentTouch.movingPos = { x: mPos.x, y: mPos.y };
+        }
+        else if (e.type === 'mousemove' && this.currentTouch.movingPos) {
+            // if (!(e.buttons & 1)) {
+            //   mouseUp()
+            //   return
+            // }
+            let mPos = getXYFromMouse(e);
+            this.currentGesture.gesture.timeLine.push({
+                t: this.currentRecording.recTimeOffset + this.getElapsed() - this.currentGesture.gesture.timeOffset,
+                x: mPos.x,
+                y: mPos.y
+            });
+            this.currentTouch.movingPos = { x: mPos.x, y: mPos.y };
+        }
+        else if (e.type === 'mouseup' && (!(e.buttons & 1))) {
+            mouseUp();
+        }
+        else if (e.type === 'mouseleave' && this.currentTouch.movingPos) {
+            mouseUp();
+        }
     }
     render() {
-        return (h("div", { class: "overlay", onTouchStart: (e) => this.handleTouch('start', e), onTouchMove: (e) => this.handleTouch('move', e), onTouchEnd: (e) => this.handleTouch('end', e) }));
+        return (h("div", { class: "overlay", onTouchStart: this.touchEvent.bind(this), onMouseDown: this.mouseEvent.bind(this), onMouseEnter: this.mouseEvent.bind(this), onTouchMove: this.touchEvent.bind(this), onMouseMove: this.mouseEvent.bind(this), onMouseLeave: this.mouseEvent.bind(this), onTouchEnd: this.touchEvent.bind(this), onMouseUp: this.mouseEvent.bind(this) }));
     }
     static get is() { return "aikuma-gestate"; }
     static get encapsulation() { return "shadow"; }
