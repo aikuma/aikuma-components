@@ -2,7 +2,7 @@ import { Component } from '@stencil/core'
 
 @Component({
   tag: 'aikuma-translate-igv',
-  styleUrl: 'translate-igv.scss',
+  styleUrl: 'translate-igv.css',
   shadow: true
 })
 export class TranslateIGV {

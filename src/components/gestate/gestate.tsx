@@ -13,7 +13,7 @@ export interface GestateElement extends HTMLElement, Gestate {}
 
 @Component({
   tag: 'aikuma-gestate',
-  styleUrl: 'gestate.scss',
+  styleUrl: 'gestate.css',
   shadow: true
 })
 export class Gestate {

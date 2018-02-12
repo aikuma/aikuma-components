@@ -19,7 +19,7 @@ interface State {
 
 @Component({
   tag: 'aikuma-image-gesture-voice',
-  styleUrls: ['../../../node_modules/swiper/dist/css/swiper.css', 'image-gesture-voice.scss'],
+  styleUrls: ['../../../node_modules/swiper/dist/css/swiper.css', 'image-gesture-voice.css'],
   shadow: true
 })
 export class ImageGestureVoice {

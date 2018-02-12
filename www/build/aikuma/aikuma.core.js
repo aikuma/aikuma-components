@@ -1196,7 +1196,9 @@ var s=document.querySelector("script[data-namespace='aikuma']");if(s){publicPath
         // update the text content for the text only vnode
         // and also only if the text is different than before
         domApi.$setTextContent(elm, newVNode.vtext);
-      }
+        // reset svgMode when svg node is fully patched
+            }
+      'svg' === newVNode.vtag && isSvgMode && (isSvgMode = false);
     }
     // internal variables to be reused per patch() call
         let isUpdate, hostContentNodes, useNativeShadowDom, scopeId;

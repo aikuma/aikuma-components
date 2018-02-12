@@ -12,10 +12,10 @@
       "$": "aikuma-gestate"
     },
     "aikuma-slide-show": {
-      "$": "aikuma-gestate"
+      "$": "aikuma-slide-show"
     },
     "aikuma-translate-igv": {
-      "$": "aikuma-gestate"
+      "$": "aikuma-translate-igv"
     }
   }
 }
