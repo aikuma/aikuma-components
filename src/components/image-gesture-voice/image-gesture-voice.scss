@@ -1,0 +1,36 @@
+.igv {
+  
+  .slidewrapper {
+    position: relative;
+  }
+  .slidewrapper aikuma-gestate {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+
+  }
+  .controls {
+    display: flex;
+    flex-direction: row;
+    .recwrapper {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      .elapsed {
+        position: absolute;
+        font-size: 0.75rem;
+        color: white;
+        bottom: 5px;
+      }
+    }
+  }
+  .buttonicon {
+    width: 32px;
+    height: 32px;
+  }
+  
+}

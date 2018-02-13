@@ -1,0 +1,58 @@
+aikuma-buttony {
+  position: relative;
+  .wrapper {
+    position: relative;
+    top: 0;
+    left: 0;
+    // display: flex;
+    // flex-direction: column;
+    // align-items: center;
+    // justify-content: center;
+    margin: 2px;
+    overflow: hidden;
+    .background {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      border-radius: 100%;
+      background-color: #55f;
+    }
+    .contents {
+      z-index: 1;
+      color: white;
+      user-select: none;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .ripple {
+      transform: scale(0);
+      border-radius: 100%;
+      position: absolute;
+      opacity: 0.75;
+      background-color: #fff;
+      animation: ripple 250ms;
+      z-index: 5;
+      pointer-events: none;
+    }
+  }
+  .wrapper.disabled {
+    .background {
+      background-color: #ccc
+    }
+    .contents {
+      opacity: 0.7;
+    }
+  }
+  @keyframes ripple {
+    to {
+      opacity  : 0;
+      transform: scale(2);
+    }
+   }
+}

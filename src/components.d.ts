@@ -15,6 +15,39 @@ declare global {
 
 
 import {
+  Buttony as AikumaButtony
+} from './components/buttony/buttony';
+
+declare global {
+  interface HTMLAikumaButtonyElement extends AikumaButtony, HTMLStencilElement {
+  }
+  var HTMLAikumaButtonyElement: {
+    prototype: HTMLAikumaButtonyElement;
+    new (): HTMLAikumaButtonyElement;
+  };
+  interface HTMLElementTagNameMap {
+    "aikuma-buttony": HTMLAikumaButtonyElement;
+  }
+  interface ElementTagNameMap {
+    "aikuma-buttony": HTMLAikumaButtonyElement;
+  }
+  namespace JSX {
+    interface IntrinsicElements {
+      "aikuma-buttony": JSXElements.AikumaButtonyAttributes;
+    }
+  }
+  namespace JSXElements {
+    export interface AikumaButtonyAttributes extends HTMLAttributes {
+      color?: string;
+      disabled?: boolean;
+      id?: string;
+      size?: string;
+    }
+  }
+}
+
+
+import {
   Gestate as AikumaGestate
 } from './components/gestate/gestate';
 

@@ -20,7 +20,10 @@ export class Gestate {
   @Element() el: HTMLElement
   @Prop() size: {content: DOMRect, frame: DOMRect}
   @Watch('size')
-  watchHandler(size: {content: DOMRect, frame: DOMRect}) {
+  watchHandler(size: {content: DOMRect, frame: DOMRect}, oldSize: {content: DOMRect, frame: DOMRect}) {
+    if (size.content === oldSize.content && size.frame === oldSize.frame) {
+      return
+    }
     if (size && this.overlay && size.content && size.frame) {
       console.log('gestate size', size)
       let newsize = size.content

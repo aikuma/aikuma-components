@@ -3,6 +3,11 @@ import { Slide, SlideShowElement } from '../slide-show/slide-show'
 import { GestateElement } from '../gestate/gestate'
 import { Microphone, WebAudioPlayer } from 'aikumic'
 import prettyprint from 'prettyprint'
+import fontawesome from '@fortawesome/fontawesome'
+import { faPlay, faStop, faPause } from '@fortawesome/fontawesome-free-solid'
+import { Observable } from 'rxjs/Observable'
+
+fontawesome.library.add(faPlay, faStop, faPause)
 
 export interface TimeLine extends Array<{t: number}>{}
 
@@ -19,7 +24,7 @@ interface State {
 
 @Component({
   tag: 'aikuma-image-gesture-voice',
-  styleUrls: ['../../../node_modules/swiper/dist/css/swiper.css', 'image-gesture-voice.css'],
+  styleUrls: ['../../../node_modules/swiper/dist/css/swiper.css', 'image-gesture-voice.scss'],
   shadow: true
 })
 export class ImageGestureVoice {
@@ -41,6 +46,7 @@ export class ImageGestureVoice {
   }
   currentIndex: number = 0
   player: WebAudioPlayer = new WebAudioPlayer()
+  recObs: Observable<number>
   @Listen('slideSize')
   slideSizeHandler(event: CustomEvent) {
     console.log('igv got slide size notification')
@@ -68,6 +74,16 @@ export class ImageGestureVoice {
       this.slideChange(v)
     }
   }
+  @Listen('clickEvent')
+  clickEventHandler(event: CustomEvent) {
+    console.log('button', event.detail.id, event.detail.type)
+    if (event.detail.id === 'record' && event.detail.type === 'up') {
+      this.pressPlayRec()
+    } else if (event.detail.id === 'play' && event.detail.type === 'up') {
+      
+    }
+  }
+  //faPlusIcon: fontawesome.Icon = fontawesome.icon(faPlus)
   //
   // Lifecycle
   //
@@ -87,6 +103,9 @@ export class ImageGestureVoice {
     })
     this.ssc.loadImages(pics)
     this.mic.connect()
+    this.recObs = this.mic.observeProgress().subscribe((t) => {
+      this.changeState({elapsed: this.getNiceTime(t)})
+    })
   }
   //
   // Logic 
@@ -165,6 +184,9 @@ export class ImageGestureVoice {
   canPlay(): boolean {
     return this.mic.hasRecordedData()
   }
+  canRecord(): boolean {
+    return true
+  }
 
   // button presses
   pressPlayRec(): void {
@@ -216,8 +238,24 @@ export class ImageGestureVoice {
     <aikuma-slide-show></aikuma-slide-show>
     <aikuma-gestate size={{content: this.state.contentSize, frame: this.state.frameSize}}></aikuma-gestate>
   </div>
-  <div class="controls"></div>
-  <button type="button" 
+  <div class="controls">
+    <aikuma-buttony 
+        disabled={!this.canRecord()} 
+        id="record" size="75" color="#e04912"
+        >
+      <div class="buttonicon"
+        innerHTML={fontawesome.icon(this.state.recording ? faPause: faStop).html[0]}>
+      </div>
+    </aikuma-buttony>
+    <aikuma-buttony 
+      disabled={!this.canPlay()} 
+      id="play" size="75" color="#e04912">
+      <div class="buttonicon"
+        innerHTML={fontawesome.icon(this.state.playing ? faStop: faPlay).html[0]}>
+      </div>
+    </aikuma-buttony>
+  </div>
+   <button type="button" 
       onClick={(e: UIEvent) => this.handleClick('record', e)}>
     {
     this.state.recording
@@ -233,6 +271,8 @@ export class ImageGestureVoice {
       : 'Play'
     }
   </button>
+  <div class="elapsed">{this.state.elapsed}</div>
+ 
   <pre>{prettyprint(this.state)}</pre>
 </div>
     )
