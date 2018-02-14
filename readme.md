@@ -2,17 +2,19 @@
 
 # Aikuma Web Component Proof-of-Concept
 
-This repo is a port of the image, gesture, voice activity in the Zahwa mobile app.
-Instead of using Angular and Ionic, these package is a collection of standard Web Components which can be used independent of JavaScript frameworks.
+This repo is a Web Component based port of the image, gesture, voice (IGV) activity in the Zahwa mobile app.
+Instead of using Angular and Ionic, these package is a collection of standard Web Components compiled by Ionic's amazing StencilJS.
 
-This doesn't remotely work yet.
+This is a work in progress, but it's looking good.
 
 ## Components
 
 * aikuma-image-gesture-voice
-* aikuma-translate-igv
+* aikuma-translate-igv (wip)
 * aikuma-gestate
 * aikuma-slide-show
+* aikuma-buttony
+* aikuma-modal
 
 The first two components are higher order components that implement entire activities.
 Both use the the gestate gesture record/playback component and the slow-show component wrapper for Swiper.
@@ -21,21 +23,27 @@ The components require the Aikumic microphone library.
 
 ## Using aikuma-image-gesture-voice
 
-<aikuma-image-gesture-voice images=""></aikuma-image-gesture-voice>
+<aikuma-image-gesture-voice></aikuma-image-gesture-voice>
 
-Emits Custom DOM Event 'igv-complete' with `IGVData` data type.
+```let igv = document.querySelector('aikuma-image-gesture-voice')
+igv.loadFromImageURLs(['http://...pic.jpg', 'http://...pic.jpg'...])
+igv.waitForComplete().then((igvdata) => {
+  if (igvdata) {
+    console.log('aikuma-image-gesture-voice returned',igvdata)
+  } else {
+    console.log('aikuma-image-gesture-voice cancelled')
+  }
+})
+```
+## Demo
 
-## Using aikuma-translate-igv
+Simply `npm start`
 
-<aikuma-translate-igv igvdata=""></aikuma-translate-igv>
-
-Emits Custom DOM Event 'igv-trans-complete' with `AlignedAlign` data type.
+See src/index.html
 
 # Why?
 
-This is part of Mat Bettinson's PhD research. Specifically, part of an investigation into a suitable architecture and implementation pattern for reusable software components for language-related apps.
+This is part of Mat Bettinson's PhD research. Specifically, an investigation into a suitable architecture and implementation pattern for reusable software components for language-related apps.
 
-TBC...
-
-
+Web Components are where it's at. Seriously.
 
