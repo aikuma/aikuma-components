@@ -1,5 +1,6 @@
 aikuma-buttony {
   position: relative;
+  z-index: 10;
   .wrapper {
     position: relative;
     top: 0;
@@ -18,7 +19,7 @@ aikuma-buttony {
       height: 100%;
       z-index: -1;
       border-radius: 100%;
-      background-color: #55f;
+      background-color: var(--app-primary-color)
     }
     .contents {
       z-index: 1;
@@ -29,6 +30,9 @@ aikuma-buttony {
       display: flex;
       justify-content: center;
       align-items: center;
+    }
+    .contents.clear {
+      color: var(--app-primary-color);
     }
     .ripple {
       transform: scale(0);
@@ -43,10 +47,13 @@ aikuma-buttony {
   }
   .wrapper.disabled {
     .background {
-      background-color: #ccc
+      background-color: var(--app-disabled-color);
     }
     .contents {
       opacity: 0.7;
+    }
+    .contents.clear {
+      color: var(--app-disabled-color);
     }
   }
   @keyframes ripple {

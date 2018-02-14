@@ -1,6 +1,7 @@
 exports.config = {
   namespace: 'aikuma',
-  generateDistribution: true
+  generateDistribution: true,
+  globalStyle: 'src/global/variables.css'
 };
 
 exports.devServer = {

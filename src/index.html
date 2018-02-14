@@ -5,11 +5,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0">
   <title>Stencil Component Starter</title>
   <script src="/build/aikuma.js"></script>
-
+  <link rel="stylesheet" type="text/css" href="build/aikuma.css">
 </head>
 <body>
 
   <aikuma-image-gesture-voice></aikuma-image-gesture-voice>
+
+  <script type="text/javascript">
+    (function() {
+      document.addEventListener("DOMContentLoaded", function(){
+        let igv = document.querySelector('aikuma-image-gesture-voice')
+        let pics = [1,2,4,5].map((i) => {
+          return 'http://localhost:8000/som-hand'+i.toString()+'.jpg'
+        })
+        igv.loadFromImageURLs(pics)
+        igv.waitForComplete().then((igvdata) => {
+          if (igvdata) {
+            console.log('aikuma-image-gesture-voice returned',igvdata)
+          } else {
+            console.log('aikuma-image-gesture-voice cancelled')
+          }
+        })
+      })
+    })();
+ </script>
 
 </body>
 </html>

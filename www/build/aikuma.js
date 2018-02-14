@@ -1,7 +1,7 @@
 /*! Built with http://stenciljs.com */
-(function(win, doc, appNamespace, urlNamespace, publicPath, appCore, appCoreSsr, appCorePolyfilled, hydratedCssClass, components) {
+(function(win, doc, appNamespace, urlNamespace, publicPath, discoverPublicPath, appCore, appCoreSsr, appCorePolyfilled, hydratedCssClass, components) {
 
-function init(win, doc, appNamespace, urlNamespace, publicPath, appCore, appCorePolyfilled, hydratedCssClass, components, x, y) {
+function init(win, doc, docScripts, appNamespace, urlNamespace, publicPath, discoverPublicPath, appCore, appCorePolyfilled, hydratedCssClass, components, x, y) {
     // create global namespace if it doesn't already exist
     (win[appNamespace] = win[appNamespace] || {}).components = components;
     y = components.filter(function (c) { return c[2]; }).map(function (c) { return c[0]; });
@@ -15,10 +15,12 @@ function init(win, doc, appNamespace, urlNamespace, publicPath, appCore, appCore
     }
     // get this current script
     // script tag cannot use "async" attribute
-    x = doc.scripts[doc.scripts.length - 1];
-    if (x && x.src) {
-        y = x.src.split('/').slice(0, -1);
-        publicPath = (y.join('/')) + (y.length ? '/' : '') + urlNamespace + '/';
+    if (discoverPublicPath) {
+        x = docScripts[docScripts.length - 1];
+        if (x && x.src) {
+            y = x.src.split('/').slice(0, -1);
+            publicPath = (y.join('/')) + (y.length ? '/' : '') + urlNamespace + '/';
+        }
     }
     // request the core this browser needs
     // test for native support of custom elements and fetch
@@ -59,6 +61,6 @@ function supportsCssVariables(win) {
 }
 
 
-init(win, doc, appNamespace, urlNamespace, publicPath, appCore, appCoreSsr, appCorePolyfilled, hydratedCssClass, components);
+init(win, doc, doc.scripts, appNamespace, urlNamespace, publicPath, discoverPublicPath, appCore, appCoreSsr, appCorePolyfilled, hydratedCssClass, components);
 
-})(window, document, "aikuma","aikuma","/build/aikuma/","aikuma.core.js","es5-build-disabled.js","hydrated",[["aikuma-buttony","aikuma-buttony",1,[["color",1,1,2],["disabled",1,1,3],["el",7],["id",1,1,2],["size",1,1,2]]],["aikuma-gestate","aikuma-gestate",1,[["clearAll",6],["el",7],["getGestures",6],["loadGestures",6],["playGestures",6],["record",6],["size",1],["stopPlay",6],["stopRecord",6]],1],["aikuma-image-gesture-voice","aikuma-gestate",1,[["el",7],["state",5]],1,[["slideSize","slideSizeHandler"],["slideEvent","slideEvenHandler"],["clickEvent","clickEventHandler"]]],["aikuma-slide-show","aikuma-slide-show",1,[["el",7],["getCurrent",6],["imagesizes",5],["loadImages",6],["slideTo",6],["slides",5]],1],["aikuma-translate-igv","aikuma-translate-igv",1,0,1]]);
+})(window, document, "aikuma","aikuma","/build/aikuma/",true,"aikuma.core.js","es5-build-disabled.js","hydrated",[["aikuma-buttony","aikuma-buttony",1,[["clear",1,1,3],["color",1,1,2],["disabled",1,1,3],["el",7],["id",1,1,2],["size",1,1,2]]],["aikuma-gestate","aikuma-gestate",1,[["clearAll",6],["el",7],["getGestures",6],["loadGestures",6],["playGestures",6],["record",6],["size",1],["stopPlay",6],["stopRecord",6]],1],["aikuma-image-gesture-voice","aikuma-gestate",1,[["el",7],["loadFromImageURLs",6],["restoreFromIGVData",6],["state",5],["waitForComplete",6]],1,[["slideSize","slideSizeHandler"],["slideEvent","slideEvenHandler"],["clickEvent","clickEventHandler"]]],["aikuma-modal","aikuma-buttony",1,[["el",7],["presentDialog",6],["state",5]]],["aikuma-slide-show","aikuma-slide-show",1,[["el",7],["getCurrent",6],["imagesizes",5],["loadImages",6],["lockPrevious",6],["slideTo",6],["slides",5],["unlockPrevious",6]],1],["aikuma-translate-igv","aikuma-translate-igv",1,0,1]]);

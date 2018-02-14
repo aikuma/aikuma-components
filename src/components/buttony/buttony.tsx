@@ -12,6 +12,7 @@ export class Buttony {
   @Prop() disabled: boolean
   @Prop() size: string = '50'
   @Prop() id: string = null
+  @Prop() clear: boolean = false
   @Event() clickEvent: EventEmitter<{id: string, type: string}>
 
   // watchHandler(size: {content: DOMRect, frame: DOMRect}) {
@@ -28,11 +29,10 @@ export class Buttony {
   // Lifecycle
   //
   componentDidLoad() {
-    console.log('buttony did load')
+    console.log('buttony did load', this.id, this.clear)
     this.wrapper = this.el.querySelector('.wrapper')
   }
 
-  //
   // Logic
   //
   doRipple(xp: number, yp: number) {
@@ -110,12 +110,16 @@ export class Buttony {
     'wrapper ' +
     (this.disabled ? 'disabled' : '')
   }>
-  <div class="background"
-    style={{ 
-      backgroundColor: this.disabled ? '#aaa' : this.color
-    }}>
-  </div>
-  <div class="contents">
+  { 
+    !this.clear ?
+      <div class="background"
+        style={
+          this.color && !this.disabled ? {backgroundColor: this.color} : {}
+        }>
+      </div> :
+      null
+  }
+  <div class={'contents ' + (this.clear ? 'clear' : '')}>
     <slot />
   </div>
 </div>   

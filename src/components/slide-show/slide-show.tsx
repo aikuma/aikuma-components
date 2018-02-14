@@ -34,6 +34,7 @@ export class SlideShow {
   updating: boolean = false
   initialized: boolean = false
   @State() imagesizes: {width: number, height: number}[] = []
+  prevLocked: boolean = false
 
   componentWillLoad() {
     console.log('SlideShow is about to be rendered')
@@ -130,6 +131,9 @@ export class SlideShow {
     if (idx === this.swiper.main.activeIndex) {
       return
     }
+    if (idx < this.swiper.main.activeIndex && this.prevLocked) {
+      return
+    }
     this.slideEvent.emit({type:'start', val: {
         from: this.swiper.main.activeIndex, 
         to: idx
@@ -137,6 +141,15 @@ export class SlideShow {
     })
     this.swiper.thumb.slideTo(idx)
     this.swiper.main.slideTo(idx)
+  }
+
+  @Method()
+  lockPrevious() {
+    this.prevLocked = true
+  }
+  @Method()
+  unlockPrevious() {
+    this.prevLocked = false
   }
 
   @Method()

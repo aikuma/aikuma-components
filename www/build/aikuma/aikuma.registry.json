@@ -14,6 +14,9 @@
     "aikuma-image-gesture-voice": {
       "$": "aikuma-gestate"
     },
+    "aikuma-modal": {
+      "$": "aikuma-buttony"
+    },
     "aikuma-slide-show": {
       "$": "aikuma-slide-show"
     },

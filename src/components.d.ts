@@ -38,6 +38,7 @@ declare global {
   }
   namespace JSXElements {
     export interface AikumaButtonyAttributes extends HTMLAttributes {
+      clear?: boolean;
       color?: string;
       disabled?: boolean;
       id?: string;
@@ -101,6 +102,36 @@ declare global {
   }
   namespace JSXElements {
     export interface AikumaImageGestureVoiceAttributes extends HTMLAttributes {
+      
+    }
+  }
+}
+
+
+import {
+  Modal as AikumaModal
+} from './components/modal/modal';
+
+declare global {
+  interface HTMLAikumaModalElement extends AikumaModal, HTMLStencilElement {
+  }
+  var HTMLAikumaModalElement: {
+    prototype: HTMLAikumaModalElement;
+    new (): HTMLAikumaModalElement;
+  };
+  interface HTMLElementTagNameMap {
+    "aikuma-modal": HTMLAikumaModalElement;
+  }
+  interface ElementTagNameMap {
+    "aikuma-modal": HTMLAikumaModalElement;
+  }
+  namespace JSX {
+    interface IntrinsicElements {
+      "aikuma-modal": JSXElements.AikumaModalAttributes;
+    }
+  }
+  namespace JSXElements {
+    export interface AikumaModalAttributes extends HTMLAttributes {
       
     }
   }

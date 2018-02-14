@@ -516,7 +516,7 @@ var s=document.querySelector("script[data-namespace='aikuma']");if(s){publicPath
     // all is good, this component has been told it's time to finish loading
     // it's possible that we've already decided to destroy this element
     // check if this element has any actively loading child elements
-    if (elm._instance && !elm._hasDestroyed && (!elm.$activeLoading || !elm.$activeLoading.length)) {
+    if (!elm._hasLoaded && elm._instance && !elm._hasDestroyed && (!elm.$activeLoading || !elm.$activeLoading.length)) {
       // cool, so at this point this element isn't already being destroyed
       // and it does not have any child elements that are still loading
       // ensure we remove any child references cuz it doesn't matter at this point
@@ -851,7 +851,7 @@ var s=document.querySelector("script[data-namespace='aikuma']");if(s){publicPath
             }
           }
         }
-        plt.activeRender || 
+        !plt.activeRender && elm.$rendered && 
         // looks like this value actually changed, so we've got work to do!
         // but only if we've already created an instance, otherwise just chill out
         // queue that we need to do an update, but don't worry about queuing
@@ -932,7 +932,7 @@ var s=document.querySelector("script[data-namespace='aikuma']");if(s){publicPath
         // Event Handlers
         // adding an standard event listener, like <button onClick=...> or something
         memberName = toLowerCase(memberName.substring(2));
-        newValue ? oldValue || 
+        newValue ? newValue !== oldValue && 
         // add listener
         plt.domApi.$addEventListener(elm, memberName, newValue) : 
         // remove listener
@@ -1669,10 +1669,10 @@ var s=document.querySelector("script[data-namespace='aikuma']");if(s){publicPath
             // dynamically generate the attribute name from the prop name
             // also add it to our array of attributes we need to observe
             cmpMeta.membersMeta[propName].attribName);
-            // set the array of all the attributes to keep an eye on
-            // https://www.youtube.com/watch?v=RBs21CFBALI
-                        HostElementConstructor.observedAttributes = observedAttributes;
           }
+          // set the array of all the attributes to keep an eye on
+          // https://www.youtube.com/watch?v=RBs21CFBALI
+                    HostElementConstructor.observedAttributes = observedAttributes;
         }
         // define the custom element
                 win.customElements.define(cmpMeta.tagNameMeta, HostElementConstructor);
