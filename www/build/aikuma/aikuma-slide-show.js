@@ -2,17 +2,106 @@
 const { h, Context } = window.aikuma;
 
 /**
- * Dom7 2.0.1
+ * SSR Window 1.0.0
+ * Better handling for window object in SSR environment
+ * https://github.com/nolimits4web/ssr-window
+ *
+ * Copyright 2018, Vladimir Kharlampidi
+ *
+ * Licensed under MIT
+ *
+ * Released on: February 10, 2018
+ */
+var d;
+if (typeof document === 'undefined') {
+  d = {
+    body: {},
+    addEventListener: function addEventListener() {},
+    removeEventListener: function removeEventListener() {},
+    activeElement: {
+      blur: function blur() {},
+      nodeName: '',
+    },
+    querySelector: function querySelector() {
+      return null;
+    },
+    querySelectorAll: function querySelectorAll() {
+      return [];
+    },
+    getElementById: function getElementById() {
+      return null;
+    },
+    createEvent: function createEvent() {
+      return {
+        initEvent: function initEvent() {},
+      };
+    },
+    createElement: function createElement() {
+      return {
+        children: [],
+        childNodes: [],
+        style: {},
+        setAttribute: function setAttribute() {},
+        getElementsByTagName: function getElementsByTagName() {
+          return [];
+        },
+      };
+    },
+    location: { hash: '' },
+  };
+} else {
+  // eslint-disable-next-line
+  d = document;
+}
+
+var doc = d;
+
+var w;
+if (typeof window === 'undefined') {
+  w = {
+    document: doc,
+    navigator: {
+      userAgent: '',
+    },
+    location: {},
+    history: {},
+    CustomEvent: function CustomEvent() {
+      return this;
+    },
+    addEventListener: function addEventListener() {},
+    removeEventListener: function removeEventListener() {},
+    getComputedStyle: function getComputedStyle() {
+      return {
+        getPropertyValue: function getPropertyValue() {
+          return '';
+        },
+      };
+    },
+    Image: function Image() {},
+    Date: function Date() {},
+    screen: {},
+    setTimeout: function setTimeout() {},
+    clearTimeout: function clearTimeout() {},
+  };
+} else {
+  // eslint-disable-next-line
+  w = window;
+}
+
+var win = w;
+
+/**
+ * Dom7 2.0.2
  * Minimalistic JavaScript library for DOM manipulation, with a jQuery-compatible API
  * http://framework7.io/docs/dom.html
  *
- * Copyright 2017, Vladimir Kharlampidi
+ * Copyright 2018, Vladimir Kharlampidi
  * The iDangero.us
  * http://www.idangero.us/
  *
  * Licensed under MIT
  *
- * Released on: October 2, 2017
+ * Released on: February 10, 2018
  */
 class Dom7 {
   constructor(arr) {
@@ -48,7 +137,7 @@ function $(selector, context) {
         if (html.indexOf('<td') === 0 || html.indexOf('<th') === 0) toCreate = 'tr';
         if (html.indexOf('<tbody') === 0) toCreate = 'table';
         if (html.indexOf('<option') === 0) toCreate = 'select';
-        tempParent = document.createElement(toCreate);
+        tempParent = doc.createElement(toCreate);
         tempParent.innerHTML = html;
         for (i = 0; i < tempParent.childNodes.length; i += 1) {
           arr.push(tempParent.childNodes[i]);
@@ -56,16 +145,16 @@ function $(selector, context) {
       } else {
         if (!context && selector[0] === '#' && !selector.match(/[ .<>:~]/)) {
           // Pure ID selector
-          els = [document.getElementById(selector.trim().split('#')[1])];
+          els = [doc.getElementById(selector.trim().split('#')[1])];
         } else {
           // Other selectors
-          els = (context || document).querySelectorAll(selector.trim());
+          els = (context || doc).querySelectorAll(selector.trim());
         }
         for (i = 0; i < els.length; i += 1) {
           if (els[i]) arr.push(els[i]);
         }
       }
-    } else if (selector.nodeType || selector === window || selector === document) {
+    } else if (selector.nodeType || selector === win || selector === doc) {
       // Node/element
       arr.push(selector);
     } else if (selector.length > 0 && selector[0].nodeType) {
@@ -304,13 +393,13 @@ function trigger(...args) {
     for (let j = 0; j < this.length; j += 1) {
       let evt;
       try {
-        evt = new window.CustomEvent(events[i], {
+        evt = new win.CustomEvent(events[i], {
           detail: eventData,
           bubbles: true,
           cancelable: true,
         });
       } catch (e) {
-        evt = document.createEvent('Event');
+        evt = doc.createEvent('Event');
         evt.initEvent(events[i], true, true);
         evt.detail = eventData;
       }
@@ -368,11 +457,11 @@ function offset() {
   if (this.length > 0) {
     const el = this[0];
     const box = el.getBoundingClientRect();
-    const body = document.body;
+    const body = doc.body;
     const clientTop = el.clientTop || body.clientTop || 0;
     const clientLeft = el.clientLeft || body.clientLeft || 0;
-    const scrollTop = el === window ? window.scrollY : el.scrollTop;
-    const scrollLeft = el === window ? window.scrollX : el.scrollLeft;
+    const scrollTop = el === win ? win.scrollY : el.scrollTop;
+    const scrollLeft = el === win ? win.scrollX : el.scrollLeft;
     return {
       top: (box.top + scrollTop) - clientTop,
       left: (box.left + scrollLeft) - clientLeft,
@@ -382,14 +471,14 @@ function offset() {
   return null;
 }
 function styles() {
-  if (this[0]) return window.getComputedStyle(this[0], null);
+  if (this[0]) return win.getComputedStyle(this[0], null);
   return {};
 }
 function css(props, value) {
   let i;
   if (arguments.length === 1) {
     if (typeof props === 'string') {
-      if (this[0]) return window.getComputedStyle(this[0], null).getPropertyValue(props);
+      if (this[0]) return win.getComputedStyle(this[0], null).getPropertyValue(props);
     } else {
       for (i = 0; i < this.length; i += 1) {
         // eslint-disable-next-line
@@ -464,8 +553,8 @@ function is(selector) {
       if (compareWith[i] === el) return true;
     }
     return false;
-  } else if (selector === document) return el === document;
-  else if (selector === window) return el === window;
+  } else if (selector === doc) return el === doc;
+  else if (selector === win) return el === win;
 
   if (selector.nodeType || selector instanceof Dom7) {
     compareWith = selector.nodeType ? [selector] : selector;
@@ -511,7 +600,7 @@ function append(...args) {
     newChild = args[k];
     for (let i = 0; i < this.length; i += 1) {
       if (typeof newChild === 'string') {
-        const tempDiv = document.createElement('div');
+        const tempDiv = doc.createElement('div');
         tempDiv.innerHTML = newChild;
         while (tempDiv.firstChild) {
           this[i].appendChild(tempDiv.firstChild);
@@ -533,7 +622,7 @@ function append(...args) {
   let j;
   for (i = 0; i < this.length; i += 1) {
     if (typeof newChild === 'string') {
-      const tempDiv = document.createElement('div');
+      const tempDiv = doc.createElement('div');
       tempDiv.innerHTML = newChild;
       for (j = tempDiv.childNodes.length - 1; j >= 0; j -= 1) {
         this[i].insertBefore(tempDiv.childNodes[j], this[i].childNodes[0]);
@@ -688,7 +777,7 @@ function add(...args) {
 const noTrigger = ('resize scroll').split(' ');
 
 /**
- * Swiper 4.1.0
+ * Swiper 4.1.6
  * Most modern mobile touch slider and framework with hardware accelerated transitions
  * http://www.idangero.us/swiper/
  *
@@ -696,7 +785,7 @@ const noTrigger = ('resize scroll').split(' ');
  *
  * Released under the MIT License
  *
- * Released on: January 13, 2018
+ * Released on: February 11, 2018
  */
 
 const Methods = {
@@ -742,29 +831,6 @@ const Methods = {
 Object.keys(Methods).forEach((methodName) => {
   $.fn[methodName] = Methods[methodName];
 });
-
-let w;
-if (typeof window === 'undefined') {
-  w = {
-    navigator: {
-      userAgent: '',
-    },
-    location: {},
-    history: {},
-    addEventListener() {},
-    removeEventListener() {},
-    getComputedStyle() {
-      return {};
-    },
-    Image() {},
-    Date() {},
-    screen: {},
-  };
-} else {
-  w = window;
-}
-
-const win = w;
 
 const Utils = {
   deleteProps(obj) {
@@ -873,38 +939,6 @@ const Utils = {
     return to;
   },
 };
-
-let d;
-if (typeof document === 'undefined') {
-  d = {
-    addEventListener() {},
-    removeEventListener() {},
-    activeElement: {
-      blur() {},
-      nodeName: '',
-    },
-    querySelector() {
-      return {};
-    },
-    querySelectorAll() {
-      return [];
-    },
-    createElement() {
-      return {
-        style: {},
-        setAttribute() {},
-        getElementsByTagName() {
-          return [];
-        },
-      };
-    },
-    location: { hash: '' },
-  };
-} else {
-  d = document;
-}
-
-const doc = d;
 
 const Support = (function Support() {
   const testDiv = doc.createElement('div');
@@ -1714,18 +1748,29 @@ var setTransition = function (duration, byController) {
   swiper.emit('setTransition', duration, byController);
 };
 
-var transitionStart = function (runCallbacks = true) {
+var transitionStart = function (runCallbacks = true, direction) {
   const swiper = this;
   const { activeIndex, params, previousIndex } = swiper;
   if (params.autoHeight) {
     swiper.updateAutoHeight();
   }
+
+  let dir = direction;
+  if (!dir) {
+    if (activeIndex > previousIndex) dir = 'next';
+    else if (activeIndex < previousIndex) dir = 'prev';
+    else dir = 'reset';
+  }
+
   swiper.emit('transitionStart');
 
-  if (!runCallbacks) return;
-  if (activeIndex !== previousIndex) {
+  if (runCallbacks && activeIndex !== previousIndex) {
+    if (dir === 'reset') {
+      swiper.emit('slideResetTransitionStart');
+      return;
+    }
     swiper.emit('slideChangeTransitionStart');
-    if (activeIndex > previousIndex) {
+    if (dir === 'next') {
       swiper.emit('slideNextTransitionStart');
     } else {
       swiper.emit('slidePrevTransitionStart');
@@ -1733,21 +1778,31 @@ var transitionStart = function (runCallbacks = true) {
   }
 };
 
-var transitionEnd$1 = function (runCallbacks = true) {
+var transitionEnd$1 = function (runCallbacks = true, direction) {
   const swiper = this;
   const { activeIndex, previousIndex } = swiper;
   swiper.animating = false;
   swiper.setTransition(0);
 
+  let dir = direction;
+  if (!dir) {
+    if (activeIndex > previousIndex) dir = 'next';
+    else if (activeIndex < previousIndex) dir = 'prev';
+    else dir = 'reset';
+  }
+
   swiper.emit('transitionEnd');
-  if (runCallbacks) {
-    if (activeIndex !== previousIndex) {
-      swiper.emit('slideChangeTransitionEnd');
-      if (activeIndex > previousIndex) {
-        swiper.emit('slideNextTransitionEnd');
-      } else {
-        swiper.emit('slidePrevTransitionEnd');
-      }
+
+  if (runCallbacks && activeIndex !== previousIndex) {
+    if (dir === 'reset') {
+      swiper.emit('slideResetTransitionEnd');
+      return;
+    }
+    swiper.emit('slideChangeTransitionEnd');
+    if (dir === 'next') {
+      swiper.emit('slideNextTransitionEnd');
+    } else {
+      swiper.emit('slidePrevTransitionEnd');
     }
   }
 };
@@ -1766,6 +1821,9 @@ var slideTo = function (index$$1 = 0, speed = this.params.speed, runCallbacks = 
   const {
     params, snapGrid, slidesGrid, previousIndex, activeIndex, rtl, $wrapperEl,
   } = swiper;
+  if (swiper.animating && params.preventIntercationOnTransition) {
+    return false;
+  }
 
   let snapIndex = Math.floor(slideIndex / params.slidesPerGroup);
   if (snapIndex >= snapGrid.length) snapIndex = snapGrid.length - 1;
@@ -1787,9 +1845,8 @@ var slideTo = function (index$$1 = 0, speed = this.params.speed, runCallbacks = 
       }
     }
   }
-
   // Directions locks
-  if (swiper.initialized) {
+  if (swiper.initialized && slideIndex !== activeIndex) {
     if (!swiper.allowSlideNext && translate < swiper.translate && translate < swiper.minTranslate()) {
       return false;
     }
@@ -1797,6 +1854,12 @@ var slideTo = function (index$$1 = 0, speed = this.params.speed, runCallbacks = 
       if ((activeIndex || 0) !== slideIndex) return false;
     }
   }
+
+  let direction;
+  if (slideIndex > activeIndex) direction = 'next';
+  else if (slideIndex < activeIndex) direction = 'prev';
+  else direction = 'reset';
+
 
   // Update Index
   if ((rtl && -translate === swiper.translate) || (!rtl && translate === swiper.translate)) {
@@ -1809,6 +1872,10 @@ var slideTo = function (index$$1 = 0, speed = this.params.speed, runCallbacks = 
     if (params.effect !== 'slide') {
       swiper.setTranslate(translate);
     }
+    if (direction !== 'reset') {
+      swiper.transitionStart(runCallbacks, direction);
+      swiper.transitionEnd(runCallbacks, direction);
+    }
     return false;
   }
 
@@ -1818,25 +1885,35 @@ var slideTo = function (index$$1 = 0, speed = this.params.speed, runCallbacks = 
     swiper.updateActiveIndex(slideIndex);
     swiper.updateSlidesClasses();
     swiper.emit('beforeTransitionStart', speed, internal);
-    swiper.transitionStart(runCallbacks);
-    swiper.transitionEnd(runCallbacks);
+    swiper.transitionStart(runCallbacks, direction);
+    swiper.transitionEnd(runCallbacks, direction);
   } else {
     swiper.setTransition(speed);
     swiper.setTranslate(translate);
     swiper.updateActiveIndex(slideIndex);
     swiper.updateSlidesClasses();
     swiper.emit('beforeTransitionStart', speed, internal);
-    swiper.transitionStart(runCallbacks);
+    swiper.transitionStart(runCallbacks, direction);
     if (!swiper.animating) {
       swiper.animating = true;
       $wrapperEl.transitionEnd(() => {
         if (!swiper || swiper.destroyed) return;
-        swiper.transitionEnd(runCallbacks);
+        swiper.transitionEnd(runCallbacks, direction);
       });
     }
   }
 
   return true;
+};
+
+var slideToLoop = function (index$$1 = 0, speed = this.params.speed, runCallbacks = true, internal) {
+  const swiper = this;
+  let newIndex = index$$1;
+  if (swiper.params.loop) {
+    newIndex += swiper.loopedSlides;
+  }
+
+  return swiper.slideTo(newIndex, speed, runCallbacks, internal);
 };
 
 /* eslint no-unused-vars: "off" */
@@ -1921,6 +1998,7 @@ var slideToClickedSlide = function () {
 
 var slide = {
   slideTo,
+  slideToLoop,
   slideNext,
   slidePrev,
   slideReset,
@@ -1973,21 +2051,32 @@ var loopCreate = function () {
 var loopFix = function () {
   const swiper = this;
   const {
-    params, activeIndex, slides, loopedSlides, allowSlidePrev, allowSlideNext,
+    params, activeIndex, slides, loopedSlides, allowSlidePrev, allowSlideNext, snapGrid, rtl,
   } = swiper;
   let newIndex;
   swiper.allowSlidePrev = true;
   swiper.allowSlideNext = true;
+
+  const snapTranslate = -snapGrid[activeIndex];
+  const diff = snapTranslate - swiper.getTranslate();
+
+
   // Fix For Negative Oversliding
   if (activeIndex < loopedSlides) {
     newIndex = (slides.length - (loopedSlides * 3)) + activeIndex;
     newIndex += loopedSlides;
-    swiper.slideTo(newIndex, 0, false, true);
+    const slideChanged = swiper.slideTo(newIndex, 0, false, true);
+    if (slideChanged && diff !== 0) {
+      swiper.setTranslate((rtl ? -swiper.translate : swiper.translate) - diff);
+    }
   } else if ((params.slidesPerView === 'auto' && activeIndex >= loopedSlides * 2) || (activeIndex > slides.length - (params.slidesPerView * 2))) {
     // Fix For Positive Oversliding
     newIndex = -slides.length + activeIndex + loopedSlides;
     newIndex += loopedSlides;
-    swiper.slideTo(newIndex, 0, false, true);
+    const slideChanged = swiper.slideTo(newIndex, 0, false, true);
+    if (slideChanged && diff !== 0) {
+      swiper.setTranslate((rtl ? -swiper.translate : swiper.translate) - diff);
+    }
   }
   swiper.allowSlidePrev = allowSlidePrev;
   swiper.allowSlideNext = allowSlideNext;
@@ -2217,12 +2306,15 @@ var onTouchStart = function (event) {
   const swiper = this;
   const data$$1 = swiper.touchEventsData;
   const { params, touches } = swiper;
+  if (swiper.animating && params.preventIntercationOnTransition) {
+    return;
+  }
   let e = event;
   if (e.originalEvent) e = e.originalEvent;
   data$$1.isTouchEvent = e.type === 'touchstart';
   if (!data$$1.isTouchEvent && 'which' in e && e.which === 3) return;
   if (data$$1.isTouched && data$$1.isMoved) return;
-  if (params.noSwiping && $(e.target).closest(`.${params.noSwipingClass}`)[0]) {
+  if (params.noSwiping && $(e.target).closest(params.noSwipingSelector ? params.noSwipingSelector : `.${params.noSwipingClass}`)[0]) {
     swiper.allowClick = true;
     return;
   }
@@ -2242,7 +2334,7 @@ var onTouchStart = function (event) {
     !Device.cordova &&
     params.iOSEdgeSwipeDetection &&
     (startX <= params.iOSEdgeSwipeThreshold) &&
-    (startX >= window.screen.width - params.iOSEdgeSwipeThreshold)
+    (startX >= win.screen.width - params.iOSEdgeSwipeThreshold)
   ) {
     return;
   }
@@ -2265,7 +2357,11 @@ var onTouchStart = function (event) {
   if (e.type !== 'touchstart') {
     let preventDefault = true;
     if ($(e.target).is(data$$1.formElements)) preventDefault = false;
-    if (doc.activeElement && $(doc.activeElement).is(data$$1.formElements)) {
+    if (
+      doc.activeElement &&
+      $(doc.activeElement).is(data$$1.formElements) &&
+      doc.activeElement !== e.target
+    ) {
       doc.activeElement.blur();
     }
     if (preventDefault && swiper.allowTouchMove) {
@@ -2281,6 +2377,12 @@ var onTouchMove = function (event) {
   const { params, touches, rtl } = swiper;
   let e = event;
   if (e.originalEvent) e = e.originalEvent;
+  if (!data$$1.isTouched) {
+    if (data$$1.startMoving && data$$1.isScrolling) {
+      swiper.emit('touchMoveOpposite', e);
+    }
+    return;
+  }
   if (data$$1.isTouchEvent && e.type === 'mousemove') return;
   const pageX = e.type === 'touchmove' ? e.targetTouches[0].pageX : e.pageX;
   const pageY = e.type === 'touchmove' ? e.targetTouches[0].pageY : e.pageY;
@@ -2359,7 +2461,6 @@ var onTouchMove = function (event) {
       data$$1.startMoving = true;
     }
   }
-  if (!data$$1.isTouched) return;
   if (data$$1.isScrolling) {
     data$$1.isTouched = false;
     return;
@@ -2483,7 +2584,14 @@ var onTouchEnd = function (event) {
     swiper.emit('touchEnd', e);
   }
   data$$1.allowTouchCallbacks = false;
-  if (!data$$1.isTouched) return;
+  if (!data$$1.isTouched) {
+    if (data$$1.isMoved && params.grabCursor) {
+      swiper.setGrabCursor(false);
+    }
+    data$$1.isMoved = false;
+    data$$1.startMoving = false;
+    return;
+  }
   // Return Grab Cursor
   if (params.grabCursor && data$$1.isMoved && data$$1.isTouched && (swiper.allowSlideNext === true || swiper.allowSlidePrev === true)) {
     swiper.setGrabCursor(false);
@@ -2518,10 +2626,12 @@ var onTouchEnd = function (event) {
   if (!data$$1.isTouched || !data$$1.isMoved || !swiper.swipeDirection || touches.diff === 0 || data$$1.currentTranslate === data$$1.startTranslate) {
     data$$1.isTouched = false;
     data$$1.isMoved = false;
+    data$$1.startMoving = false;
     return;
   }
   data$$1.isTouched = false;
   data$$1.isMoved = false;
+  data$$1.startMoving = false;
 
   let currentPos;
   if (params.followFinger) {
@@ -2626,7 +2736,7 @@ var onTouchEnd = function (event) {
         swiper.updateProgress(afterBouncePosition);
         swiper.setTransition(momentumDuration);
         swiper.setTranslate(newPosition);
-        swiper.transitionStart();
+        swiper.transitionStart(true, swiper.swipeDirection);
         swiper.animating = true;
         $wrapperEl.transitionEnd(() => {
           if (!swiper || swiper.destroyed || !data$$1.allowMomentumBounce) return;
@@ -2643,7 +2753,7 @@ var onTouchEnd = function (event) {
         swiper.updateProgress(newPosition);
         swiper.setTransition(momentumDuration);
         swiper.setTranslate(newPosition);
-        swiper.transitionStart();
+        swiper.transitionStart(true, swiper.swipeDirection);
         if (!swiper.animating) {
           swiper.animating = true;
           $wrapperEl.transitionEnd(() => {
@@ -2770,7 +2880,6 @@ var onClick = function (e) {
 
 function attachEvents() {
   const swiper = this;
-
   const {
     params, touchEvents, el, wrapperEl,
   } = swiper;
@@ -2788,10 +2897,10 @@ function attachEvents() {
 
   // Touch Events
   {
-    if (Support.pointerEvents || Support.prefixedPointerEvents) {
+    if (!Support.touch && (Support.pointerEvents || Support.prefixedPointerEvents)) {
       target.addEventListener(touchEvents.start, swiper.onTouchStart, false);
-      (Support.touch ? target : doc).addEventListener(touchEvents.move, swiper.onTouchMove, capture);
-      (Support.touch ? target : doc).addEventListener(touchEvents.end, swiper.onTouchEnd, false);
+      doc.addEventListener(touchEvents.move, swiper.onTouchMove, capture);
+      doc.addEventListener(touchEvents.end, swiper.onTouchEnd, false);
     } else {
       if (Support.touch) {
         const passiveListener = touchEvents.start === 'touchstart' && Support.passiveListener && params.passiveListeners ? { passive: true, capture: false } : false;
@@ -2827,10 +2936,10 @@ function detachEvents() {
 
   // Touch Events
   {
-    if (Support.pointerEvents || Support.prefixedPointerEvents) {
+    if (!Support.touch && (Support.pointerEvents || Support.prefixedPointerEvents)) {
       target.removeEventListener(touchEvents.start, swiper.onTouchStart, false);
-      (Support.touch ? target : doc).removeEventListener(touchEvents.move, swiper.onTouchMove, capture);
-      (Support.touch ? target : doc).removeEventListener(touchEvents.end, swiper.onTouchEnd, false);
+      doc.removeEventListener(touchEvents.move, swiper.onTouchMove, capture);
+      doc.removeEventListener(touchEvents.end, swiper.onTouchEnd, false);
     } else {
       if (Support.touch) {
         const passiveListener = touchEvents.start === 'onTouchStart' && Support.passiveListener && params.passiveListeners ? { passive: true, capture: false } : false;
@@ -2910,6 +3019,18 @@ var getBreakpoint = function (breakpoints) {
 
 var breakpoints = { setBreakpoint, getBreakpoint };
 
+const Browser = (function Browser() {
+  function isSafari() {
+    const ua = win.navigator.userAgent.toLowerCase();
+    return (ua.indexOf('safari') >= 0 && ua.indexOf('chrome') < 0 && ua.indexOf('android') < 0);
+  }
+  return {
+    isIE: !!win.navigator.userAgent.match(/Trident/g) || !!win.navigator.userAgent.match(/MSIE/g),
+    isSafari: isSafari(),
+    isUiWebView: /(iPhone|iPod|iPad).*AppleWebKit(?!.*Safari)/i.test(win.navigator.userAgent),
+  };
+}());
+
 var addClasses = function () {
   const swiper = this;
   const {
@@ -2941,7 +3062,7 @@ var addClasses = function () {
     suffixes.push('ios');
   }
   // WP8 Touch Events Fix
-  if (Support.pointerEvents || Support.prefixedPointerEvents) {
+  if (Browser.isIE && (Support.pointerEvents || Support.prefixedPointerEvents)) {
     suffixes.push(`wp8-${params.direction}`);
   }
 
@@ -3039,6 +3160,8 @@ var defaults = {
   touchEventsTarget: 'container',
   initialSlide: 0,
   speed: 300,
+  //
+  preventIntercationOnTransition: false,
 
   // To support iOS's swipe-to-go-back gesture (when being used in-app, with UIWebView).
   iOSEdgeSwipeDetection: false,
@@ -3135,6 +3258,7 @@ var defaults = {
   swipeHandler: null, // '.swipe-handler',
   noSwiping: true,
   noSwipingClass: 'swiper-no-swiping',
+  noSwipingSelector: null,
 
   // Passive Listeners
   passiveListeners: true,
@@ -3232,6 +3356,9 @@ class Swiper$1 extends SwiperClass {
     swiper.originalParams = Utils.extend({}, swiper.params);
     swiper.passedParams = Utils.extend({}, params);
 
+    // Save Dom lib
+    swiper.$ = $;
+
     // Find el
     const $el = $(swiper.params.el);
     el = $el[0];
@@ -3309,12 +3436,17 @@ class Swiper$1 extends SwiperClass {
         } else if (Support.prefixedPointerEvents) {
           desktop = ['MSPointerDown', 'MSPointerMove', 'MSPointerUp'];
         }
-
-        return {
-          start: Support.touch || !swiper.params.simulateTouch ? touch[0] : desktop[0],
-          move: Support.touch || !swiper.params.simulateTouch ? touch[1] : desktop[1],
-          end: Support.touch || !swiper.params.simulateTouch ? touch[2] : desktop[2],
+        swiper.touchEventsTouch = {
+          start: touch[0],
+          move: touch[1],
+          end: touch[2],
         };
+        swiper.touchEventsDesktop = {
+          start: desktop[0],
+          move: desktop[1],
+          end: desktop[2],
+        };
+        return Support.touch || !swiper.params.simulateTouch ? swiper.touchEventsTouch : swiper.touchEventsDesktop;
       }()),
       touchEventsData: {
         isTouched: undefined,
@@ -3576,24 +3708,13 @@ var Support$2 = {
   },
 };
 
-const Browser$1 = (function Browser() {
-  function isSafari() {
-    const ua = win.navigator.userAgent.toLowerCase();
-    return (ua.indexOf('safari') >= 0 && ua.indexOf('chrome') < 0 && ua.indexOf('android') < 0);
-  }
-  return {
-    isSafari: isSafari(),
-    isUiWebView: /(iPhone|iPod|iPad).*AppleWebKit(?!.*Safari)/i.test(win.navigator.userAgent),
-  };
-}());
-
-var Browser = {
+var Browser$2 = {
   name: 'browser',
   proto: {
-    browser: Browser$1,
+    browser: Browser,
   },
   static: {
-    browser: Browser$1,
+    browser: Browser,
   },
 };
 
@@ -3910,10 +4031,6 @@ const Keyboard = {
       if (swiper.$el.parents(`.${swiper.params.slideClass}`).length > 0 && swiper.$el.parents(`.${swiper.params.slideActiveClass}`).length === 0) {
         return undefined;
       }
-      const windowScroll = {
-        left: win.pageXOffset,
-        top: win.pageYOffset,
-      };
       const windowWidth = win.innerWidth;
       const windowHeight = win.innerHeight;
       const swiperOffset = swiper.$el.offset();
@@ -3927,8 +4044,8 @@ const Keyboard = {
       for (let i = 0; i < swiperCoord.length; i += 1) {
         const point = swiperCoord[i];
         if (
-          point[0] >= windowScroll.left && point[0] <= windowScroll.left + windowWidth &&
-            point[1] >= windowScroll.top && point[1] <= windowScroll.top + windowHeight
+          point[0] >= 0 && point[0] <= windowWidth &&
+          point[1] >= 0 && point[1] <= windowHeight
         ) {
           inView = true;
         }
@@ -4164,9 +4281,8 @@ const Mousewheel = {
 
       // Stop autoplay
       if (swiper.params.autoplay && swiper.params.autoplayDisableOnInteraction) swiper.stopAutoplay();
-
       // Return page scroll on edge positions
-      if (position === 0 || position === swiper.maxTranslate()) return true;
+      if (position === swiper.minTranslate() || position === swiper.maxTranslate()) return true;
     }
 
     if (e.preventDefault) e.preventDefault();
@@ -4410,22 +4526,43 @@ const Pagination = {
     // Types
     if (params.type === 'bullets' && swiper.pagination.bullets && swiper.pagination.bullets.length > 0) {
       const bullets = swiper.pagination.bullets;
+      let firstIndex;
+      let lastIndex;
+      let midIndex;
       if (params.dynamicBullets) {
         swiper.pagination.bulletSize = bullets.eq(0)[swiper.isHorizontal() ? 'outerWidth' : 'outerHeight'](true);
-        $el.css(swiper.isHorizontal() ? 'width' : 'height', `${swiper.pagination.bulletSize * 5}px`);
+        $el.css(swiper.isHorizontal() ? 'width' : 'height', `${swiper.pagination.bulletSize * (params.dynamicMainBullets + 4)}px`);
+        if (params.dynamicMainBullets > 1 && swiper.previousIndex !== undefined) {
+          if (current > swiper.previousIndex && swiper.pagination.dynamicBulletIndex < (params.dynamicMainBullets - 1)) {
+            swiper.pagination.dynamicBulletIndex += 1;
+          } else if (current < swiper.previousIndex && swiper.pagination.dynamicBulletIndex > 0) {
+            swiper.pagination.dynamicBulletIndex -= 1;
+          }
+        }
+        firstIndex = current - swiper.pagination.dynamicBulletIndex;
+        lastIndex = firstIndex + (params.dynamicMainBullets - 1);
+        midIndex = (lastIndex + firstIndex) / 2;
       }
-      bullets.removeClass(`${params.bulletActiveClass} ${params.bulletActiveClass}-next ${params.bulletActiveClass}-next-next ${params.bulletActiveClass}-prev ${params.bulletActiveClass}-prev-prev`);
+      bullets.removeClass(`${params.bulletActiveClass} ${params.bulletActiveClass}-next ${params.bulletActiveClass}-next-next ${params.bulletActiveClass}-prev ${params.bulletActiveClass}-prev-prev ${params.bulletActiveClass}-main`);
       if ($el.length > 1) {
         bullets.each((index$$1, bullet) => {
           const $bullet = $(bullet);
-          if ($bullet.index() === current) {
+          const bulletIndex = $bullet.index();
+          if (bulletIndex === current) {
             $bullet.addClass(params.bulletActiveClass);
-            if (params.dynamicBullets) {
+          }
+          if (params.dynamicBullets) {
+            if (bulletIndex >= firstIndex && bulletIndex <= lastIndex) {
+              $bullet.addClass(`${params.bulletActiveClass}-main`);
+            }
+            if (bulletIndex === firstIndex) {
               $bullet
                 .prev()
                 .addClass(`${params.bulletActiveClass}-prev`)
                 .prev()
                 .addClass(`${params.bulletActiveClass}-prev-prev`);
+            }
+            if (bulletIndex === lastIndex) {
               $bullet
                 .next()
                 .addClass(`${params.bulletActiveClass}-next`)
@@ -4438,12 +4575,17 @@ const Pagination = {
         const $bullet = bullets.eq(current);
         $bullet.addClass(params.bulletActiveClass);
         if (params.dynamicBullets) {
-          $bullet
+          const $firstDisplayedBullet = bullets.eq(firstIndex);
+          const $lastDisplayedBullet = bullets.eq(lastIndex);
+          for (let i = firstIndex; i <= lastIndex; i += 1) {
+            bullets.eq(i).addClass(`${params.bulletActiveClass}-main`);
+          }
+          $firstDisplayedBullet
             .prev()
             .addClass(`${params.bulletActiveClass}-prev`)
             .prev()
             .addClass(`${params.bulletActiveClass}-prev-prev`);
-          $bullet
+          $lastDisplayedBullet
             .next()
             .addClass(`${params.bulletActiveClass}-next`)
             .next()
@@ -4451,8 +4593,8 @@ const Pagination = {
         }
       }
       if (params.dynamicBullets) {
-        const dynamicBulletsLength = Math.min(bullets.length, 5);
-        const bulletsOffset = (((swiper.pagination.bulletSize * dynamicBulletsLength) - (swiper.pagination.bulletSize)) / 2) - (current * swiper.pagination.bulletSize);
+        const dynamicBulletsLength = Math.min(bullets.length, params.dynamicMainBullets + 4);
+        const bulletsOffset = (((swiper.pagination.bulletSize * dynamicBulletsLength) - (swiper.pagination.bulletSize)) / 2) - (midIndex * swiper.pagination.bulletSize);
         const offsetProp = rtl ? 'right' : 'left';
         bullets.css(swiper.isHorizontal() ? offsetProp : 'top', `${bulletsOffset}px`);
       }
@@ -4548,6 +4690,10 @@ const Pagination = {
 
     if (params.type === 'bullets' && params.dynamicBullets) {
       $el.addClass(`${params.modifierClass}${params.type}-dynamic`);
+      swiper.pagination.dynamicBulletIndex = 0;
+      if (params.dynamicMainBullets < 1) {
+        params.dynamicMainBullets = 1;
+      }
     }
 
     if (params.clickable) {
@@ -4593,7 +4739,7 @@ var Pagination$1 = {
       renderCustom: null,
       type: 'bullets', // 'bullets' or 'progressbar' or 'fraction' or 'custom'
       dynamicBullets: false,
-
+      dynamicMainBullets: 1,
       bulletClass: 'swiper-pagination-bullet',
       bulletActiveClass: 'swiper-pagination-bullet-active',
       modifierClass: 'swiper-pagination-', // NEW
@@ -4613,6 +4759,7 @@ var Pagination$1 = {
         render: Pagination.render.bind(swiper),
         update: Pagination.update.bind(swiper),
         destroy: Pagination.destroy.bind(swiper),
+        dynamicBulletIndex: 0,
       },
     });
   },
@@ -4850,27 +4997,61 @@ const Scrollbar = {
   enableDraggable() {
     const swiper = this;
     if (!swiper.params.scrollbar.el) return;
-    const { scrollbar } = swiper;
+    const {
+      scrollbar, touchEvents, touchEventsDesktop, params,
+    } = swiper;
     const $el = scrollbar.$el;
-    const target = Support.touch ? $el[0] : document;
-    $el.on(swiper.scrollbar.dragEvents.start, swiper.scrollbar.onDragStart);
-    $(target).on(swiper.scrollbar.dragEvents.move, swiper.scrollbar.onDragMove);
-    $(target).on(swiper.scrollbar.dragEvents.end, swiper.scrollbar.onDragEnd);
+    const target = $el[0];
+    const activeListener = Support.passiveListener && params.passiveListener ? { passive: false, capture: false } : false;
+    const passiveListener = Support.passiveListener && params.passiveListener ? { passive: true, capture: false } : false;
+    if (!Support.touch && (Support.pointerEvents || Support.prefixedPointerEvents)) {
+      target.addEventListener(touchEventsDesktop.start, swiper.scrollbar.onDragStart, activeListener);
+      doc.addEventListener(touchEventsDesktop.move, swiper.scrollbar.onDragMove, activeListener);
+      doc.addEventListener(touchEventsDesktop.end, swiper.scrollbar.onDragEnd, passiveListener);
+    } else {
+      if (Support.touch) {
+        target.addEventListener(touchEvents.start, swiper.scrollbar.onDragStart, activeListener);
+        target.addEventListener(touchEvents.move, swiper.scrollbar.onDragMove, activeListener);
+        target.addEventListener(touchEvents.end, swiper.scrollbar.onDragEnd, passiveListener);
+      }
+      if ((params.simulateTouch && !Device.ios && !Device.android) || (params.simulateTouch && !Support.touch && Device.ios)) {
+        target.addEventListener('mousedown', swiper.scrollbar.onDragStart, activeListener);
+        doc.addEventListener('mousemove', swiper.scrollbar.onDragMove, activeListener);
+        doc.addEventListener('mouseup', swiper.scrollbar.onDragEnd, passiveListener);
+      }
+    }
   },
   disableDraggable() {
     const swiper = this;
     if (!swiper.params.scrollbar.el) return;
-    const { scrollbar } = swiper;
+    const {
+      scrollbar, touchEvents, touchEventsDesktop, params,
+    } = swiper;
     const $el = scrollbar.$el;
-    const target = Support.touch ? $el[0] : document;
-    $el.off(swiper.scrollbar.dragEvents.start);
-    $(target).off(swiper.scrollbar.dragEvents.move);
-    $(target).off(swiper.scrollbar.dragEvents.end);
+    const target = $el[0];
+    const activeListener = Support.passiveListener && params.passiveListener ? { passive: false, capture: false } : false;
+    const passiveListener = Support.passiveListener && params.passiveListener ? { passive: true, capture: false } : false;
+    if (!Support.touch && (Support.pointerEvents || Support.prefixedPointerEvents)) {
+      target.removeEventListener(touchEventsDesktop.start, swiper.scrollbar.onDragStart, activeListener);
+      doc.removeEventListener(touchEventsDesktop.move, swiper.scrollbar.onDragMove, activeListener);
+      doc.removeEventListener(touchEventsDesktop.end, swiper.scrollbar.onDragEnd, passiveListener);
+    } else {
+      if (Support.touch) {
+        target.removeEventListener(touchEvents.start, swiper.scrollbar.onDragStart, activeListener);
+        target.removeEventListener(touchEvents.move, swiper.scrollbar.onDragMove, activeListener);
+        target.removeEventListener(touchEvents.end, swiper.scrollbar.onDragEnd, passiveListener);
+      }
+      if ((params.simulateTouch && !Device.ios && !Device.android) || (params.simulateTouch && !Support.touch && Device.ios)) {
+        target.removeEventListener('mousedown', swiper.scrollbar.onDragStart, activeListener);
+        doc.removeEventListener('mousemove', swiper.scrollbar.onDragMove, activeListener);
+        doc.removeEventListener('mouseup', swiper.scrollbar.onDragEnd, passiveListener);
+      }
+    }
   },
   init() {
     const swiper = this;
     if (!swiper.params.scrollbar.el) return;
-    const { scrollbar, $el: $swiperEl, touchEvents } = swiper;
+    const { scrollbar, $el: $swiperEl } = swiper;
     const params = swiper.params.scrollbar;
 
     let $el = $(params.el);
@@ -4878,22 +5059,11 @@ const Scrollbar = {
       $el = $swiperEl.find(params.el);
     }
 
-    let $dragEl = $el.find('.swiper-scrollbar-drag');
+    let $dragEl = $el.find(`.${swiper.params.scrollbar.dragClass}`);
     if ($dragEl.length === 0) {
-      $dragEl = $('<div class="swiper-scrollbar-drag"></div>');
+      $dragEl = $(`<div class="${swiper.params.scrollbar.dragClass}"></div>`);
       $el.append($dragEl);
     }
-
-    swiper.scrollbar.dragEvents = (function dragEvents() {
-      if ((swiper.params.simulateTouch === false && !Support.touch)) {
-        return {
-          start: 'mousedown',
-          move: 'mousemove',
-          end: 'mouseup',
-        };
-      }
-      return touchEvents;
-    }());
 
     Utils.extend(scrollbar, {
       $el,
@@ -4922,6 +5092,7 @@ var Scrollbar$1 = {
       draggable: false,
       snapOnRelease: true,
       lockClass: 'swiper-scrollbar-lock',
+      dragClass: 'swiper-scrollbar-drag',
     },
   },
   create() {
@@ -5080,6 +5251,7 @@ var Parallax$1 = {
   on: {
     beforeInit() {
       const swiper = this;
+      if (!swiper.params.parallax.enabled) return;
       swiper.params.watchSlidesProgress = true;
     },
     init() {
@@ -5127,7 +5299,7 @@ const Zoom = {
       gesture.scaleStart = Zoom.getDistanceBetweenTouches(e);
     }
     if (!gesture.$slideEl || !gesture.$slideEl.length) {
-      gesture.$slideEl = $(this);
+      gesture.$slideEl = $(e.target).closest('.swiper-slide');
       if (gesture.$slideEl.length === 0) gesture.$slideEl = swiper.slides.eq(swiper.activeIndex);
       gesture.$imageEl = gesture.$slideEl.find('img, svg, canvas');
       gesture.$imageWrapEl = gesture.$imageEl.parent(`.${params.containerClass}`);
@@ -5469,28 +5641,21 @@ const Zoom = {
     if (zoom.enabled) return;
     zoom.enabled = true;
 
-    const slides = swiper.slides;
-
     const passiveListener = swiper.touchEvents.start === 'touchstart' && Support.passiveListener && swiper.params.passiveListeners ? { passive: true, capture: false } : false;
 
     // Scale image
     if (Support.gestures) {
-      slides.on('gesturestart', zoom.onGestureStart, passiveListener);
-      slides.on('gesturechange', zoom.onGestureChange, passiveListener);
-      slides.on('gestureend', zoom.onGestureEnd, passiveListener);
+      swiper.$wrapperEl.on('gesturestart', '.swiper-slide', zoom.onGestureStart, passiveListener);
+      swiper.$wrapperEl.on('gesturechange', '.swiper-slide', zoom.onGestureChange, passiveListener);
+      swiper.$wrapperEl.on('gestureend', '.swiper-slide', zoom.onGestureEnd, passiveListener);
     } else if (swiper.touchEvents.start === 'touchstart') {
-      slides.on(swiper.touchEvents.start, zoom.onGestureStart, passiveListener);
-      slides.on(swiper.touchEvents.move, zoom.onGestureChange, passiveListener);
-      slides.on(swiper.touchEvents.end, zoom.onGestureEnd, passiveListener);
+      swiper.$wrapperEl.on(swiper.touchEvents.start, '.swiper-slide', zoom.onGestureStart, passiveListener);
+      swiper.$wrapperEl.on(swiper.touchEvents.move, '.swiper-slide', zoom.onGestureChange, passiveListener);
+      swiper.$wrapperEl.on(swiper.touchEvents.end, '.swiper-slide', zoom.onGestureEnd, passiveListener);
     }
 
     // Move image
-    swiper.slides.each((index$$1, slideEl) => {
-      const $slideEl = $(slideEl);
-      if ($slideEl.find(`.${swiper.params.zoom.containerClass}`).length > 0) {
-        $slideEl.on(swiper.touchEvents.move, zoom.onTouchMove);
-      }
-    });
+    swiper.$wrapperEl.on(swiper.touchEvents.move, `.${swiper.params.zoom.containerClass}`, zoom.onTouchMove);
   },
   disable() {
     const swiper = this;
@@ -5499,28 +5664,21 @@ const Zoom = {
 
     swiper.zoom.enabled = false;
 
-    const slides = swiper.slides;
-
     const passiveListener = swiper.touchEvents.start === 'touchstart' && Support.passiveListener && swiper.params.passiveListeners ? { passive: true, capture: false } : false;
 
     // Scale image
     if (Support.gestures) {
-      slides.off('gesturestart', zoom.onGestureStart, passiveListener);
-      slides.off('gesturechange', zoom.onGestureChange, passiveListener);
-      slides.off('gestureend', zoom.onGestureEnd, passiveListener);
+      swiper.$wrapperEl.off('gesturestart', '.swiper-slide', zoom.onGestureStart, passiveListener);
+      swiper.$wrapperEl.off('gesturechange', '.swiper-slide', zoom.onGestureChange, passiveListener);
+      swiper.$wrapperEl.off('gestureend', '.swiper-slide', zoom.onGestureEnd, passiveListener);
     } else if (swiper.touchEvents.start === 'touchstart') {
-      slides.off(swiper.touchEvents.start, zoom.onGestureStart, passiveListener);
-      slides.off(swiper.touchEvents.move, zoom.onGestureChange, passiveListener);
-      slides.off(swiper.touchEvents.end, zoom.onGestureEnd, passiveListener);
+      swiper.$wrapperEl.off(swiper.touchEvents.start, '.swiper-slide', zoom.onGestureStart, passiveListener);
+      swiper.$wrapperEl.off(swiper.touchEvents.move, '.swiper-slide', zoom.onGestureChange, passiveListener);
+      swiper.$wrapperEl.off(swiper.touchEvents.end, '.swiper-slide', zoom.onGestureEnd, passiveListener);
     }
 
     // Move image
-    swiper.slides.each((index$$1, slideEl) => {
-      const $slideEl = $(slideEl);
-      if ($slideEl.find(`.${swiper.params.zoom.containerClass}`).length > 0) {
-        $slideEl.off(swiper.touchEvents.move, zoom.onTouchMove);
-      }
-    });
+    swiper.$wrapperEl.off(swiper.touchEvents.move, `.${swiper.params.zoom.containerClass}`, zoom.onTouchMove);
   },
 };
 
@@ -6757,7 +6915,7 @@ const Cube = {
         $cubeShadowEl.transform(`scale3d(${scale1}, 1, ${scale2}) translate3d(0px, ${(swiperHeight / 2) + offset$$1}px, ${-swiperHeight / 2 / scale2}px) rotateX(-90deg)`);
       }
     }
-    const zFactor = (Browser$1.isSafari || Browser$1.isUiWebView) ? (-swiperSize / 2) : 0;
+    const zFactor = (Browser.isSafari || Browser.isUiWebView) ? (-swiperSize / 2) : 0;
     $wrapperEl
       .transform(`translate3d(0px,0,${zFactor}px) rotateX(${swiper.isHorizontal() ? 0 : wrapperRotate}deg) rotateY(${swiper.isHorizontal() ? -wrapperRotate : 0}deg)`);
   },
@@ -7062,7 +7220,7 @@ var EffectCoverflow = {
 const components = [
   Device$2,
   Support$2,
-  Browser,
+  Browser$2,
   Resize,
   Observer$1,
   Virtual$1,
@@ -7092,6 +7250,14 @@ if (typeof Swiper$1.use === 'undefined') {
 
 Swiper$1.use(components);
 
+var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 class SlideShow {
     constructor() {
         this.slides = [];
@@ -7163,24 +7329,31 @@ class SlideShow {
             main: smainctrl,
             thumb: sthumbctrl
         };
-        this.swiper.main.on('slideChangeTransitionEnd', () => {
-            this.slideEvent.emit({ type: 'end', val: this.getSlideContentSize() });
-            this.checkAspectRatio(this.swiper.main.activeIndex);
+        this.swiper.main.on('slideChangeTransitionEnd', () => __awaiter(this, void 0, void 0, function* () {
+            this.slideEvent.emit({ type: 'end', val: yield this.getSlideContentSize() });
+            //this.checkAspectRatio(this.swiper.main.activeIndex)
+        }));
+        const emitResize = () => __awaiter(this, void 0, void 0, function* () {
+            try {
+                let cs = yield this.getSlideContentSize();
+                this.slideSize.emit({
+                    content: cs,
+                    frame: this.getSlideFrameSize()
+                });
+            }
+            catch (e) {
+                console.error('slide-show: can\'t get content size', e);
+            }
         });
-        const emitResize = () => {
-            this.slideSize.emit({
-                content: this.getSlideContentSize(),
-                frame: this.getSlideFrameSize()
-            });
-        };
         this.swiper.main.on('resize', () => {
             emitResize();
         });
         this.swiper.main.on('init', () => {
             this.slideEvent.emit({ type: 'init', val: this.swiper });
-            setTimeout(() => {
-                emitResize();
-            }, 100);
+            emitResize();
+            // setTimeout(() => {
+            //   emitResize()
+            // },100)
         });
     }
     getCurrent() {
@@ -7229,8 +7402,22 @@ class SlideShow {
     // componentDidUnload() {
     // }
     getSlideContentSize() {
-        let slideEl = this.el.shadowRoot.querySelector('.swiper-container.main .swiper-slide.swiper-slide-active img');
-        return slideEl.getBoundingClientRect();
+        return new Promise((resolve, reject) => {
+            let slideEl = this.el.shadowRoot.querySelector('.swiper-container.main .swiper-slide.swiper-slide-active img');
+            let i = 0;
+            let wait = setInterval(function () {
+                let w = slideEl.naturalWidth, h = slideEl.naturalHeight;
+                if (w && h) {
+                    clearInterval(wait);
+                    resolve(slideEl.getBoundingClientRect());
+                }
+                if (i === 10) {
+                    clearInterval(wait);
+                    reject();
+                }
+                ++i;
+            }, 30);
+        });
     }
     getSlideFrameSize() {
         let slideEl = this.el.shadowRoot.querySelector('.swiper-container.main .swiper-slide.swiper-slide-active');
@@ -7240,15 +7427,15 @@ class SlideShow {
         console.log('clicked slide', idx, this.swiper.main.activeIndex);
         this.slideTo(idx);
     }
-    checkAspectRatio(idx) {
-        if (!this.imagesizes[idx]) {
-            return false;
-        }
-        let frame = this.getSlideFrameSize();
-        let ar_slide = frame.width / frame.height;
-        let ar_img = this.imagesizes[idx].width / this.imagesizes[idx].height;
-        console.log(idx, ar_slide, ar_img);
-    }
+    // checkAspectRatio (idx: number) {
+    //   if (!this.imagesizes[idx]) {
+    //     return false
+    //   }
+    //   let frame = this.getSlideFrameSize()
+    //   let ar_slide = frame.width / frame.height 
+    //   let ar_img = this.imagesizes[idx].width / this.imagesizes[idx].height
+    //   console.log(idx, ar_slide, ar_img)
+    // }
     render() {
         const getSlideStyle = (bg) => {
             return {
@@ -7257,7 +7444,7 @@ class SlideShow {
         };
         const imageLoad = (idx) => {
             let img = this.el.shadowRoot.querySelector('.swiper-container.main #i' + idx);
-            console.log('index', idx, img.naturalWidth, img.naturalHeight);
+            //console.log('index', idx, img.naturalWidth, img.naturalHeight)
             let nis = this.imagesizes.slice();
             nis[idx] = { width: img.naturalWidth, height: img.naturalHeight };
             this.imagesizes = nis;
@@ -7269,7 +7456,7 @@ class SlideShow {
             let frame = this.getSlideFrameSize();
             let ar_slide = frame.width / frame.height;
             let ar_img = this.imagesizes[idx].width / this.imagesizes[idx].height;
-            console.log(idx, ar_slide, ar_img);
+            //console.log(idx, ar_slide, ar_img)
             return ar_img > ar_slide;
         };
         return (h("div", null,
@@ -7286,7 +7473,7 @@ class SlideShow {
     static get encapsulation() { return "shadow"; }
     static get properties() { return { "el": { "elementRef": true }, "getCurrent": { "method": true }, "imagesizes": { "state": true }, "loadImages": { "method": true }, "lockPrevious": { "method": true }, "slides": { "state": true }, "slideTo": { "method": true }, "unlockPrevious": { "method": true } }; }
     static get events() { return [{ "name": "slideSize", "method": "slideSize", "bubbles": true, "cancelable": true, "composed": true }, { "name": "slideEvent", "method": "slideEvent", "bubbles": true, "cancelable": true, "composed": true }]; }
-    static get style() { return "/**\n * Swiper 4.1.0\n * Most modern mobile touch slider and framework with hardware accelerated transitions\n * http://www.idangero.us/swiper/\n *\n * Copyright 2014-2018 Vladimir Kharlampidi\n *\n * Released under the MIT License\n *\n * Released on: January 13, 2018\n */\n.swiper-container {\n  margin: 0 auto;\n  position: relative;\n  overflow: hidden;\n  list-style: none;\n  padding: 0;\n  /* Fix of Webkit flickering */\n  z-index: 1;\n}\n.swiper-container-no-flexbox .swiper-slide {\n  float: left;\n}\n.swiper-container-vertical > .swiper-wrapper {\n  -webkit-box-orient: vertical;\n  -webkit-box-direction: normal;\n  -webkit-flex-direction: column;\n  -ms-flex-direction: column;\n  flex-direction: column;\n}\n.swiper-wrapper {\n  position: relative;\n  width: 100%;\n  height: 100%;\n  z-index: 1;\n  display: -webkit-box;\n  display: -webkit-flex;\n  display: -ms-flexbox;\n  display: flex;\n  -webkit-transition-property: -webkit-transform;\n  transition-property: -webkit-transform;\n  -o-transition-property: transform;\n  transition-property: transform;\n  transition-property: transform, -webkit-transform;\n  -webkit-box-sizing: content-box;\n  box-sizing: content-box;\n}\n.swiper-container-android .swiper-slide,\n.swiper-wrapper {\n  -webkit-transform: translate3d(0px, 0, 0);\n  transform: translate3d(0px, 0, 0);\n}\n.swiper-container-multirow > .swiper-wrapper {\n  -webkit-flex-wrap: wrap;\n  -ms-flex-wrap: wrap;\n  flex-wrap: wrap;\n}\n.swiper-container-free-mode > .swiper-wrapper {\n  -webkit-transition-timing-function: ease-out;\n  -o-transition-timing-function: ease-out;\n  transition-timing-function: ease-out;\n  margin: 0 auto;\n}\n.swiper-slide {\n  -webkit-flex-shrink: 0;\n  -ms-flex-negative: 0;\n  flex-shrink: 0;\n  width: 100%;\n  height: 100%;\n  position: relative;\n  -webkit-transition-property: -webkit-transform;\n  transition-property: -webkit-transform;\n  -o-transition-property: transform;\n  transition-property: transform;\n  transition-property: transform, -webkit-transform;\n}\n.swiper-invisible-blank-slide {\n  visibility: hidden;\n}\n/* Auto Height */\n.swiper-container-autoheight,\n.swiper-container-autoheight .swiper-slide {\n  height: auto;\n}\n.swiper-container-autoheight .swiper-wrapper {\n  -webkit-box-align: start;\n  -webkit-align-items: flex-start;\n  -ms-flex-align: start;\n  align-items: flex-start;\n  -webkit-transition-property: height, -webkit-transform;\n  transition-property: height, -webkit-transform;\n  -o-transition-property: transform, height;\n  transition-property: transform, height;\n  transition-property: transform, height, -webkit-transform;\n}\n/* 3D Effects */\n.swiper-container-3d {\n  -webkit-perspective: 1200px;\n  perspective: 1200px;\n}\n.swiper-container-3d .swiper-wrapper,\n.swiper-container-3d .swiper-slide,\n.swiper-container-3d .swiper-slide-shadow-left,\n.swiper-container-3d .swiper-slide-shadow-right,\n.swiper-container-3d .swiper-slide-shadow-top,\n.swiper-container-3d .swiper-slide-shadow-bottom,\n.swiper-container-3d .swiper-cube-shadow {\n  -webkit-transform-style: preserve-3d;\n  transform-style: preserve-3d;\n}\n.swiper-container-3d .swiper-slide-shadow-left,\n.swiper-container-3d .swiper-slide-shadow-right,\n.swiper-container-3d .swiper-slide-shadow-top,\n.swiper-container-3d .swiper-slide-shadow-bottom {\n  position: absolute;\n  left: 0;\n  top: 0;\n  width: 100%;\n  height: 100%;\n  pointer-events: none;\n  z-index: 10;\n}\n.swiper-container-3d .swiper-slide-shadow-left {\n  background-image: -webkit-gradient(linear, right top, left top, from(rgba(0, 0, 0, 0.5)), to(rgba(0, 0, 0, 0)));\n  background-image: -webkit-linear-gradient(right, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n  background-image: -o-linear-gradient(right, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n  background-image: linear-gradient(to left, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n}\n.swiper-container-3d .swiper-slide-shadow-right {\n  background-image: -webkit-gradient(linear, left top, right top, from(rgba(0, 0, 0, 0.5)), to(rgba(0, 0, 0, 0)));\n  background-image: -webkit-linear-gradient(left, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n  background-image: -o-linear-gradient(left, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n  background-image: linear-gradient(to right, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n}\n.swiper-container-3d .swiper-slide-shadow-top {\n  background-image: -webkit-gradient(linear, left bottom, left top, from(rgba(0, 0, 0, 0.5)), to(rgba(0, 0, 0, 0)));\n  background-image: -webkit-linear-gradient(bottom, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n  background-image: -o-linear-gradient(bottom, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n  background-image: linear-gradient(to top, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n}\n.swiper-container-3d .swiper-slide-shadow-bottom {\n  background-image: -webkit-gradient(linear, left top, left bottom, from(rgba(0, 0, 0, 0.5)), to(rgba(0, 0, 0, 0)));\n  background-image: -webkit-linear-gradient(top, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n  background-image: -o-linear-gradient(top, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n  background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n}\n/* IE10 Windows Phone 8 Fixes */\n.swiper-container-wp8-horizontal,\n.swiper-container-wp8-horizontal > .swiper-wrapper {\n  -ms-touch-action: pan-y;\n  touch-action: pan-y;\n}\n.swiper-container-wp8-vertical,\n.swiper-container-wp8-vertical > .swiper-wrapper {\n  -ms-touch-action: pan-x;\n  touch-action: pan-x;\n}\n.swiper-button-prev,\n.swiper-button-next {\n  position: absolute;\n  top: 50%;\n  width: 27px;\n  height: 44px;\n  margin-top: -22px;\n  z-index: 10;\n  cursor: pointer;\n  background-size: 27px 44px;\n  background-position: center;\n  background-repeat: no-repeat;\n}\n.swiper-button-prev.swiper-button-disabled,\n.swiper-button-next.swiper-button-disabled {\n  opacity: 0.35;\n  cursor: auto;\n  pointer-events: none;\n}\n.swiper-button-prev,\n.swiper-container-rtl .swiper-button-next {\n  background-image: url(\"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2027%2044'%3E%3Cpath%20d%3D'M0%2C22L22%2C0l2.1%2C2.1L4.2%2C22l19.9%2C19.9L22%2C44L0%2C22L0%2C22L0%2C22z'%20fill%3D'%23007aff'%2F%3E%3C%2Fsvg%3E\");\n  left: 10px;\n  right: auto;\n}\n.swiper-button-next,\n.swiper-container-rtl .swiper-button-prev {\n  background-image: url(\"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2027%2044'%3E%3Cpath%20d%3D'M27%2C22L27%2C22L5%2C44l-2.1-2.1L22.8%2C22L2.9%2C2.1L5%2C0L27%2C22L27%2C22z'%20fill%3D'%23007aff'%2F%3E%3C%2Fsvg%3E\");\n  right: 10px;\n  left: auto;\n}\n.swiper-button-prev.swiper-button-white,\n.swiper-container-rtl .swiper-button-next.swiper-button-white {\n  background-image: url(\"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2027%2044'%3E%3Cpath%20d%3D'M0%2C22L22%2C0l2.1%2C2.1L4.2%2C22l19.9%2C19.9L22%2C44L0%2C22L0%2C22L0%2C22z'%20fill%3D'%23ffffff'%2F%3E%3C%2Fsvg%3E\");\n}\n.swiper-button-next.swiper-button-white,\n.swiper-container-rtl .swiper-button-prev.swiper-button-white {\n  background-image: url(\"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2027%2044'%3E%3Cpath%20d%3D'M27%2C22L27%2C22L5%2C44l-2.1-2.1L22.8%2C22L2.9%2C2.1L5%2C0L27%2C22L27%2C22z'%20fill%3D'%23ffffff'%2F%3E%3C%2Fsvg%3E\");\n}\n.swiper-button-prev.swiper-button-black,\n.swiper-container-rtl .swiper-button-next.swiper-button-black {\n  background-image: url(\"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2027%2044'%3E%3Cpath%20d%3D'M0%2C22L22%2C0l2.1%2C2.1L4.2%2C22l19.9%2C19.9L22%2C44L0%2C22L0%2C22L0%2C22z'%20fill%3D'%23000000'%2F%3E%3C%2Fsvg%3E\");\n}\n.swiper-button-next.swiper-button-black,\n.swiper-container-rtl .swiper-button-prev.swiper-button-black {\n  background-image: url(\"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2027%2044'%3E%3Cpath%20d%3D'M27%2C22L27%2C22L5%2C44l-2.1-2.1L22.8%2C22L2.9%2C2.1L5%2C0L27%2C22L27%2C22z'%20fill%3D'%23000000'%2F%3E%3C%2Fsvg%3E\");\n}\n.swiper-button-lock {\n  display: none;\n}\n.swiper-pagination {\n  position: absolute;\n  text-align: center;\n  -webkit-transition: 300ms opacity;\n  -o-transition: 300ms opacity;\n  transition: 300ms opacity;\n  -webkit-transform: translate3d(0, 0, 0);\n  transform: translate3d(0, 0, 0);\n  z-index: 10;\n}\n.swiper-pagination.swiper-pagination-hidden {\n  opacity: 0;\n}\n/* Common Styles */\n.swiper-pagination-fraction,\n.swiper-pagination-custom,\n.swiper-container-horizontal > .swiper-pagination-bullets {\n  bottom: 10px;\n  left: 0;\n  width: 100%;\n}\n/* Bullets */\n.swiper-pagination-bullets-dynamic {\n  overflow: hidden;\n  font-size: 0;\n}\n.swiper-pagination-bullets-dynamic .swiper-pagination-bullet {\n  -webkit-transform: scale(0.33);\n  -ms-transform: scale(0.33);\n  transform: scale(0.33);\n  position: relative;\n}\n.swiper-pagination-bullets-dynamic .swiper-pagination-bullet-active {\n  -webkit-transform: scale(1);\n  -ms-transform: scale(1);\n  transform: scale(1);\n}\n.swiper-pagination-bullets-dynamic .swiper-pagination-bullet-active-prev {\n  -webkit-transform: scale(0.66);\n  -ms-transform: scale(0.66);\n  transform: scale(0.66);\n}\n.swiper-pagination-bullets-dynamic .swiper-pagination-bullet-active-prev-prev {\n  -webkit-transform: scale(0.33);\n  -ms-transform: scale(0.33);\n  transform: scale(0.33);\n}\n.swiper-pagination-bullets-dynamic .swiper-pagination-bullet-active-next {\n  -webkit-transform: scale(0.66);\n  -ms-transform: scale(0.66);\n  transform: scale(0.66);\n}\n.swiper-pagination-bullets-dynamic .swiper-pagination-bullet-active-next-next {\n  -webkit-transform: scale(0.33);\n  -ms-transform: scale(0.33);\n  transform: scale(0.33);\n}\n.swiper-pagination-bullet {\n  width: 8px;\n  height: 8px;\n  display: inline-block;\n  border-radius: 100%;\n  background: #000;\n  opacity: 0.2;\n}\nbutton.swiper-pagination-bullet {\n  border: none;\n  margin: 0;\n  padding: 0;\n  -webkit-box-shadow: none;\n  box-shadow: none;\n  -webkit-appearance: none;\n  -moz-appearance: none;\n  appearance: none;\n}\n.swiper-pagination-clickable .swiper-pagination-bullet {\n  cursor: pointer;\n}\n.swiper-pagination-bullet-active {\n  opacity: 1;\n  background: #007aff;\n}\n.swiper-container-vertical > .swiper-pagination-bullets {\n  right: 10px;\n  top: 50%;\n  -webkit-transform: translate3d(0px, -50%, 0);\n  transform: translate3d(0px, -50%, 0);\n}\n.swiper-container-vertical > .swiper-pagination-bullets .swiper-pagination-bullet {\n  margin: 6px 0;\n  display: block;\n}\n.swiper-container-vertical > .swiper-pagination-bullets.swiper-pagination-bullets-dynamic {\n  top: 50%;\n  -webkit-transform: translateY(-50%);\n  -ms-transform: translateY(-50%);\n  transform: translateY(-50%);\n  width: 8px;\n}\n.swiper-container-vertical > .swiper-pagination-bullets.swiper-pagination-bullets-dynamic .swiper-pagination-bullet {\n  display: inline-block;\n  -webkit-transition: 200ms top, 200ms -webkit-transform;\n  transition: 200ms top, 200ms -webkit-transform;\n  -o-transition: 200ms transform, 200ms top;\n  transition: 200ms transform, 200ms top;\n  transition: 200ms transform, 200ms top, 200ms -webkit-transform;\n}\n.swiper-container-horizontal > .swiper-pagination-bullets .swiper-pagination-bullet {\n  margin: 0 4px;\n}\n.swiper-container-horizontal > .swiper-pagination-bullets.swiper-pagination-bullets-dynamic {\n  left: 50%;\n  -webkit-transform: translateX(-50%);\n  -ms-transform: translateX(-50%);\n  transform: translateX(-50%);\n  white-space: nowrap;\n}\n.swiper-container-horizontal > .swiper-pagination-bullets.swiper-pagination-bullets-dynamic .swiper-pagination-bullet {\n  -webkit-transition: 200ms left, 200ms -webkit-transform;\n  transition: 200ms left, 200ms -webkit-transform;\n  -o-transition: 200ms transform, 200ms left;\n  transition: 200ms transform, 200ms left;\n  transition: 200ms transform, 200ms left, 200ms -webkit-transform;\n}\n.swiper-container-horizontal.swiper-container-rtl > .swiper-pagination-bullets-dynamic .swiper-pagination-bullet {\n  -webkit-transition: 200ms right, 200ms -webkit-transform;\n  transition: 200ms right, 200ms -webkit-transform;\n  -o-transition: 200ms transform, 200ms right;\n  transition: 200ms transform, 200ms right;\n  transition: 200ms transform, 200ms right, 200ms -webkit-transform;\n}\n/* Progress */\n.swiper-pagination-progressbar {\n  background: rgba(0, 0, 0, 0.25);\n  position: absolute;\n}\n.swiper-pagination-progressbar .swiper-pagination-progressbar-fill {\n  background: #007aff;\n  position: absolute;\n  left: 0;\n  top: 0;\n  width: 100%;\n  height: 100%;\n  -webkit-transform: scale(0);\n  -ms-transform: scale(0);\n  transform: scale(0);\n  -webkit-transform-origin: left top;\n  -ms-transform-origin: left top;\n  transform-origin: left top;\n}\n.swiper-container-rtl .swiper-pagination-progressbar .swiper-pagination-progressbar-fill {\n  -webkit-transform-origin: right top;\n  -ms-transform-origin: right top;\n  transform-origin: right top;\n}\n.swiper-container-horizontal > .swiper-pagination-progressbar {\n  width: 100%;\n  height: 4px;\n  left: 0;\n  top: 0;\n}\n.swiper-container-vertical > .swiper-pagination-progressbar {\n  width: 4px;\n  height: 100%;\n  left: 0;\n  top: 0;\n}\n.swiper-pagination-white .swiper-pagination-bullet-active {\n  background: #ffffff;\n}\n.swiper-pagination-progressbar.swiper-pagination-white {\n  background: rgba(255, 255, 255, 0.25);\n}\n.swiper-pagination-progressbar.swiper-pagination-white .swiper-pagination-progressbar-fill {\n  background: #ffffff;\n}\n.swiper-pagination-black .swiper-pagination-bullet-active {\n  background: #000000;\n}\n.swiper-pagination-progressbar.swiper-pagination-black {\n  background: rgba(0, 0, 0, 0.25);\n}\n.swiper-pagination-progressbar.swiper-pagination-black .swiper-pagination-progressbar-fill {\n  background: #000000;\n}\n.swiper-pagination-lock {\n  display: none;\n}\n/* Scrollbar */\n.swiper-scrollbar {\n  border-radius: 10px;\n  position: relative;\n  -ms-touch-action: none;\n  background: rgba(0, 0, 0, 0.1);\n}\n.swiper-container-horizontal > .swiper-scrollbar {\n  position: absolute;\n  left: 1%;\n  bottom: 3px;\n  z-index: 50;\n  height: 5px;\n  width: 98%;\n}\n.swiper-container-vertical > .swiper-scrollbar {\n  position: absolute;\n  right: 3px;\n  top: 1%;\n  z-index: 50;\n  width: 5px;\n  height: 98%;\n}\n.swiper-scrollbar-drag {\n  height: 100%;\n  width: 100%;\n  position: relative;\n  background: rgba(0, 0, 0, 0.5);\n  border-radius: 10px;\n  left: 0;\n  top: 0;\n}\n.swiper-scrollbar-cursor-drag {\n  cursor: move;\n}\n.swiper-scrollbar-lock {\n  display: none;\n}\n.swiper-zoom-container {\n  width: 100%;\n  height: 100%;\n  display: -webkit-box;\n  display: -webkit-flex;\n  display: -ms-flexbox;\n  display: flex;\n  -webkit-box-pack: center;\n  -webkit-justify-content: center;\n  -ms-flex-pack: center;\n  justify-content: center;\n  -webkit-box-align: center;\n  -webkit-align-items: center;\n  -ms-flex-align: center;\n  align-items: center;\n  text-align: center;\n}\n.swiper-zoom-container > img,\n.swiper-zoom-container > svg,\n.swiper-zoom-container > canvas {\n  max-width: 100%;\n  max-height: 100%;\n  -o-object-fit: contain;\n  object-fit: contain;\n}\n.swiper-slide-zoomed {\n  cursor: move;\n}\n/* Preloader */\n.swiper-lazy-preloader {\n  width: 42px;\n  height: 42px;\n  position: absolute;\n  left: 50%;\n  top: 50%;\n  margin-left: -21px;\n  margin-top: -21px;\n  z-index: 10;\n  -webkit-transform-origin: 50%;\n  -ms-transform-origin: 50%;\n  transform-origin: 50%;\n  -webkit-animation: swiper-preloader-spin 1s steps(12, end) infinite;\n  animation: swiper-preloader-spin 1s steps(12, end) infinite;\n}\n.swiper-lazy-preloader:after {\n  display: block;\n  content: '';\n  width: 100%;\n  height: 100%;\n  background-image: url(\"data:image/svg+xml;charset=utf-8,%3Csvg%20viewBox%3D'0%200%20120%20120'%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20xmlns%3Axlink%3D'http%3A%2F%2Fwww.w3.org%2F1999%2Fxlink'%3E%3Cdefs%3E%3Cline%20id%3D'l'%20x1%3D'60'%20x2%3D'60'%20y1%3D'7'%20y2%3D'27'%20stroke%3D'%236c6c6c'%20stroke-width%3D'11'%20stroke-linecap%3D'round'%2F%3E%3C%2Fdefs%3E%3Cg%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(30%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(60%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(90%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(120%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(150%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.37'%20transform%3D'rotate(180%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.46'%20transform%3D'rotate(210%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.56'%20transform%3D'rotate(240%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.66'%20transform%3D'rotate(270%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.75'%20transform%3D'rotate(300%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.85'%20transform%3D'rotate(330%2060%2C60)'%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E\");\n  background-position: 50%;\n  background-size: 100%;\n  background-repeat: no-repeat;\n}\n.swiper-lazy-preloader-white:after {\n  background-image: url(\"data:image/svg+xml;charset=utf-8,%3Csvg%20viewBox%3D'0%200%20120%20120'%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20xmlns%3Axlink%3D'http%3A%2F%2Fwww.w3.org%2F1999%2Fxlink'%3E%3Cdefs%3E%3Cline%20id%3D'l'%20x1%3D'60'%20x2%3D'60'%20y1%3D'7'%20y2%3D'27'%20stroke%3D'%23fff'%20stroke-width%3D'11'%20stroke-linecap%3D'round'%2F%3E%3C%2Fdefs%3E%3Cg%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(30%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(60%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(90%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(120%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(150%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.37'%20transform%3D'rotate(180%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.46'%20transform%3D'rotate(210%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.56'%20transform%3D'rotate(240%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.66'%20transform%3D'rotate(270%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.75'%20transform%3D'rotate(300%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.85'%20transform%3D'rotate(330%2060%2C60)'%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E\");\n}\n\@-webkit-keyframes swiper-preloader-spin {\n  100% {\n    -webkit-transform: rotate(360deg);\n    transform: rotate(360deg);\n  }\n}\n\@keyframes swiper-preloader-spin {\n  100% {\n    -webkit-transform: rotate(360deg);\n    transform: rotate(360deg);\n  }\n}\n/* a11y */\n.swiper-container .swiper-notification {\n  position: absolute;\n  left: 0;\n  top: 0;\n  pointer-events: none;\n  opacity: 0;\n  z-index: -1000;\n}\n.swiper-container-fade.swiper-container-free-mode .swiper-slide {\n  -webkit-transition-timing-function: ease-out;\n  -o-transition-timing-function: ease-out;\n  transition-timing-function: ease-out;\n}\n.swiper-container-fade .swiper-slide {\n  pointer-events: none;\n  -webkit-transition-property: opacity;\n  -o-transition-property: opacity;\n  transition-property: opacity;\n}\n.swiper-container-fade .swiper-slide .swiper-slide {\n  pointer-events: none;\n}\n.swiper-container-fade .swiper-slide-active,\n.swiper-container-fade .swiper-slide-active .swiper-slide-active {\n  pointer-events: auto;\n}\n.swiper-container-cube {\n  overflow: visible;\n}\n.swiper-container-cube .swiper-slide {\n  pointer-events: none;\n  -webkit-backface-visibility: hidden;\n  backface-visibility: hidden;\n  z-index: 1;\n  visibility: hidden;\n  -webkit-transform-origin: 0 0;\n  -ms-transform-origin: 0 0;\n  transform-origin: 0 0;\n  width: 100%;\n  height: 100%;\n}\n.swiper-container-cube .swiper-slide .swiper-slide {\n  pointer-events: none;\n}\n.swiper-container-cube.swiper-container-rtl .swiper-slide {\n  -webkit-transform-origin: 100% 0;\n  -ms-transform-origin: 100% 0;\n  transform-origin: 100% 0;\n}\n.swiper-container-cube .swiper-slide-active,\n.swiper-container-cube .swiper-slide-active .swiper-slide-active {\n  pointer-events: auto;\n}\n.swiper-container-cube .swiper-slide-active,\n.swiper-container-cube .swiper-slide-next,\n.swiper-container-cube .swiper-slide-prev,\n.swiper-container-cube .swiper-slide-next + .swiper-slide {\n  pointer-events: auto;\n  visibility: visible;\n}\n.swiper-container-cube .swiper-slide-shadow-top,\n.swiper-container-cube .swiper-slide-shadow-bottom,\n.swiper-container-cube .swiper-slide-shadow-left,\n.swiper-container-cube .swiper-slide-shadow-right {\n  z-index: 0;\n  -webkit-backface-visibility: hidden;\n  backface-visibility: hidden;\n}\n.swiper-container-cube .swiper-cube-shadow {\n  position: absolute;\n  left: 0;\n  bottom: 0px;\n  width: 100%;\n  height: 100%;\n  background: #000;\n  opacity: 0.6;\n  -webkit-filter: blur(50px);\n  filter: blur(50px);\n  z-index: 0;\n}\n.swiper-container-flip {\n  overflow: visible;\n}\n.swiper-container-flip .swiper-slide {\n  pointer-events: none;\n  -webkit-backface-visibility: hidden;\n  backface-visibility: hidden;\n  z-index: 1;\n}\n.swiper-container-flip .swiper-slide .swiper-slide {\n  pointer-events: none;\n}\n.swiper-container-flip .swiper-slide-active,\n.swiper-container-flip .swiper-slide-active .swiper-slide-active {\n  pointer-events: auto;\n}\n.swiper-container-flip .swiper-slide-shadow-top,\n.swiper-container-flip .swiper-slide-shadow-bottom,\n.swiper-container-flip .swiper-slide-shadow-left,\n.swiper-container-flip .swiper-slide-shadow-right {\n  z-index: 0;\n  -webkit-backface-visibility: hidden;\n  backface-visibility: hidden;\n}\n.swiper-container-coverflow .swiper-wrapper {\n  /* Windows 8 IE 10 fix */\n  -ms-perspective: 1200px;\n}\n\n\n.swiper-container {\n  width: 100%;\n  /* border: 1px solid red; */\n  position: relative;\n}\n\n.swiper-slide {\n  /* border: 1px solid blue; */\n  width: 50vw;\n  height: 37.5vw;\n  background-color: rgba(0,0,0,0.2);\n  background-size: contain;\n  background-repeat: no-repeat;\n  background-position: center center;\n}\n\n.swiper-container.main {\n  /* height: 200px; */\n}\n.swiper-container.main .swiper-slide {\n  width: 50vw;\n  height: 100%;\n  max-height: 50vw;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n}\n.swiper-container.main .swiper-slide img {\n  object-fit: contain;\n}\n.swiper-container.main .swiper-slide img.fitheight {\n  width: auto;\n  height: 100%;\n}\n\n.swiper-container.main .swiper-slide img.fitwidth {\n  width: 100%;\n  height: auto;\n}\n\n.swiper-container.thumb {\n  height: 25vw;\n  position: relative;\n  padding: 5px;\n}\n.swiper-container.thumb .swiper-slide {\n  width: 33vw;\n  height: 100%;\n  opacity: 0.5;\n  box-shadow: 1px 1px 6px 2px rgba(40, 0, 0, 0.6);\n}\n.swiper-container.thumb .swiper-slide-active {\n  opacity: 1;\n  box-shadow: 1px 1px 3px 2px rgba(40, 0, 0, 0.3);\n}\n.swiper-container.thumb .navbutton {\n  font-size: 62px;\n  height: 62px;\n  width: 40px;\n}\n\naikuma-gestate {\n  position: absolute;\n  top: 0;\n  left: 0;\n  right: 0;\n  margin: 0 auto;\n  z-index: 10; \n}\naikuma-gestate canvas.sketch {\n  position: absolute;\n  pointer-events: none;\n  width: 100%;\n  height: 100%;\n  top: 0;\n  left: 0;\n  z-index: 12;\n}\n\n\@media all and (orientation: landscape) {\n  .swiper-container.main .swiper-slide {\n    width: 50vw;\n    height: 37.5vw;\n  }\n  .swiper-container.thumb {\n    display: none\n  }\n}\n\n\@media all and (orientation: portrait) {\n  .swiper-container.main  .swiper-button-next, .swiper-button-prev {\n    display: none;\n  }\n  .swiper-container.main .swiper-slide {\n    width: 100%;\n      height: 75vw;\n  }\n\n}"; }
+    static get style() { return "/**\n * Swiper 4.1.6\n * Most modern mobile touch slider and framework with hardware accelerated transitions\n * http://www.idangero.us/swiper/\n *\n * Copyright 2014-2018 Vladimir Kharlampidi\n *\n * Released under the MIT License\n *\n * Released on: February 11, 2018\n */\n.swiper-container {\n  margin: 0 auto;\n  position: relative;\n  overflow: hidden;\n  list-style: none;\n  padding: 0;\n  /* Fix of Webkit flickering */\n  z-index: 1;\n}\n.swiper-container-no-flexbox .swiper-slide {\n  float: left;\n}\n.swiper-container-vertical > .swiper-wrapper {\n  -webkit-box-orient: vertical;\n  -webkit-box-direction: normal;\n  -webkit-flex-direction: column;\n  -ms-flex-direction: column;\n  flex-direction: column;\n}\n.swiper-wrapper {\n  position: relative;\n  width: 100%;\n  height: 100%;\n  z-index: 1;\n  display: -webkit-box;\n  display: -webkit-flex;\n  display: -ms-flexbox;\n  display: flex;\n  -webkit-transition-property: -webkit-transform;\n  transition-property: -webkit-transform;\n  -o-transition-property: transform;\n  transition-property: transform;\n  transition-property: transform, -webkit-transform;\n  -webkit-box-sizing: content-box;\n  box-sizing: content-box;\n}\n.swiper-container-android .swiper-slide,\n.swiper-wrapper {\n  -webkit-transform: translate3d(0px, 0, 0);\n  transform: translate3d(0px, 0, 0);\n}\n.swiper-container-multirow > .swiper-wrapper {\n  -webkit-flex-wrap: wrap;\n  -ms-flex-wrap: wrap;\n  flex-wrap: wrap;\n}\n.swiper-container-free-mode > .swiper-wrapper {\n  -webkit-transition-timing-function: ease-out;\n  -o-transition-timing-function: ease-out;\n  transition-timing-function: ease-out;\n  margin: 0 auto;\n}\n.swiper-slide {\n  -webkit-flex-shrink: 0;\n  -ms-flex-negative: 0;\n  flex-shrink: 0;\n  width: 100%;\n  height: 100%;\n  position: relative;\n  -webkit-transition-property: -webkit-transform;\n  transition-property: -webkit-transform;\n  -o-transition-property: transform;\n  transition-property: transform;\n  transition-property: transform, -webkit-transform;\n}\n.swiper-invisible-blank-slide {\n  visibility: hidden;\n}\n/* Auto Height */\n.swiper-container-autoheight,\n.swiper-container-autoheight .swiper-slide {\n  height: auto;\n}\n.swiper-container-autoheight .swiper-wrapper {\n  -webkit-box-align: start;\n  -webkit-align-items: flex-start;\n  -ms-flex-align: start;\n  align-items: flex-start;\n  -webkit-transition-property: height, -webkit-transform;\n  transition-property: height, -webkit-transform;\n  -o-transition-property: transform, height;\n  transition-property: transform, height;\n  transition-property: transform, height, -webkit-transform;\n}\n/* 3D Effects */\n.swiper-container-3d {\n  -webkit-perspective: 1200px;\n  perspective: 1200px;\n}\n.swiper-container-3d .swiper-wrapper,\n.swiper-container-3d .swiper-slide,\n.swiper-container-3d .swiper-slide-shadow-left,\n.swiper-container-3d .swiper-slide-shadow-right,\n.swiper-container-3d .swiper-slide-shadow-top,\n.swiper-container-3d .swiper-slide-shadow-bottom,\n.swiper-container-3d .swiper-cube-shadow {\n  -webkit-transform-style: preserve-3d;\n  transform-style: preserve-3d;\n}\n.swiper-container-3d .swiper-slide-shadow-left,\n.swiper-container-3d .swiper-slide-shadow-right,\n.swiper-container-3d .swiper-slide-shadow-top,\n.swiper-container-3d .swiper-slide-shadow-bottom {\n  position: absolute;\n  left: 0;\n  top: 0;\n  width: 100%;\n  height: 100%;\n  pointer-events: none;\n  z-index: 10;\n}\n.swiper-container-3d .swiper-slide-shadow-left {\n  background-image: -webkit-gradient(linear, right top, left top, from(rgba(0, 0, 0, 0.5)), to(rgba(0, 0, 0, 0)));\n  background-image: -webkit-linear-gradient(right, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n  background-image: -o-linear-gradient(right, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n  background-image: linear-gradient(to left, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n}\n.swiper-container-3d .swiper-slide-shadow-right {\n  background-image: -webkit-gradient(linear, left top, right top, from(rgba(0, 0, 0, 0.5)), to(rgba(0, 0, 0, 0)));\n  background-image: -webkit-linear-gradient(left, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n  background-image: -o-linear-gradient(left, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n  background-image: linear-gradient(to right, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n}\n.swiper-container-3d .swiper-slide-shadow-top {\n  background-image: -webkit-gradient(linear, left bottom, left top, from(rgba(0, 0, 0, 0.5)), to(rgba(0, 0, 0, 0)));\n  background-image: -webkit-linear-gradient(bottom, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n  background-image: -o-linear-gradient(bottom, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n  background-image: linear-gradient(to top, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n}\n.swiper-container-3d .swiper-slide-shadow-bottom {\n  background-image: -webkit-gradient(linear, left top, left bottom, from(rgba(0, 0, 0, 0.5)), to(rgba(0, 0, 0, 0)));\n  background-image: -webkit-linear-gradient(top, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n  background-image: -o-linear-gradient(top, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n  background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));\n}\n/* IE10 Windows Phone 8 Fixes */\n.swiper-container-wp8-horizontal,\n.swiper-container-wp8-horizontal > .swiper-wrapper {\n  -ms-touch-action: pan-y;\n  touch-action: pan-y;\n}\n.swiper-container-wp8-vertical,\n.swiper-container-wp8-vertical > .swiper-wrapper {\n  -ms-touch-action: pan-x;\n  touch-action: pan-x;\n}\n.swiper-button-prev,\n.swiper-button-next {\n  position: absolute;\n  top: 50%;\n  width: 27px;\n  height: 44px;\n  margin-top: -22px;\n  z-index: 10;\n  cursor: pointer;\n  background-size: 27px 44px;\n  background-position: center;\n  background-repeat: no-repeat;\n}\n.swiper-button-prev.swiper-button-disabled,\n.swiper-button-next.swiper-button-disabled {\n  opacity: 0.35;\n  cursor: auto;\n  pointer-events: none;\n}\n.swiper-button-prev,\n.swiper-container-rtl .swiper-button-next {\n  background-image: url(\"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2027%2044'%3E%3Cpath%20d%3D'M0%2C22L22%2C0l2.1%2C2.1L4.2%2C22l19.9%2C19.9L22%2C44L0%2C22L0%2C22L0%2C22z'%20fill%3D'%23007aff'%2F%3E%3C%2Fsvg%3E\");\n  left: 10px;\n  right: auto;\n}\n.swiper-button-next,\n.swiper-container-rtl .swiper-button-prev {\n  background-image: url(\"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2027%2044'%3E%3Cpath%20d%3D'M27%2C22L27%2C22L5%2C44l-2.1-2.1L22.8%2C22L2.9%2C2.1L5%2C0L27%2C22L27%2C22z'%20fill%3D'%23007aff'%2F%3E%3C%2Fsvg%3E\");\n  right: 10px;\n  left: auto;\n}\n.swiper-button-prev.swiper-button-white,\n.swiper-container-rtl .swiper-button-next.swiper-button-white {\n  background-image: url(\"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2027%2044'%3E%3Cpath%20d%3D'M0%2C22L22%2C0l2.1%2C2.1L4.2%2C22l19.9%2C19.9L22%2C44L0%2C22L0%2C22L0%2C22z'%20fill%3D'%23ffffff'%2F%3E%3C%2Fsvg%3E\");\n}\n.swiper-button-next.swiper-button-white,\n.swiper-container-rtl .swiper-button-prev.swiper-button-white {\n  background-image: url(\"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2027%2044'%3E%3Cpath%20d%3D'M27%2C22L27%2C22L5%2C44l-2.1-2.1L22.8%2C22L2.9%2C2.1L5%2C0L27%2C22L27%2C22z'%20fill%3D'%23ffffff'%2F%3E%3C%2Fsvg%3E\");\n}\n.swiper-button-prev.swiper-button-black,\n.swiper-container-rtl .swiper-button-next.swiper-button-black {\n  background-image: url(\"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2027%2044'%3E%3Cpath%20d%3D'M0%2C22L22%2C0l2.1%2C2.1L4.2%2C22l19.9%2C19.9L22%2C44L0%2C22L0%2C22L0%2C22z'%20fill%3D'%23000000'%2F%3E%3C%2Fsvg%3E\");\n}\n.swiper-button-next.swiper-button-black,\n.swiper-container-rtl .swiper-button-prev.swiper-button-black {\n  background-image: url(\"data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2027%2044'%3E%3Cpath%20d%3D'M27%2C22L27%2C22L5%2C44l-2.1-2.1L22.8%2C22L2.9%2C2.1L5%2C0L27%2C22L27%2C22z'%20fill%3D'%23000000'%2F%3E%3C%2Fsvg%3E\");\n}\n.swiper-button-lock {\n  display: none;\n}\n.swiper-pagination {\n  position: absolute;\n  text-align: center;\n  -webkit-transition: 300ms opacity;\n  -o-transition: 300ms opacity;\n  transition: 300ms opacity;\n  -webkit-transform: translate3d(0, 0, 0);\n  transform: translate3d(0, 0, 0);\n  z-index: 10;\n}\n.swiper-pagination.swiper-pagination-hidden {\n  opacity: 0;\n}\n/* Common Styles */\n.swiper-pagination-fraction,\n.swiper-pagination-custom,\n.swiper-container-horizontal > .swiper-pagination-bullets {\n  bottom: 10px;\n  left: 0;\n  width: 100%;\n}\n/* Bullets */\n.swiper-pagination-bullets-dynamic {\n  overflow: hidden;\n  font-size: 0;\n}\n.swiper-pagination-bullets-dynamic .swiper-pagination-bullet {\n  -webkit-transform: scale(0.33);\n  -ms-transform: scale(0.33);\n  transform: scale(0.33);\n  position: relative;\n}\n.swiper-pagination-bullets-dynamic .swiper-pagination-bullet-active {\n  -webkit-transform: scale(1);\n  -ms-transform: scale(1);\n  transform: scale(1);\n}\n.swiper-pagination-bullets-dynamic .swiper-pagination-bullet-active-main {\n  -webkit-transform: scale(1);\n  -ms-transform: scale(1);\n  transform: scale(1);\n}\n.swiper-pagination-bullets-dynamic .swiper-pagination-bullet-active-prev {\n  -webkit-transform: scale(0.66);\n  -ms-transform: scale(0.66);\n  transform: scale(0.66);\n}\n.swiper-pagination-bullets-dynamic .swiper-pagination-bullet-active-prev-prev {\n  -webkit-transform: scale(0.33);\n  -ms-transform: scale(0.33);\n  transform: scale(0.33);\n}\n.swiper-pagination-bullets-dynamic .swiper-pagination-bullet-active-next {\n  -webkit-transform: scale(0.66);\n  -ms-transform: scale(0.66);\n  transform: scale(0.66);\n}\n.swiper-pagination-bullets-dynamic .swiper-pagination-bullet-active-next-next {\n  -webkit-transform: scale(0.33);\n  -ms-transform: scale(0.33);\n  transform: scale(0.33);\n}\n.swiper-pagination-bullet {\n  width: 8px;\n  height: 8px;\n  display: inline-block;\n  border-radius: 100%;\n  background: #000;\n  opacity: 0.2;\n}\nbutton.swiper-pagination-bullet {\n  border: none;\n  margin: 0;\n  padding: 0;\n  -webkit-box-shadow: none;\n  box-shadow: none;\n  -webkit-appearance: none;\n  -moz-appearance: none;\n  appearance: none;\n}\n.swiper-pagination-clickable .swiper-pagination-bullet {\n  cursor: pointer;\n}\n.swiper-pagination-bullet-active {\n  opacity: 1;\n  background: #007aff;\n}\n.swiper-container-vertical > .swiper-pagination-bullets {\n  right: 10px;\n  top: 50%;\n  -webkit-transform: translate3d(0px, -50%, 0);\n  transform: translate3d(0px, -50%, 0);\n}\n.swiper-container-vertical > .swiper-pagination-bullets .swiper-pagination-bullet {\n  margin: 6px 0;\n  display: block;\n}\n.swiper-container-vertical > .swiper-pagination-bullets.swiper-pagination-bullets-dynamic {\n  top: 50%;\n  -webkit-transform: translateY(-50%);\n  -ms-transform: translateY(-50%);\n  transform: translateY(-50%);\n  width: 8px;\n}\n.swiper-container-vertical > .swiper-pagination-bullets.swiper-pagination-bullets-dynamic .swiper-pagination-bullet {\n  display: inline-block;\n  -webkit-transition: 200ms top, 200ms -webkit-transform;\n  transition: 200ms top, 200ms -webkit-transform;\n  -o-transition: 200ms transform, 200ms top;\n  transition: 200ms transform, 200ms top;\n  transition: 200ms transform, 200ms top, 200ms -webkit-transform;\n}\n.swiper-container-horizontal > .swiper-pagination-bullets .swiper-pagination-bullet {\n  margin: 0 4px;\n}\n.swiper-container-horizontal > .swiper-pagination-bullets.swiper-pagination-bullets-dynamic {\n  left: 50%;\n  -webkit-transform: translateX(-50%);\n  -ms-transform: translateX(-50%);\n  transform: translateX(-50%);\n  white-space: nowrap;\n}\n.swiper-container-horizontal > .swiper-pagination-bullets.swiper-pagination-bullets-dynamic .swiper-pagination-bullet {\n  -webkit-transition: 200ms left, 200ms -webkit-transform;\n  transition: 200ms left, 200ms -webkit-transform;\n  -o-transition: 200ms transform, 200ms left;\n  transition: 200ms transform, 200ms left;\n  transition: 200ms transform, 200ms left, 200ms -webkit-transform;\n}\n.swiper-container-horizontal.swiper-container-rtl > .swiper-pagination-bullets-dynamic .swiper-pagination-bullet {\n  -webkit-transition: 200ms right, 200ms -webkit-transform;\n  transition: 200ms right, 200ms -webkit-transform;\n  -o-transition: 200ms transform, 200ms right;\n  transition: 200ms transform, 200ms right;\n  transition: 200ms transform, 200ms right, 200ms -webkit-transform;\n}\n/* Progress */\n.swiper-pagination-progressbar {\n  background: rgba(0, 0, 0, 0.25);\n  position: absolute;\n}\n.swiper-pagination-progressbar .swiper-pagination-progressbar-fill {\n  background: #007aff;\n  position: absolute;\n  left: 0;\n  top: 0;\n  width: 100%;\n  height: 100%;\n  -webkit-transform: scale(0);\n  -ms-transform: scale(0);\n  transform: scale(0);\n  -webkit-transform-origin: left top;\n  -ms-transform-origin: left top;\n  transform-origin: left top;\n}\n.swiper-container-rtl .swiper-pagination-progressbar .swiper-pagination-progressbar-fill {\n  -webkit-transform-origin: right top;\n  -ms-transform-origin: right top;\n  transform-origin: right top;\n}\n.swiper-container-horizontal > .swiper-pagination-progressbar {\n  width: 100%;\n  height: 4px;\n  left: 0;\n  top: 0;\n}\n.swiper-container-vertical > .swiper-pagination-progressbar {\n  width: 4px;\n  height: 100%;\n  left: 0;\n  top: 0;\n}\n.swiper-pagination-white .swiper-pagination-bullet-active {\n  background: #ffffff;\n}\n.swiper-pagination-progressbar.swiper-pagination-white {\n  background: rgba(255, 255, 255, 0.25);\n}\n.swiper-pagination-progressbar.swiper-pagination-white .swiper-pagination-progressbar-fill {\n  background: #ffffff;\n}\n.swiper-pagination-black .swiper-pagination-bullet-active {\n  background: #000000;\n}\n.swiper-pagination-progressbar.swiper-pagination-black {\n  background: rgba(0, 0, 0, 0.25);\n}\n.swiper-pagination-progressbar.swiper-pagination-black .swiper-pagination-progressbar-fill {\n  background: #000000;\n}\n.swiper-pagination-lock {\n  display: none;\n}\n/* Scrollbar */\n.swiper-scrollbar {\n  border-radius: 10px;\n  position: relative;\n  -ms-touch-action: none;\n  background: rgba(0, 0, 0, 0.1);\n}\n.swiper-container-horizontal > .swiper-scrollbar {\n  position: absolute;\n  left: 1%;\n  bottom: 3px;\n  z-index: 50;\n  height: 5px;\n  width: 98%;\n}\n.swiper-container-vertical > .swiper-scrollbar {\n  position: absolute;\n  right: 3px;\n  top: 1%;\n  z-index: 50;\n  width: 5px;\n  height: 98%;\n}\n.swiper-scrollbar-drag {\n  height: 100%;\n  width: 100%;\n  position: relative;\n  background: rgba(0, 0, 0, 0.5);\n  border-radius: 10px;\n  left: 0;\n  top: 0;\n}\n.swiper-scrollbar-cursor-drag {\n  cursor: move;\n}\n.swiper-scrollbar-lock {\n  display: none;\n}\n.swiper-zoom-container {\n  width: 100%;\n  height: 100%;\n  display: -webkit-box;\n  display: -webkit-flex;\n  display: -ms-flexbox;\n  display: flex;\n  -webkit-box-pack: center;\n  -webkit-justify-content: center;\n  -ms-flex-pack: center;\n  justify-content: center;\n  -webkit-box-align: center;\n  -webkit-align-items: center;\n  -ms-flex-align: center;\n  align-items: center;\n  text-align: center;\n}\n.swiper-zoom-container > img,\n.swiper-zoom-container > svg,\n.swiper-zoom-container > canvas {\n  max-width: 100%;\n  max-height: 100%;\n  -o-object-fit: contain;\n  object-fit: contain;\n}\n.swiper-slide-zoomed {\n  cursor: move;\n}\n/* Preloader */\n.swiper-lazy-preloader {\n  width: 42px;\n  height: 42px;\n  position: absolute;\n  left: 50%;\n  top: 50%;\n  margin-left: -21px;\n  margin-top: -21px;\n  z-index: 10;\n  -webkit-transform-origin: 50%;\n  -ms-transform-origin: 50%;\n  transform-origin: 50%;\n  -webkit-animation: swiper-preloader-spin 1s steps(12, end) infinite;\n  animation: swiper-preloader-spin 1s steps(12, end) infinite;\n}\n.swiper-lazy-preloader:after {\n  display: block;\n  content: '';\n  width: 100%;\n  height: 100%;\n  background-image: url(\"data:image/svg+xml;charset=utf-8,%3Csvg%20viewBox%3D'0%200%20120%20120'%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20xmlns%3Axlink%3D'http%3A%2F%2Fwww.w3.org%2F1999%2Fxlink'%3E%3Cdefs%3E%3Cline%20id%3D'l'%20x1%3D'60'%20x2%3D'60'%20y1%3D'7'%20y2%3D'27'%20stroke%3D'%236c6c6c'%20stroke-width%3D'11'%20stroke-linecap%3D'round'%2F%3E%3C%2Fdefs%3E%3Cg%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(30%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(60%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(90%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(120%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(150%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.37'%20transform%3D'rotate(180%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.46'%20transform%3D'rotate(210%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.56'%20transform%3D'rotate(240%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.66'%20transform%3D'rotate(270%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.75'%20transform%3D'rotate(300%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.85'%20transform%3D'rotate(330%2060%2C60)'%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E\");\n  background-position: 50%;\n  background-size: 100%;\n  background-repeat: no-repeat;\n}\n.swiper-lazy-preloader-white:after {\n  background-image: url(\"data:image/svg+xml;charset=utf-8,%3Csvg%20viewBox%3D'0%200%20120%20120'%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20xmlns%3Axlink%3D'http%3A%2F%2Fwww.w3.org%2F1999%2Fxlink'%3E%3Cdefs%3E%3Cline%20id%3D'l'%20x1%3D'60'%20x2%3D'60'%20y1%3D'7'%20y2%3D'27'%20stroke%3D'%23fff'%20stroke-width%3D'11'%20stroke-linecap%3D'round'%2F%3E%3C%2Fdefs%3E%3Cg%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(30%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(60%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(90%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(120%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.27'%20transform%3D'rotate(150%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.37'%20transform%3D'rotate(180%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.46'%20transform%3D'rotate(210%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.56'%20transform%3D'rotate(240%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.66'%20transform%3D'rotate(270%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.75'%20transform%3D'rotate(300%2060%2C60)'%2F%3E%3Cuse%20xlink%3Ahref%3D'%23l'%20opacity%3D'.85'%20transform%3D'rotate(330%2060%2C60)'%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E\");\n}\n\@-webkit-keyframes swiper-preloader-spin {\n  100% {\n    -webkit-transform: rotate(360deg);\n    transform: rotate(360deg);\n  }\n}\n\@keyframes swiper-preloader-spin {\n  100% {\n    -webkit-transform: rotate(360deg);\n    transform: rotate(360deg);\n  }\n}\n/* a11y */\n.swiper-container .swiper-notification {\n  position: absolute;\n  left: 0;\n  top: 0;\n  pointer-events: none;\n  opacity: 0;\n  z-index: -1000;\n}\n.swiper-container-fade.swiper-container-free-mode .swiper-slide {\n  -webkit-transition-timing-function: ease-out;\n  -o-transition-timing-function: ease-out;\n  transition-timing-function: ease-out;\n}\n.swiper-container-fade .swiper-slide {\n  pointer-events: none;\n  -webkit-transition-property: opacity;\n  -o-transition-property: opacity;\n  transition-property: opacity;\n}\n.swiper-container-fade .swiper-slide .swiper-slide {\n  pointer-events: none;\n}\n.swiper-container-fade .swiper-slide-active,\n.swiper-container-fade .swiper-slide-active .swiper-slide-active {\n  pointer-events: auto;\n}\n.swiper-container-cube {\n  overflow: visible;\n}\n.swiper-container-cube .swiper-slide {\n  pointer-events: none;\n  -webkit-backface-visibility: hidden;\n  backface-visibility: hidden;\n  z-index: 1;\n  visibility: hidden;\n  -webkit-transform-origin: 0 0;\n  -ms-transform-origin: 0 0;\n  transform-origin: 0 0;\n  width: 100%;\n  height: 100%;\n}\n.swiper-container-cube .swiper-slide .swiper-slide {\n  pointer-events: none;\n}\n.swiper-container-cube.swiper-container-rtl .swiper-slide {\n  -webkit-transform-origin: 100% 0;\n  -ms-transform-origin: 100% 0;\n  transform-origin: 100% 0;\n}\n.swiper-container-cube .swiper-slide-active,\n.swiper-container-cube .swiper-slide-active .swiper-slide-active {\n  pointer-events: auto;\n}\n.swiper-container-cube .swiper-slide-active,\n.swiper-container-cube .swiper-slide-next,\n.swiper-container-cube .swiper-slide-prev,\n.swiper-container-cube .swiper-slide-next + .swiper-slide {\n  pointer-events: auto;\n  visibility: visible;\n}\n.swiper-container-cube .swiper-slide-shadow-top,\n.swiper-container-cube .swiper-slide-shadow-bottom,\n.swiper-container-cube .swiper-slide-shadow-left,\n.swiper-container-cube .swiper-slide-shadow-right {\n  z-index: 0;\n  -webkit-backface-visibility: hidden;\n  backface-visibility: hidden;\n}\n.swiper-container-cube .swiper-cube-shadow {\n  position: absolute;\n  left: 0;\n  bottom: 0px;\n  width: 100%;\n  height: 100%;\n  background: #000;\n  opacity: 0.6;\n  -webkit-filter: blur(50px);\n  filter: blur(50px);\n  z-index: 0;\n}\n.swiper-container-flip {\n  overflow: visible;\n}\n.swiper-container-flip .swiper-slide {\n  pointer-events: none;\n  -webkit-backface-visibility: hidden;\n  backface-visibility: hidden;\n  z-index: 1;\n}\n.swiper-container-flip .swiper-slide .swiper-slide {\n  pointer-events: none;\n}\n.swiper-container-flip .swiper-slide-active,\n.swiper-container-flip .swiper-slide-active .swiper-slide-active {\n  pointer-events: auto;\n}\n.swiper-container-flip .swiper-slide-shadow-top,\n.swiper-container-flip .swiper-slide-shadow-bottom,\n.swiper-container-flip .swiper-slide-shadow-left,\n.swiper-container-flip .swiper-slide-shadow-right {\n  z-index: 0;\n  -webkit-backface-visibility: hidden;\n  backface-visibility: hidden;\n}\n.swiper-container-coverflow .swiper-wrapper {\n  /* Windows 8 IE 10 fix */\n  -ms-perspective: 1200px;\n}\n\n\n.swiper-container {\n  width: 100%;\n  /* border: 1px solid red; */\n  position: relative;\n}\n\n.swiper-slide {\n  /* border: 1px solid blue; */\n  width: 50vw;\n  height: 37.5vw;\n  background-color: rgba(0,0,0,0.2);\n  background-size: contain;\n  background-repeat: no-repeat;\n  background-position: center center;\n}\n\n.swiper-container.main {\n  /* height: 200px; */\n}\n.swiper-container.main .swiper-slide {\n  width: 50vw;\n  height: 100%;\n  max-height: 50vw;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n}\n.swiper-container.main .swiper-slide img {\n  object-fit: contain;\n}\n.swiper-container.main .swiper-slide img.fitheight {\n  width: auto;\n  height: 100%;\n}\n\n.swiper-container.main .swiper-slide img.fitwidth {\n  width: 100%;\n  height: auto;\n}\n\n.swiper-container.thumb {\n  height: 25vw;\n  position: relative;\n  padding: 5px;\n}\n.swiper-container.thumb .swiper-slide {\n  width: 33vw;\n  height: 100%;\n  opacity: 0.5;\n  box-shadow: 1px 1px 6px 2px rgba(40, 0, 0, 0.6);\n}\n.swiper-container.thumb .swiper-slide-active {\n  opacity: 1;\n  box-shadow: 1px 1px 3px 2px rgba(40, 0, 0, 0.3);\n}\n.swiper-container.thumb .navbutton {\n  font-size: 62px;\n  height: 62px;\n  width: 40px;\n}\n\naikuma-gestate {\n  position: absolute;\n  top: 0;\n  left: 0;\n  right: 0;\n  margin: 0 auto;\n  z-index: 10; \n}\naikuma-gestate canvas.sketch {\n  position: absolute;\n  pointer-events: none;\n  width: 100%;\n  height: 100%;\n  top: 0;\n  left: 0;\n  z-index: 12;\n}\n\n\@media all and (orientation: landscape) {\n  .swiper-container.main .swiper-slide {\n    width: 50vw;\n    height: 37.5vw;\n  }\n  .swiper-container.thumb {\n    display: none\n  }\n}\n\n\@media all and (orientation: portrait) {\n  .swiper-container.main  .swiper-button-next, .swiper-button-prev {\n    display: none;\n  }\n  .swiper-container.main .swiper-slide {\n    width: 100%;\n      height: 75vw;\n  }\n\n}"; }
 }
 // {this.slides.map((slide) => 
 //   <div class="swiper-slide" style={getSlideStyle(slide.bg)}></div>

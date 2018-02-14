@@ -102,24 +102,30 @@ export class SlideShow {
       thumb: sthumbctrl
     }
     
-    this.swiper.main.on('slideChangeTransitionEnd', () => {
-      this.slideEvent.emit({type:'end', val: this.getSlideContentSize()})
-      this.checkAspectRatio(this.swiper.main.activeIndex)
+    this.swiper.main.on('slideChangeTransitionEnd', async () => {
+      this.slideEvent.emit({type:'end', val: await this.getSlideContentSize()})
+      //this.checkAspectRatio(this.swiper.main.activeIndex)
     })
-    const emitResize = () => {
-      this.slideSize.emit( {
-        content: this.getSlideContentSize(),
-        frame: this.getSlideFrameSize()
-      })
+    const emitResize = async () => {
+      try {
+        let cs = await this.getSlideContentSize()
+        this.slideSize.emit( {
+          content: cs,
+          frame: this.getSlideFrameSize()
+        })
+      } catch(e) {
+        console.error('slide-show: can\'t get content size',e)
+      }
     }
     this.swiper.main.on('resize', () => {
       emitResize()
     })
     this.swiper.main.on('init', () => {
       this.slideEvent.emit({type:'init', val: this.swiper})
-      setTimeout(() => {
-        emitResize()
-      },100)
+      emitResize()
+      // setTimeout(() => {
+      //   emitResize()
+      // },100)
     })
   }
   @Method()
@@ -178,9 +184,24 @@ export class SlideShow {
 
   // }
 
-  getSlideContentSize(): DOMRect {
-    let slideEl = this.el.shadowRoot.querySelector('.swiper-container.main .swiper-slide.swiper-slide-active img')
-    return slideEl.getBoundingClientRect() as DOMRect
+  getSlideContentSize(): Promise<DOMRect> {
+    return new Promise((resolve, reject) => {
+      let slideEl:HTMLImageElement = this.el.shadowRoot.querySelector('.swiper-container.main .swiper-slide.swiper-slide-active img')
+      let i = 0
+      let wait = setInterval(function() {
+        let w = slideEl.naturalWidth,
+            h = slideEl.naturalHeight
+        if (w && h) {
+          clearInterval(wait)
+          resolve(slideEl.getBoundingClientRect() as DOMRect)
+        }
+        if (i === 10) {
+          clearInterval(wait)
+          reject()
+        }
+        ++i
+      }, 30)
+    })
   }
 
   getSlideFrameSize(): DOMRect {
@@ -193,15 +214,15 @@ export class SlideShow {
     this.slideTo(idx)
   }
 
-  checkAspectRatio (idx: number) {
-    if (!this.imagesizes[idx]) {
-      return false
-    }
-    let frame = this.getSlideFrameSize()
-    let ar_slide = frame.width / frame.height 
-    let ar_img = this.imagesizes[idx].width / this.imagesizes[idx].height
-    console.log(idx, ar_slide, ar_img)
-  }
+  // checkAspectRatio (idx: number) {
+  //   if (!this.imagesizes[idx]) {
+  //     return false
+  //   }
+  //   let frame = this.getSlideFrameSize()
+  //   let ar_slide = frame.width / frame.height 
+  //   let ar_img = this.imagesizes[idx].width / this.imagesizes[idx].height
+  //   console.log(idx, ar_slide, ar_img)
+  // }
 
   render() {
     const getSlideStyle = (bg: string) => {
@@ -211,7 +232,7 @@ export class SlideShow {
     }
     const imageLoad = (idx: number) => {
       let img = this.el.shadowRoot.querySelector('.swiper-container.main #i'+idx) as HTMLImageElement
-      console.log('index', idx, img.naturalWidth, img.naturalHeight)
+      //console.log('index', idx, img.naturalWidth, img.naturalHeight)
       let nis = this.imagesizes.slice()
       nis[idx] = {width: img.naturalWidth, height: img.naturalHeight}
       this.imagesizes = nis
@@ -223,7 +244,7 @@ export class SlideShow {
       let frame = this.getSlideFrameSize()
       let ar_slide = frame.width / frame.height 
       let ar_img = this.imagesizes[idx].width / this.imagesizes[idx].height
-      console.log(idx, ar_slide, ar_img)
+      //console.log(idx, ar_slide, ar_img)
       return ar_img > ar_slide
     }
     return (

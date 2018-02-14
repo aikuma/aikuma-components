@@ -9,15 +9,13 @@ export interface Gesture {
   timeLine: {x: number, y: number, t: number}[]
 }
 
-export interface GestateElement extends HTMLElement, Gestate {}
-
 @Component({
   tag: 'aikuma-gestate',
   styleUrl: 'gestate.css',
   shadow: true
 })
 export class Gestate {
-  @Element() el: HTMLElement
+  @Element() el: HTMLAikumaGestateElement
   @Prop() size: {content: DOMRect, frame: DOMRect}
   @Watch('size')
   watchHandler(size: {content: DOMRect, frame: DOMRect}, oldSize: {content: DOMRect, frame: DOMRect}) {
@@ -25,7 +23,7 @@ export class Gestate {
       return
     }
     if (size && this.overlay && size.content && size.frame) {
-      console.log('gestate size', size)
+      //console.log('gestate size', size)
       let newsize = size.content
       this.overlay.style.setProperty('width', newsize.width.toString()+'px')
       this.overlay.style.setProperty('height', newsize.height.toString()+'px')

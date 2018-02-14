@@ -1,6 +1,6 @@
 import { Component, Element, State, Method, Listen } from '@stencil/core'
 import { SlideShowElement } from '../slide-show/slide-show'
-import { Gesture, GestateElement } from '../gestate/gestate'
+import { Gesture } from '../gestate/gestate'
 import { Microphone, WebAudioPlayer } from 'aikumic'
 import prettyprint from 'prettyprint'
 import fontawesome from '@fortawesome/fontawesome'
@@ -38,7 +38,7 @@ interface State {
 export class ImageGestureVoice {
   @Element() el: HTMLElement
   ssc: SlideShowElement
-  gestate: GestateElement
+  gestate: HTMLAikumaGestateElement
   modal: ModalElement
   mic: Microphone = new Microphone()
   timeLine: {t: number}[] = []
@@ -66,7 +66,7 @@ export class ImageGestureVoice {
   } = { recordLength: 0, audioBlob: null}
   @Listen('slideSize')
   slideSizeHandler(event: CustomEvent) {
-    console.log('igv got slide size notification')
+    console.log('igv got slide size notification', event.detail)
     if (event.detail) {
       this.changeState({contentSize: event.detail.content, frameSize: event.detail.frame})
     }
@@ -83,7 +83,7 @@ export class ImageGestureVoice {
         this.gestate.stopRecord()
       }
     } else if (t === 'end') {
-      console.log('slide change ending',v)
+      //console.log('slide change ending',v)
       this.changeState({contentSize: v})
       if (this.state.recording) {
         this.gestate.record('attention', this.mic.getElapsed())

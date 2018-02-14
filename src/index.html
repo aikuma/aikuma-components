@@ -14,9 +14,10 @@
   <script type="text/javascript">
     (function() {
       document.addEventListener("DOMContentLoaded", function(){
-        let igv = document.querySelector('aikuma-image-gesture-voice')
-        let pics = [1,2,4,5].map((i) => {
-          return 'http://localhost:8000/som-hand'+i.toString()+'.jpg'
+        setTimeout(()=> {
+          let igv = document.querySelector('aikuma-image-gesture-voice')
+        let pics = [1,2,3].map((i) => {
+          return 'http://members.iinet.net.au/~lurks/img/som-hand'+i.toString()+'.jpg'
         })
         igv.loadFromImageURLs(pics)
         igv.waitForComplete().then((igvdata) => {
@@ -26,6 +27,8 @@
             console.log('aikuma-image-gesture-voice cancelled')
           }
         })
+        }, 1000)
+        
       })
     })();
  </script>
