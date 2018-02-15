@@ -1,5 +1,4 @@
 import { randomColor } from 'randomcolor'
-import Sketch from 'sketch-js'
 
 export class Particle {
   alive: boolean = true
@@ -42,7 +41,7 @@ export class Particle {
     this.theta += this.random( -0.5, 0.5 ) * this.wander
     this.vx += Math.sin( this.theta ) * 0.1
     this.vy += Math.cos( this.theta ) * 0.1
-    this.radius *= 0.91
+    this.radius *= 0.93
     this.alive = this.radius > 0.5
   }
   draw( ctx: CanvasRenderingContext2D ) {
@@ -60,100 +59,86 @@ export class Particle {
 }
 
 export class Particles {
-  MAX_PARTICLES: number = 250
-  FAST_PARTICLES: number = 250
+  MAX_PARTICLES: number = 500
+  FAST_PARTICLES: number = 500
   SPAWN_MIN: number = 3
   SPAWN_MAX: number = 5
   particles = []
   times: number[] = []
   lastParp: {time: number, particles: number, x: number, y: number} = null
-  sketchActive: boolean = false
   colors: string[] 
-  sketch: any
-  htmlelement: HTMLElement
   width: number
   height: number
   recordMode: boolean = false
   lastSpawn: {x: number, y: number, d: Date} = null
-  constructor(htmlElement: HTMLElement) {
-    this.htmlelement = htmlElement
-    //this.colors = randomColor({count: 10, luminosity: 'dark'})
+  canvas: HTMLCanvasElement
+  ctx: CanvasRenderingContext2D
+  running: boolean = false
+  constructor(canvas: HTMLCanvasElement) {
+    this.canvas = canvas
+    this.ctx = this.canvas.getContext('2d')
+    this.ctx.globalCompositeOperation  = 'color'
     this.colors = randomColor({count: 20})
-    //this.init()
   }
   
-  init(recordMode: boolean = false) {
+  begin(recordMode: boolean = false) {
     this.recordMode = recordMode
-    this.width = this.htmlelement.clientWidth
-    this.height = this.htmlelement.clientHeight
     this.lastParp = null
-    if (this.sketchActive) {
-      return
-    }
-    this.sketch = Sketch.create({
-      globals: false,
-      container: this.htmlelement,
-      eventTarget: this.htmlelement,
-      retina: false,
-      fullscreen: false,
-      autopause: true,
-      //interval: recordMode ? 2 : 1,
-      width: this.width,
-      height: this.height,
-      autoclear: false
-    })
-    console.log('particles create size', this.htmlelement.clientWidth, this.htmlelement.clientHeight)
-    this.sketch.globalCompositeOperation  = 'color'
-    this.sketch.spawn = ( x: number, y: number, lvec: {lx: number, ly: number, lt: number} = null ) => {
-      let mp = recordMode ? this.FAST_PARTICLES : this.MAX_PARTICLES
-      if ( this.particles.length >= mp ) {
-        this.particles.shift()
-      }
-      this.particles.push( new Particle(x, y, this.random( 4, 8 ), this.colors, lvec ) )
-    }
-    this.sketch.update = () => {
-      this.sketch.clear()
-      let lp = []
-      for ( let p of this.particles ) {
-        p.move()
-        if (p.alive) {
-          lp.push(p)
-        }
-      }
-      this.particles = lp
-      //this.times.push(this.sketch.dt)
-    }
-    this.sketch.draw = () => {
-      for (let p of this.particles) {
-        p.draw(this.sketch)
-      }
-      this.times.push(this.sketch.dt)
-    }
-    this.sketchActive = true
+    this.running = true
+    this.renderTick()
   }
-  resize(rect: DOMRect) {
-    let cv = this.htmlelement.querySelector('canvas')
-    if (!cv) {
-      return
-    }
-    this.width = Math.floor(rect.width)
-    this.height = Math.floor(rect.height)
-    cv.setAttribute('width', this.width.toString()+'px')
-    cv.setAttribute('height', this.height.toString()+'px')
-    //cv.style.setProperty('width', this.width.toString()+'px')
-    //cv.style.setProperty('height', this.height.toString()+'px')
-    cv.style.setProperty('left', Math.floor(rect.left).toString()+'px')
-    cv.style.setProperty('right', Math.floor(rect.right).toString()+'px')
-  }
-  start() {
 
+  renderTick() {
+    this.drawParticles()
+    this.moveParticles()
+    if (this.running) {
+      window.requestAnimationFrame(() => {
+        this.renderTick()
+      })
+    } 
   }
+
+  drawParticles() {
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
+    for (let p of this.particles) {
+      p.draw(this.ctx)
+    }
+  }
+
+  moveParticles() {
+    let lp = []
+    for ( let p of this.particles ) {
+      p.move()
+      if (p.alive) {
+        lp.push(p)
+      }
+    }
+    this.particles = lp
+  }
+
+  spawnParticles(x: number, y: number, lvec: {lx: number, ly: number, lt: number} = null ) {
+    let mp = this.recordMode ? this.FAST_PARTICLES : this.MAX_PARTICLES
+    if ( this.particles.length >= mp ) {
+      this.particles.shift()
+    }
+    this.particles.push( new Particle(x, y, this.random( 4, 8 ), this.colors, lvec ) )
+  }
+
+  resize(rect: DOMRect) {
+    this.width = rect.width
+    this.height = rect.height
+    this.canvas.width = this.width
+    this.canvas.height = this.height
+    this.canvas.style.setProperty('width', this.width.toString()+'px')
+    this.canvas.style.setProperty('height', this.height.toString()+'px')
+    this.canvas.style.setProperty('left', rect.left.toString()+'px')
+    this.canvas.style.setProperty('right', rect.right.toString()+'px')
+  }
+ 
   stop() {
-    let total: number = this.times.reduce((sum, value) => sum + value, 1)
-    console.log('sketch fps', Math.round(1000 / (total/this.times.length)))
     this.lastParp = null
-    //this.sketch.destroy()
-    //this.sketchActive = false
+    this.running = false
+    this.particles = []
   }
   random( min, max ) {
     return Math.random() * (max - min) + min
@@ -188,10 +173,8 @@ export class Particles {
           ly: fy - this.lastSpawn.y,
           lt: new Date().valueOf() - this.lastSpawn.d.valueOf()
         } : null
-      
-      
       if (!min) {
-        this.sketch.spawn(fx, fy, lvec)
+        this.spawnParticles(fx, fy, lvec)
       } else {
         let mv = this.lastSpawn 
           ? Math.min(Math.sqrt(Math.pow(lvec.lx,2) + Math.pow(lvec.ly,2)), 10)
@@ -200,7 +183,7 @@ export class Particles {
         let smin = ~~(min*af)
         let smax = ~~(max*af)
         for (let x = 0; x < this.getRandomIntInclusive(smin, smax); ++x) {
-          this.sketch.spawn(fx, fy, lvec)
+          this.spawnParticles(fx, fy, lvec)
         }
       }
     }
@@ -242,9 +225,5 @@ export class Particles {
   clearLastParp() {
     this.lastParp = null
   }
-  destroy() {
-    if (this.sketchActive) {
-      this.sketch.destroy()
-    }
-  }
+
 }

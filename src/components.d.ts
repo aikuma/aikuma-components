@@ -49,36 +49,6 @@ declare global {
 
 
 import {
-  Gestate as AikumaGestate
-} from './components/gestate/gestate';
-
-declare global {
-  interface HTMLAikumaGestateElement extends AikumaGestate, HTMLStencilElement {
-  }
-  var HTMLAikumaGestateElement: {
-    prototype: HTMLAikumaGestateElement;
-    new (): HTMLAikumaGestateElement;
-  };
-  interface HTMLElementTagNameMap {
-    "aikuma-gestate": HTMLAikumaGestateElement;
-  }
-  interface ElementTagNameMap {
-    "aikuma-gestate": HTMLAikumaGestateElement;
-  }
-  namespace JSX {
-    interface IntrinsicElements {
-      "aikuma-gestate": JSXElements.AikumaGestateAttributes;
-    }
-  }
-  namespace JSXElements {
-    export interface AikumaGestateAttributes extends HTMLAttributes {
-      size?: {content: DOMRect, frame: DOMRect};
-    }
-  }
-}
-
-
-import {
   ImageGestureVoice as AikumaImageGestureVoice
 } from './components/image-gesture-voice/image-gesture-voice';
 

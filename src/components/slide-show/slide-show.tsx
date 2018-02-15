@@ -101,31 +101,34 @@ export class SlideShow {
       main: smainctrl,
       thumb: sthumbctrl
     }
-    
-    this.swiper.main.on('slideChangeTransitionEnd', async () => {
-      this.slideEvent.emit({type:'end', val: await this.getSlideContentSize()})
-      //this.checkAspectRatio(this.swiper.main.activeIndex)
+    this.swiper.main.on('slideChangeTransitionStart', async () => {
+      this.slideEvent.emit({type: 'changeslide', val: {slide: this.swiper.main.activeIndex}})
     })
-    const emitResize = async () => {
-      try {
-        let cs = await this.getSlideContentSize()
-        this.slideSize.emit( {
-          content: cs,
-          frame: this.getSlideFrameSize()
-        })
-      } catch(e) {
-        console.error('slide-show: can\'t get content size',e)
-      }
-    }
+    this.swiper.main.on('slideChangeTransitionEnd', async () => {
+      //this.slideEvent.emit({type:'end', val: await this.getSlideContentSize()})
+      this.emitSlide()
+    })
+    // const emitResize = async () => {
+    //   try {
+    //     let cs = await this.getSlideContentSize()
+    //     this.slideSize.emit( {
+    //       content: cs,
+    //       frame: this.getSlideFrameSize()
+    //     })
+    //   } catch(e) {
+    //     console.error('slide-show: can\'t get content size',e)
+    //   }
+    // }
     this.swiper.main.on('resize', () => {
-      emitResize()
+      //emitResize()
     })
     this.swiper.main.on('init', () => {
       this.slideEvent.emit({type:'init', val: this.swiper})
-      emitResize()
+      //emitResize()
       // setTimeout(() => {
       //   emitResize()
       // },100)
+      this.emitSlide()
     })
   }
   @Method()
@@ -180,9 +183,10 @@ export class SlideShow {
     this.updating = false
   }
 
-  // componentDidUnload() {
-
-  // }
+  emitSlide() {
+    let imgEl:HTMLImageElement = this.el.shadowRoot.querySelector('.swiper-container.main .swiper-slide.swiper-slide-active img')
+    this.slideEvent.emit({type: 'newslide', val: {element: imgEl, slide: this.swiper.main.activeIndex}})
+  }
 
   getSlideContentSize(): Promise<DOMRect> {
     return new Promise((resolve, reject) => {
@@ -195,7 +199,7 @@ export class SlideShow {
           clearInterval(wait)
           resolve(slideEl.getBoundingClientRect() as DOMRect)
         }
-        if (i === 10) {
+        if (i === 100) {
           clearInterval(wait)
           reject()
         }

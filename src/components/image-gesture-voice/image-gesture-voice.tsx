@@ -1,6 +1,6 @@
-import { Component, Element, State, Method, Listen } from '@stencil/core'
+import { Component, Element, State, Method, Listen, Event, EventEmitter } from '@stencil/core'
 import { SlideShowElement } from '../slide-show/slide-show'
-import { Gesture } from '../gestate/gestate'
+import { Gesture, Gestate } from './gestate'
 import { Microphone, WebAudioPlayer } from 'aikumic'
 import prettyprint from 'prettyprint'
 import fontawesome from '@fortawesome/fontawesome'
@@ -38,7 +38,7 @@ interface State {
 export class ImageGestureVoice {
   @Element() el: HTMLElement
   ssc: SlideShowElement
-  gestate: HTMLAikumaGestateElement
+  gestate: Gestate
   modal: ModalElement
   mic: Microphone = new Microphone()
   timeLine: {t: number}[] = []
@@ -49,7 +49,7 @@ export class ImageGestureVoice {
     contentSize: null,  // Rect of an aspect-adjusted image in the frame
     frameSize: null,    // Rect of a slide frame
     elapsed: '0.0',
-    enableRecord: true, // show record buttons
+    enableRecord: false, // show record buttons
     havePlayed: false,  // have ever played
     restored: false,    // restored complete slides (with recording)
     madeChanges: false,  // if we have made any changes
@@ -64,6 +64,8 @@ export class ImageGestureVoice {
     recordLength: number,
     audioBlob: Blob
   } = { recordLength: 0, audioBlob: null}
+  gestureElement: HTMLElement
+  @Event() AikumaIGV: EventEmitter<string>
   @Listen('slideSize')
   slideSizeHandler(event: CustomEvent) {
     console.log('igv got slide size notification', event.detail)
@@ -77,19 +79,20 @@ export class ImageGestureVoice {
     let v = event.detail.val
     if (t === 'init') {
       console.log('igv got slide init')
-    } else if (t === 'start') {
-      //console.log('slide change',v)
+    } else if (t === 'changeslide') {
+      console.log('slide change begin',v)
       if (this.state.recording) {
         this.gestate.stopRecord()
       }
-    } else if (t === 'end') {
-      //console.log('slide change ending',v)
-      this.changeState({contentSize: v})
+    } else if (t === 'newslide') {
+      console.log('slide change ending',v)
+      //this.changeState({contentSize: v})
+      this.gestureElement = v.element
       if (this.state.recording) {
-        this.gestate.record('attention', this.mic.getElapsed())
+        this.gestate.record(this.gestureElement, 'attention', this.mic.getElapsed())
       }
       this.slideChange(v)
-    }
+    } 
   }
   @Listen('clickEvent')
   clickEventHandler(event: CustomEvent) {
@@ -112,13 +115,15 @@ export class ImageGestureVoice {
   // Lifecycle
   //
   componentWillLoad() {
-    console.log('IGV is about to be rendered')
+    console.log('IGV componentWillLoad()')
   }
 
   componentDidLoad() {
+    console.log('IGV componentDidLoad()')
     this.ssc = this.el.shadowRoot.querySelector('aikuma-slide-show')
-    this.gestate = this.el.shadowRoot.querySelector('aikuma-gestate')
     this.modal = this.el.shadowRoot.querySelector('aikuma-modal')
+    this.gestate = new Gestate({debug: true})
+    this.AikumaIGV.emit('init')
   }
 
   init() {
@@ -126,6 +131,7 @@ export class ImageGestureVoice {
     this.recObs = this.mic.observeProgress().subscribe((t) => {
       this.changeState({elapsed: this.getNiceTime(t)})
     })
+    this.changeState({'enableRecord': true})
   }
   //
   // Public Methods
@@ -267,7 +273,7 @@ export class ImageGestureVoice {
         this.state.recording = true
         this.changeState({recording: true, showControls: false})
         this.ssc.lockPrevious()
-        this.gestate.record('attention', this.mic.getElapsed())
+        this.gestate.record(this.gestureElement, 'attention', this.mic.getElapsed())
       }
     } else if (this.state.mode === 'review') {
       if (this.state.playing) {
@@ -345,20 +351,23 @@ export class ImageGestureVoice {
   <aikuma-modal></aikuma-modal>
   <div class="slidewrapper">
     <aikuma-slide-show></aikuma-slide-show>
-    <aikuma-gestate size={{content: this.state.contentSize, frame: this.state.frameSize}}></aikuma-gestate>
   </div>
   <div class="controls">
-    <aikuma-buttony 
-        disabled={!this.canRecord()} 
-        id="record" size="85"
-        >
-      <div class="recbutton">
-        <div class="buttonicon"
-          innerHTML={fontawesome.icon(this.state.recording ? faPause: faStop).html[0]}>
-        </div>
-        <div class="elapsed">{this.state.elapsed}</div>
-      </div>
-    </aikuma-buttony>
+    {
+      this.state.enableRecord ?
+        <aikuma-buttony 
+            disabled={!this.canRecord()} 
+            id="record" size="85">
+          <div class="recbutton">
+            <div class="buttonicon"
+              innerHTML={fontawesome.icon(this.state.recording ? faPause: faStop).html[0]}>
+            </div>
+            <div class="elapsed">{this.state.elapsed}</div>
+          </div>
+        </aikuma-buttony> :
+        null
+    }
+  
     {
       this.state.showControls ? 
         <div class="ctrlwrapper">

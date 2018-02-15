@@ -1,7 +1,6 @@
-import { Component, Element, Watch, Prop, Method } from '@stencil/core'
 import { Particles } from './particles'
 
-type Milliseconds = number
+export type Milliseconds = number
 
 export interface Gesture {
   timeOffset: number
@@ -9,34 +8,7 @@ export interface Gesture {
   timeLine: {x: number, y: number, t: number}[]
 }
 
-@Component({
-  tag: 'aikuma-gestate',
-  styleUrl: 'gestate.css',
-  shadow: true
-})
 export class Gestate {
-  @Element() el: HTMLAikumaGestateElement
-  @Prop() size: {content: DOMRect, frame: DOMRect}
-  @Watch('size')
-  watchHandler(size: {content: DOMRect, frame: DOMRect}, oldSize: {content: DOMRect, frame: DOMRect}) {
-    if (size.content === oldSize.content && size.frame === oldSize.frame) {
-      return
-    }
-    if (size && this.overlay && size.content && size.frame) {
-      //console.log('gestate size', size)
-      let newsize = size.content
-      this.overlay.style.setProperty('width', newsize.width.toString()+'px')
-      this.overlay.style.setProperty('height', newsize.height.toString()+'px')
-      let offsetx = ((this.el.clientWidth - newsize.width) / 2) 
-      let offsety = ((size.frame.height  - newsize.height) / 2) 
-      this.overlay.style.setProperty('left', offsetx.toString()+'px')
-      this.overlay.style.setProperty('top', offsety.toString()+'px')
-      if (this.particles) {
-        this.particles.resize(newsize)
-      }
-    }
-  }
-
   // 
   //  Class Variables
   //
@@ -61,33 +33,53 @@ export class Gestate {
     trackTouchIdentifier: null
   }
   gestures: Gesture[] = []
-  overlay: HTMLElement
+  canvas: HTMLCanvasElement
   particles: Particles
+  sourceElement: HTMLElement
+  debug: boolean = false
+  constructor(config: any) {
+    this.debug = config && config.debug
+    this.init()
+  }
   // 
   // Lifecycle
   //
-  componentDidLoad() {
-    console.log('gestate did load')
-    this.overlay = this.el.shadowRoot.querySelector('.overlay')
-    console.log('... and got overlay', this.overlay)
-    this.init()
-  }
-  init() {
-    console.log('gestate init particles')
-    this.particles = new Particles(this.overlay)
-  }
-  componentDidUnload() {
-    console.log('The view has been removed from the DOM');
-    if (this.particles) {
-      this.particles.destroy()
+   init() {
+    //console.log('gestate init particles')
+    this.canvas = document.createElement('canvas')
+    this.canvas.classList.add('gestateoverlay')
+    let style = "position: absolute; z-index: 100; user-select: none; -moz-user-select: none; -webkit-user-select: none;"
+    if (this.debug) {
+      style += " border: 1px solid red; box-sizing: border-box;"
     }
+    this.canvas.setAttribute("style", style)
+    this.canvas.addEventListener('touchstart', this.touchEvent.bind(this))
+    this.canvas.addEventListener('touchmove', this.touchEvent.bind(this))
+    this.canvas.addEventListener('touchend', this.touchEvent.bind(this))
+    this.canvas.addEventListener('mousedown', this.mouseEvent.bind(this))
+    this.canvas.addEventListener('mouseenter', this.mouseEvent.bind(this))
+    this.canvas.addEventListener('mousemove', this.mouseEvent.bind(this))
+    this.canvas.addEventListener('mouseleave', this.mouseEvent.bind(this))
+    this.canvas.addEventListener('mouseup', this.mouseEvent.bind(this))
+    let body = document.querySelector('body')
+    body.appendChild(this.canvas)
+    this.particles = new Particles(this.canvas)
+    window.addEventListener('resize', () => {
+      this.resizeCanvas()
+    })
   }
+
+  destroy() {
+    this.canvas.remove()
+  }
+ 
   //
   // Logic
   //
-  @Method()
-  record(gtype: string, time: number): void {
+  record(element: HTMLElement, gtype: string, time: number): void {
     console.log('gestate start()')
+    this.sourceElement = element
+    this.resizeCanvas()
     this.state = {
       isPlaying: false,
       isRecording: true
@@ -102,36 +94,36 @@ export class Gestate {
       movingPos: null,
       trackTouchIdentifier: null
     }
-    this.particles.init(true)
+    this.particles.begin(true)
     this.recordTick()
   }
-  @Method()
+
   stopRecord(): void {
     console.log('gestate stop()')
     this.state.isRecording = false
-    //this.particles.stop()
+    this.particles.stop()
     if (this.currentGesture) {
       this.finishCurrentGesture()
     }
   }
-  @Method()
+ 
   clearAll(): void {
     this.gestures = []
   }
-  @Method()
+ 
   getGestures(): Gesture[] {
     return this.gestures
   }
-  @Method()
+ 
   loadGestures(gestures: Gesture[]): void {
     this.gestures = gestures
   }
-  @Method()
+ 
   playGestures(time: Milliseconds) {
     if (this.state.isRecording) {
       this.stopRecord()
     }
-    this.particles.start()
+    this.particles.begin()
     this.currentRecording = {
       startTime: new Date(),
       recTimeOffset: time,
@@ -141,7 +133,7 @@ export class Gestate {
     this.state.isPlaying = true
     this.playTick()
   }
-  @Method()
+
   stopPlay(): void {
     this.state.isPlaying = false
     this.particles.stop()
@@ -174,6 +166,25 @@ export class Gestate {
     }
     if (this.state.isPlaying) {
       window.requestAnimationFrame(this.playTick.bind(this))
+    }
+  }
+  
+  resizeCanvas() {
+    if (this.sourceElement) {
+      let rect = this.sourceElement.getBoundingClientRect() as DOMRect
+      let crct = this.canvas.getBoundingClientRect() as DOMRect
+      if (rect.width !== crct.width || 
+          rect.height !== crct.height ||
+          rect.top !== crct.top ||
+          rect.left !== crct.left
+        ) {
+          console.log('gestate resizing canvas', rect)
+          this.canvas.style.setProperty('width', rect.width.toString()+'px')
+          this.canvas.style.setProperty('height', rect.height.toString()+'px')
+          this.canvas.style.setProperty('top', rect.top.toString()+'px')
+          this.canvas.style.setProperty('left', rect.left.toString()+'px')
+          this.particles.resize(rect)
+      }
     }
   }
 
@@ -299,31 +310,5 @@ export class Gestate {
       mouseUp()
     }
   }
- 
-
-
-  render() {
-    return (
-      <div class="overlay"
-        onTouchStart={this.touchEvent.bind(this)}
-        onMouseDown={this.mouseEvent.bind(this)}
-        onMouseEnter={this.mouseEvent.bind(this)}
-        onTouchMove={this.touchEvent.bind(this)}
-        onMouseMove={this.mouseEvent.bind(this)}
-        onMouseLeave={this.mouseEvent.bind(this)}
-        onTouchEnd={this.touchEvent.bind(this)}
-        onMouseUp={this.mouseEvent.bind(this)}>
-      </div>
-    )
-  }
-  
+   
 }
-
-{/* <div class="overlay"
-onTouchStart={this.touchEvent.bind(this)}
-onMouseDown={this.mouseEvent.bind(this)}
-onTouchMove={this.touchEvent.bind(this)}
-onMouseMove={this.mouseEvent.bind(this)}
-onTouchEnd={this.touchEvent.bind(this)}
-onMouseUp={this.mouseEvent.bind(this)}>
-</div> */}
