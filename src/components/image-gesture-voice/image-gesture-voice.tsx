@@ -1,6 +1,6 @@
 import { Component, Element, State, Method, Listen, Event, EventEmitter } from '@stencil/core'
 import { SlideShowElement } from '../slide-show/slide-show'
-import { Gesture, Gestate } from './gestate'
+import { Gesture, Gestate } from 'gestate'
 import { Microphone, WebAudioPlayer } from 'aikumic'
 import prettyprint from 'prettyprint'
 import fontawesome from '@fortawesome/fontawesome'
