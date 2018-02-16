@@ -44,7 +44,7 @@
   height: 25vw;
   padding: 5px;
   .swiper-slide {
-    box-shadow: 1px 1px 6px 2px rgba(40, 0, 0, 0.6);
+    box-shadow: 0px 0px 3px 2px rgba(40, 40, 40, 0.6);
     width: 33vw;
     height: 100%;
     img {
@@ -52,7 +52,7 @@
     }
   }
   .swiper-slide.highlight {
-    box-shadow: 1px 1px 6px 2px rgba(255, 0, 0, 0.6);
+    box-shadow: 0px 0px 3px 2px rgba(0, 150, 0, 0.6);
   }
   .swiper-slide-active img {
     opacity: 1;

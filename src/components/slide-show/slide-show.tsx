@@ -216,7 +216,6 @@ export class SlideShow {
   }
 
   emitSlide() {
-    let imgEl:HTMLImageElement = this.el.shadowRoot.querySelector('.swiper-container.main .swiper-slide.swiper-slide-active img')
     this.slideEvent.emit({type: 'newslide', val: this.swiper.main.activeIndex})
   }
 
@@ -291,7 +290,7 @@ export class SlideShow {
   <div class="swiper-container thumb">
     <div class="swiper-wrapper">
       {this.slides.map((slide, index) => 
-        <div class={"swiper-slide" + (this.state.highlight === index ? ' highlight' : '')}
+        <div class={"swiper-slide" + (this.state.highlight >= index ? ' highlight' : '')}
             onClick={ (event: UIEvent) => this.handleClick(event, index)}>
           <img class={getAspectClass(slide)}  src={slide.url}/>
         </div>
