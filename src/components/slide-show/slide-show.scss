@@ -1,0 +1,105 @@
+.swiper-container {
+  width: 100%;
+  position: relative;
+  .swiper-slide {
+    background-color: rgba(0,0,0,0.2);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    img {
+      object-fit: contain;
+    }
+    img.fitheight {
+      width: auto;
+      height: 100%;
+    }
+    img.fitwidth {
+      width: 100%;
+      height: auto;
+    }
+  }
+}
+
+// .swiper-container.main .swiper-slide {
+//   width: 50vw;
+//   height: 100%;
+//   max-height: 50vw;
+//   display: flex;
+//   flex-direction: column;
+//   align-items: center;
+//   justify-content: center;
+// }
+
+.swiper-container.main {
+  .swiper-slide {
+    width: 50vw;
+    height: 100%;
+    max-height: 50vw;
+  }
+}
+
+.swiper-container.thumb {
+  height: 25vw;
+  padding: 5px;
+  .swiper-slide {
+    box-shadow: 1px 1px 6px 2px rgba(40, 0, 0, 0.6);
+    width: 33vw;
+    height: 100%;
+    img {
+      opacity: 0.5;
+    }
+  }
+  .swiper-slide.highlight {
+    box-shadow: 1px 1px 6px 2px rgba(255, 0, 0, 0.6);
+  }
+  .swiper-slide-active img {
+    opacity: 1;
+  }
+  .navbutton {
+    font-size: 62px;
+    height: 62px;
+    width: 40px;
+  }
+}
+
+aikuma-gestate {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  z-index: 10; 
+}
+aikuma-gestate canvas.sketch {
+  position: absolute;
+  pointer-events: none;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  z-index: 12;
+}
+
+@media all and (orientation: landscape) {
+  .swiper-container.main .swiper-slide {
+    width: 50vw;
+    height: 37.5vw;
+  }
+  .swiper-container.thumb {
+    display: none
+  }
+}
+
+@media all and (orientation: portrait) {
+  .swiper-container.main  .swiper-button-next, .swiper-button-prev {
+    display: none;
+  }
+  .swiper-container.main .swiper-slide {
+    width: 100%;
+      height: 75vw;
+  }
+
+}
+

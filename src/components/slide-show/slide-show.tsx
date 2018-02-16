@@ -1,24 +1,27 @@
 import { Component, Element, Method, State, Event, EventEmitter } from '@stencil/core'
 import Swiper from 'swiper'
+import { CacheImage } from './cacheimage'
+
 //import { Swiper, Navigation, Lazy, Pagination, Controller, EffectCoverflow } from 'swiper/dist/js/swiper.esm.js'
 
 //Swiper.use([Navigation, Lazy, Pagination, Controller, EffectCoverflow])
 
 export interface Slide {
-  imageId?: string
-  type?: string
-  bg: string
-  url?: string
-  image?: Blob
-  video?: Blob
-  videoId?: string
+  url: string
+  width: number
+  height: number
+  id: string
+}
+
+interface State {
+  highlight?: number
 }
 
 export interface SlideShowElement extends HTMLElement, SlideShow {}
 
 @Component({
   tag: 'aikuma-slide-show',
-  styleUrls: ['../../../node_modules/swiper/dist/css/swiper.css', 'slide-show.css'],
+  styleUrls: ['../../../node_modules/swiper/dist/css/swiper.css', 'slide-show.scss'],
   shadow: true
 })
 export class SlideShow {
@@ -26,16 +29,14 @@ export class SlideShow {
   @State() slides: Slide[] = []
   @Event() slideSize: EventEmitter<{content: DOMRect, frame: DOMRect}>;
   @Event() slideEvent: EventEmitter<{type: string, val: any}>;
-
   swiper: {
     main: Swiper,
     thumb: Swiper
   }
   updating: boolean = false
   initialized: boolean = false
-  @State() imagesizes: {width: number, height: number}[] = []
   prevLocked: boolean = false
-
+  @State() state: State = {highlight: -1}
   componentWillLoad() {
     console.log('SlideShow is about to be rendered')
   }
@@ -136,7 +137,7 @@ export class SlideShow {
     return this.swiper.main.activeIndex
   }
   @Method()
-  slideTo(idx: number) {
+  slideTo(idx: number, instant: boolean = false) {
     if (idx === this.swiper.main.activeIndex) {
       return
     }
@@ -148,8 +149,13 @@ export class SlideShow {
         to: idx
       }
     })
-    this.swiper.thumb.slideTo(idx)
-    this.swiper.main.slideTo(idx)
+    if (instant) {
+      this.swiper.thumb.slideTo(idx, 0, false)
+      this.swiper.main.slideTo(idx, 0, false)
+    } else {
+      this.swiper.thumb.slideTo(idx)
+      this.swiper.main.slideTo(idx)
+    }
   }
 
   @Method()
@@ -162,15 +168,41 @@ export class SlideShow {
   }
 
   @Method()
-  loadImages(images: string[]): void {
+  async loadImages(images: string[]){
     console.log('SlideShow loading images', images)
-    this.slides = images.map((s) => {
-      return {
-        url: s,
-        bg: 'url(' + s + ')'
-      } 
-    })
+    let cache = new CacheImage()
+    let sizes: {width: number, height: number}[]
+    try {
+      sizes = await cache.cacheImages(images)
+    } catch(e) {
+      throw new Error('Could not cache images '+ e)
+    }
+    console.log('sizes', sizes)
+    let newSlides = []
+    for (let i = 0; i < images.length; ++i) {
+      newSlides.push({
+        width: sizes[i].width,
+        height: sizes[i].height,
+        url: images[i],
+        id: this.makeShortId()
+      })
+    }
+    console.log('slide-show loadImages set', newSlides)
+    this.slides = newSlides
     this.updating = true
+  }
+
+  @Method()
+  highlightSlide(idx: number) {
+    if (idx > this.slides.length -1) {
+      throw new Error('slide out of range')
+    }
+    console.log('highlightslide', idx, typeof idx)
+    this.changeState({highlight: idx})
+  }
+  @Method()
+  getCurrentImageElement(): HTMLImageElement {
+    return this.el.shadowRoot.querySelector('.swiper-container.main .swiper-slide.swiper-slide-active')
   }
 
   componentDidUpdate() {
@@ -185,7 +217,7 @@ export class SlideShow {
 
   emitSlide() {
     let imgEl:HTMLImageElement = this.el.shadowRoot.querySelector('.swiper-container.main .swiper-slide.swiper-slide-active img')
-    this.slideEvent.emit({type: 'newslide', val: {element: imgEl, slide: this.swiper.main.activeIndex}})
+    this.slideEvent.emit({type: 'newslide', val: this.swiper.main.activeIndex})
   }
 
   getSlideContentSize(): Promise<DOMRect> {
@@ -210,7 +242,19 @@ export class SlideShow {
 
   getSlideFrameSize(): DOMRect {
     let slideEl = this.el.shadowRoot.querySelector('.swiper-container.main .swiper-slide.swiper-slide-active')
-    return slideEl.getBoundingClientRect() as DOMRect
+    return slideEl ? slideEl.getBoundingClientRect() as DOMRect : null
+  }
+
+  //
+  // Util
+  //
+  makeShortId(): string {
+    return Math.random().toString(36).substr(2, 9);
+  }  
+  changeState(newStates: State) {
+    let s = Object.assign({}, this.state)
+    Object.assign(s, newStates)
+    this.state = s
   }
 
   handleClick(evt: UIEvent, idx: number) {
@@ -218,48 +262,25 @@ export class SlideShow {
     this.slideTo(idx)
   }
 
-  // checkAspectRatio (idx: number) {
-  //   if (!this.imagesizes[idx]) {
-  //     return false
-  //   }
-  //   let frame = this.getSlideFrameSize()
-  //   let ar_slide = frame.width / frame.height 
-  //   let ar_img = this.imagesizes[idx].width / this.imagesizes[idx].height
-  //   console.log(idx, ar_slide, ar_img)
-  // }
-
   render() {
-    const getSlideStyle = (bg: string) => {
-      return {
-        backgroundImage: bg
-      }
-    }
-    const imageLoad = (idx: number) => {
-      let img = this.el.shadowRoot.querySelector('.swiper-container.main #i'+idx) as HTMLImageElement
-      //console.log('index', idx, img.naturalWidth, img.naturalHeight)
-      let nis = this.imagesizes.slice()
-      nis[idx] = {width: img.naturalWidth, height: img.naturalHeight}
-      this.imagesizes = nis
-    }
-    const higherAspectRatio = (idx: number) => {
-      if (!this.imagesizes[idx]) {
-        return false
-      }
+    const getAspectClass = (s: Slide) => {
       let frame = this.getSlideFrameSize()
+      console.log('getAspectClass', frame)
+      if (!frame) {
+        return 'fitheight'
+      }
       let ar_slide = frame.width / frame.height 
-      let ar_img = this.imagesizes[idx].width / this.imagesizes[idx].height
-      //console.log(idx, ar_slide, ar_img)
-      return ar_img > ar_slide
+      let ar_img = s.width / s.height
+      return ar_img > ar_slide ? 'fitwidth' : 'fitheight'
     }
     return (
 <div>
   <div class="swiper-container main">
     <div  class="swiper-wrapper">
       {this.slides.map((slide, index) => 
-        <div class="swiper-slide" 
-            onClick={ (event: UIEvent) => this.handleClick(event, index)}
-            >
-          <img class={higherAspectRatio(index) ? 'fitwidth' : 'fitheight'} onLoad={() => imageLoad(index)} id={'i'+index.toString()} src={slide.url}/>
+        <div class={"swiper-slide" + (this.state.highlight === index ? ' highlight' : '')}
+            onClick={ (event: UIEvent) => this.handleClick(event, index)}>
+          <img class={getAspectClass(slide)}  src={slide.url}/>
         </div>
       )}
     </div>
@@ -270,8 +291,10 @@ export class SlideShow {
   <div class="swiper-container thumb">
     <div class="swiper-wrapper">
       {this.slides.map((slide, index) => 
-        <div class="swiper-slide" onClick={ (event: UIEvent) => this.handleClick(event, index)}
-          style={getSlideStyle(slide.bg)}></div>
+        <div class={"swiper-slide" + (this.state.highlight === index ? ' highlight' : '')}
+            onClick={ (event: UIEvent) => this.handleClick(event, index)}>
+          <img class={getAspectClass(slide)}  src={slide.url}/>
+        </div>
       )}
     </div>
   </div>
@@ -292,3 +315,18 @@ export class SlideShow {
 //     {/* </div> */}
 //   </div>
 // )}
+
+{/* <div class="swiper-container main">
+<div  class="swiper-wrapper">
+  {this.slides.map((slide, index) => 
+    <div class="swiper-slide" 
+        onClick={ (event: UIEvent) => this.handleClick(event, index)}
+        >
+      <img class={higherAspectRatio(index) ? 'fitwidth' : 'fitheight'} onLoad={() => imageLoad(index)} id={'i'+index.toString()} src={slide.url}/>
+    </div>
+  )}
+</div>
+<div class="swiper-pagination"></div>
+<div class="swiper-button-prev"></div>
+<div class="swiper-button-next"></div>
+</div> */}

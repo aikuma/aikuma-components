@@ -64,7 +64,6 @@ export class ImageGestureVoice {
     recordLength: number,
     audioBlob: Blob
   } = { recordLength: 0, audioBlob: null}
-  gestureElement: HTMLElement
   @Event() AikumaIGV: EventEmitter<string>
   @Listen('slideSize')
   slideSizeHandler(event: CustomEvent) {
@@ -86,10 +85,9 @@ export class ImageGestureVoice {
       }
     } else if (t === 'newslide') {
       console.log('slide change ending',v)
-      //this.changeState({contentSize: v})
-      this.gestureElement = v.element
       if (this.state.recording) {
-        this.gestate.record(this.gestureElement, 'attention', this.mic.getElapsed())
+        let el = this.ssc.getCurrentImageElement()
+        this.gestate.record(el, 'attention', this.mic.getElapsed())
       }
       this.slideChange(v)
     } 
@@ -116,6 +114,7 @@ export class ImageGestureVoice {
   //
   componentWillLoad() {
     console.log('IGV componentWillLoad()')
+    console.log('****IGV test')
   }
 
   componentDidLoad() {
@@ -190,7 +189,9 @@ export class ImageGestureVoice {
     this.timeLine.push({
       t: time,
     })
-    console.log('registerSlideChange, timeLine is', this.timeLine)
+    console.log('registerSlideChange, timeLine is', this.timeLine, imageIndex)
+    this.ssc.highlightSlide(imageIndex)
+    
   }
   async stopRecording() {
     this.changeState({enableRecord: false, recording: false})
@@ -204,8 +205,8 @@ export class ImageGestureVoice {
     this.gestate.stopPlay()
     this.changeState({playing: false, showControls: true})
   }
-  slideTo(slide: number): void {
-    this.ssc.slideTo(slide)
+  slideTo(slide: number, instant: boolean = false): void {
+    this.ssc.slideTo(slide, instant)
   }
   async enterReviewMode() {
     this.changeState({mode: 'review', showControls: false})
@@ -262,7 +263,7 @@ export class ImageGestureVoice {
         if (this.timeLine.length) {
           // If we are somewhere other than the last slide, go back to the last slide
           this.currentIndex = this.timeLine.length - 1
-          this.slideTo(this.currentIndex)
+          this.slideTo(this.currentIndex, true)
         } else {
           // otherwise record first slide at 0
           this.slideTo(0)
@@ -273,7 +274,8 @@ export class ImageGestureVoice {
         this.state.recording = true
         this.changeState({recording: true, showControls: false})
         this.ssc.lockPrevious()
-        this.gestate.record(this.gestureElement, 'attention', this.mic.getElapsed())
+        let el = this.ssc.getCurrentImageElement()
+        this.gestate.record(el, 'attention', this.mic.getElapsed())
       }
     } else if (this.state.mode === 'review') {
       if (this.state.playing) {
@@ -300,14 +302,14 @@ export class ImageGestureVoice {
     const reset = () => {
       console.log('reset')
       this.slideTo(0)
+      this.ssc.highlightSlide(-1)
       this.mic.clear()
-      this.changeState({elapsed: ''})
+      this.changeState({elapsed: '', enableRecord: true})
       this.timeLine = []
       this.gestate.clearAll()
       if (this.state.restored)  {
         this.changeState({madeChanges: true})
       }
-      this.changeState({enableRecord: true})
     }
     if (this.state.restored) {
       if (!(await this.modal.presentDialog('Clear recording?', 'Do you want clear the current recording?', 'Clear', 'Cancel'))) {
@@ -395,6 +397,7 @@ export class ImageGestureVoice {
   </div>
   
   <pre>{prettyprint(this.state)}</pre>
+  <pre>{prettyprint([this.timeLine.length, this.numberOfSlides])}</pre>
 </div>
     )
   }
