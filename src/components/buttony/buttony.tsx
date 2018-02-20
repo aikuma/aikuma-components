@@ -29,7 +29,6 @@ export class Buttony {
   // Lifecycle
   //
   componentDidLoad() {
-    console.log('buttony did load', this.id, this.clear)
     this.wrapper = this.el.querySelector('.wrapper')
   }
 
@@ -108,7 +107,7 @@ export class Buttony {
   }}
   class={
     'wrapper ' +
-    (this.disabled ? 'disabled' : '')
+    (this.disabled ? 'disabled ' : '') 
   }>
   { 
     !this.clear ?
@@ -119,7 +118,10 @@ export class Buttony {
       </div> :
       null
   }
-  <div class={'contents ' + (this.clear ? 'clear' : '')}>
+  <div class={'contents ' + (this.clear ? 'clear' : '')}
+    style={
+      this.clear && !this.disabled ? {color: this.color} : {}
+    }>
     <slot />
   </div>
 </div>   

@@ -28,9 +28,9 @@ export class Modal {
   // 
   // Lifecycle
   //
-  componentDidLoad() {
-    console.log('dialog did load')
-  }
+  // componentDidLoad() {
+  //   console.log('dialog did load')
+  // }
 
   // 
   // Public methods

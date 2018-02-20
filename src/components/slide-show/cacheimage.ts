@@ -3,7 +3,6 @@ export class CacheImage {
     return new Promise((resolve, reject) => {
       let img = new Image()
       img.onload = () => {
-        console.log('image load',img)
         resolve({width: img.naturalWidth, height: img.naturalHeight})
       }
       img.onerror = () => {

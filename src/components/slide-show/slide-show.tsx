@@ -36,13 +36,11 @@ export class SlideShow {
   updating: boolean = false
   initialized: boolean = false
   prevLocked: boolean = false
+  transitionTime: number = 300
+  changing: boolean = false
   @State() state: State = {highlight: -1}
-  componentWillLoad() {
-    console.log('SlideShow is about to be rendered')
-  }
 
   componentDidLoad() {
-    console.log('SlideShow was rendered')
     this.init()
   }
 
@@ -81,7 +79,6 @@ export class SlideShow {
       allowTouchMove: false
     })
     let sthumbel = this.el.shadowRoot.querySelector('.swiper-container.thumb')
-    console.log('thumbel', sthumbel)
     let sthumbctrl = new Swiper(sthumbel, {
       init: false,
       loop: false,
@@ -93,43 +90,30 @@ export class SlideShow {
       spaceBetween: 5,
       touchRatio: 0.3,
       slideToClickedSlide: false,
-      allowTouchMove: false,
-      controller: {
-        control: smainctrl
-      }
+      allowTouchMove: false
     })
     this.swiper = {
       main: smainctrl,
       thumb: sthumbctrl
     }
-    this.swiper.main.on('slideChangeTransitionStart', async () => {
-      this.slideEvent.emit({type: 'changeslide', val: {slide: this.swiper.main.activeIndex}})
-    })
-    this.swiper.main.on('slideChangeTransitionEnd', async () => {
-      //this.slideEvent.emit({type:'end', val: await this.getSlideContentSize()})
-      this.emitSlide()
-    })
-    // const emitResize = async () => {
-    //   try {
-    //     let cs = await this.getSlideContentSize()
-    //     this.slideSize.emit( {
-    //       content: cs,
-    //       frame: this.getSlideFrameSize()
-    //     })
-    //   } catch(e) {
-    //     console.error('slide-show: can\'t get content size',e)
-    //   }
-    // }
-    this.swiper.main.on('resize', () => {
-      //emitResize()
-    })
+    // this.swiper.main.on('slideChangeTransitionStart', async () => {
+    //   this.slideEvent.emit({type: 'changeslide', val: {slide: this.swiper.main.activeIndex}})
+    //   //console.log('slide show emitting changeslide slideChangeTransitionStart')
+    // })
+    // this.swiper.main.on('slideChangeTransitionEnd', async () => {
+    //   //console.log('slide show emitting newslide slideChangeTransitionEnd')
+    //   this.slideEvent.emit({type: 'newslide', val: this.swiper.main.activeIndex})
+    // })
     this.swiper.main.on('init', () => {
       this.slideEvent.emit({type:'init', val: this.swiper})
-      //emitResize()
-      // setTimeout(() => {
-      //   emitResize()
-      // },100)
-      this.emitSlide()
+    })
+    this.swiper.main.on('slideChange', (e) => {
+      this.slideEvent.emit({type: 'changestart', val: this.swiper.main.activeIndex})
+      this.changing = true
+      setTimeout(() => {
+        this.slideEvent.emit({type: 'changeend', val: this.swiper.main.activeIndex})
+        this.changing = false
+      }, this.transitionTime)
     })
   }
   @Method()
@@ -137,7 +121,7 @@ export class SlideShow {
     return this.swiper.main.activeIndex
   }
   @Method()
-  slideTo(idx: number, instant: boolean = false) {
+  slideTo(idx: number, instant: boolean = false, skipCallback: boolean = false) {
     if (idx === this.swiper.main.activeIndex) {
       return
     }
@@ -149,13 +133,8 @@ export class SlideShow {
         to: idx
       }
     })
-    if (instant) {
-      this.swiper.thumb.slideTo(idx, 0, false)
-      this.swiper.main.slideTo(idx, 0, false)
-    } else {
-      this.swiper.thumb.slideTo(idx)
-      this.swiper.main.slideTo(idx)
-    }
+    this.swiper.thumb.slideTo(idx, instant ? 0 : this.transitionTime, !skipCallback)
+    this.swiper.main.slideTo(idx, instant ? 0 : this.transitionTime, !skipCallback)
   }
 
   @Method()
@@ -169,7 +148,7 @@ export class SlideShow {
 
   @Method()
   async loadImages(images: string[]){
-    console.log('SlideShow loading images', images)
+    //console.log('SlideShow loading images', images)
     let cache = new CacheImage()
     let sizes: {width: number, height: number}[]
     try {
@@ -177,7 +156,6 @@ export class SlideShow {
     } catch(e) {
       throw new Error('Could not cache images '+ e)
     }
-    console.log('sizes', sizes)
     let newSlides = []
     for (let i = 0; i < images.length; ++i) {
       newSlides.push({
@@ -187,7 +165,6 @@ export class SlideShow {
         id: this.makeShortId()
       })
     }
-    console.log('slide-show loadImages set', newSlides)
     this.slides = newSlides
     this.updating = true
   }
@@ -197,26 +174,24 @@ export class SlideShow {
     if (idx > this.slides.length -1) {
       throw new Error('slide out of range')
     }
-    console.log('highlightslide', idx, typeof idx)
     this.changeState({highlight: idx})
   }
   @Method()
   getCurrentImageElement(): HTMLImageElement {
-    return this.el.shadowRoot.querySelector('.swiper-container.main .swiper-slide.swiper-slide-active')
+    return this.el.shadowRoot.querySelector('.swiper-container.main .swiper-slide.swiper-slide-active img')
+  }
+  @Method() 
+  isChanging(): boolean {
+    return this.changing
   }
 
   componentDidUpdate() {
-    //console.log('SlideShow did update')
     if (this.updating && !this.initialized) {
       this.swiper.main.init()
       this.swiper.thumb.init()
       this.initialized = true
     }
     this.updating = false
-  }
-
-  emitSlide() {
-    this.slideEvent.emit({type: 'newslide', val: this.swiper.main.activeIndex})
   }
 
   getSlideContentSize(): Promise<DOMRect> {
@@ -257,14 +232,12 @@ export class SlideShow {
   }
 
   handleClick(evt: UIEvent, idx: number) {
-    console.log('clicked slide', idx, this.swiper.main.activeIndex)
     this.slideTo(idx)
   }
 
   render() {
     const getAspectClass = (s: Slide) => {
       let frame = this.getSlideFrameSize()
-      console.log('getAspectClass', frame)
       if (!frame) {
         return 'fitheight'
       }
@@ -292,7 +265,7 @@ export class SlideShow {
       {this.slides.map((slide, index) => 
         <div class={"swiper-slide" + (this.state.highlight >= index ? ' highlight' : '')}
             onClick={ (event: UIEvent) => this.handleClick(event, index)}>
-          <img class={getAspectClass(slide)}  src={slide.url}/>
+          <img class={getAspectClass(slide)} src={slide.url} />
         </div>
       )}
     </div>

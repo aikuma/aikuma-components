@@ -1,6 +1,6 @@
 import { Component, Element, State, Method, Listen, Event, EventEmitter } from '@stencil/core'
 import { SlideShowElement } from '../slide-show/slide-show'
-import { Gesture, Gestate } from 'gestate'
+import { Gesture, Gestate } from './gestate'
 import { Microphone, WebAudioPlayer } from 'aikumic'
 import prettyprint from 'prettyprint'
 import fontawesome from '@fortawesome/fontawesome'
@@ -8,6 +8,7 @@ import { faPlay, faStop, faPause, faCheckCircle, faTimesCircle } from '@fortawes
 import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { ModalElement } from '../modal/modal'
+import { CssClassMap } from '@stencil/core'
 fontawesome.library.add(faPlay, faStop, faPause, faCheckCircle, faTimesCircle)
 
 export interface IGVData {
@@ -20,8 +21,6 @@ interface State {
   recording?: boolean,
   playing?: boolean,
   mode?: string,
-  contentSize?: DOMRect,
-  frameSize?: DOMRect,
   elapsed?: string,
   enableRecord?: boolean,
   havePlayed?: boolean,
@@ -46,65 +45,54 @@ export class ImageGestureVoice {
     recording: false,
     playing: false,
     mode: 'record',
-    contentSize: null,  // Rect of an aspect-adjusted image in the frame
-    frameSize: null,    // Rect of a slide frame
     elapsed: '0.0',
     enableRecord: false, // show record buttons
     havePlayed: false,  // have ever played
     restored: false,    // restored complete slides (with recording)
     madeChanges: false,  // if we have made any changes
-    showControls: false
+    showControls: true
   }
   currentIndex: number = 0
   numberOfSlides: number = 0
   player: WebAudioPlayer = new WebAudioPlayer()
   recObs: Observable<number>
+  playProgressObs: Observable<number>
   completeSubject: Subject<any> = new Subject()
   recording: {
     recordLength: number,
     audioBlob: Blob
   } = { recordLength: 0, audioBlob: null}
   @Event() AikumaIGV: EventEmitter<string>
-  @Listen('slideSize')
-  slideSizeHandler(event: CustomEvent) {
-    console.log('igv got slide size notification', event.detail)
-    if (event.detail) {
-      this.changeState({contentSize: event.detail.content, frameSize: event.detail.frame})
-    }
-  }
   @Listen('slideEvent')
   slideEvenHandler(event: CustomEvent) {
     let t = event.detail.type
     let v = event.detail.val
     if (t === 'init') {
       console.log('igv got slide init')
-    } else if (t === 'changeslide') {
+    } else if (t === 'changestart') {
       console.log('slide change begin',v)
       if (this.state.recording) {
-        this.gestate.stopRecord()
-      }
-    } else if (t === 'newslide') {
-      console.log('slide change ending',v)
-      if (this.state.recording) {
-        let el = this.ssc.getCurrentImageElement()
-        this.gestate.record(el, 'attention', this.mic.getElapsed())
-      }
-      this.slideChange(v)
+        //this.gestate.stopRecord()
+      } 
+    } else if (t === 'changeend') {
+      console.log('slide change end',v)
+      this.slideChangeEvent(v)
     } 
   }
   @Listen('clickEvent')
   clickEventHandler(event: CustomEvent) {
-    console.log('button', event.detail.id, event.detail.type)
     let id = event.detail.id
     let type = event.detail.type
     if (type === 'up') {
       // regular clicks
       if (id === 'record') {
-        this.pressPlayRec()
+        this.pressRec()
       } else if (id === 'cancel') {
         this.pressClear()
       } else if (id === 'accept') {
         this.pressAccept()
+      } else if (id === 'play') {
+        this.pressPlay()
       }
     }
   }
@@ -112,25 +100,56 @@ export class ImageGestureVoice {
   //
   // Lifecycle
   //
-  componentWillLoad() {
-    console.log('IGV componentWillLoad()')
-    console.log('****IGV test')
-  }
+  // componentWillLoad() {
+  //   console.log('IGV componentWillLoad()')
+  // }
 
   componentDidLoad() {
-    console.log('IGV componentDidLoad()')
     this.ssc = this.el.shadowRoot.querySelector('aikuma-slide-show')
     this.modal = this.el.shadowRoot.querySelector('aikuma-modal')
     this.gestate = new Gestate({debug: true})
     this.AikumaIGV.emit('init')
   }
+  // componentDidUnload() {
+  //   console.log('The view has been removed from the DOM');
+  // }
 
   init() {
     this.mic.connect()
     this.recObs = this.mic.observeProgress().subscribe((t) => {
+      console.log(t)
       this.changeState({elapsed: this.getNiceTime(t)})
     })
     this.changeState({'enableRecord': true})
+    const checkPlaybackSlide = (timems: number): void => {
+      let thisslide = 0
+      for (let i = this.timeLine.length - 1; i > 0; --i ) {
+        if (timems > this.timeLine[i].t) {
+          thisslide = i
+          break
+        }
+      }
+      if (thisslide !== this.currentIndex) {
+        //console.log('checkPlaybackSlide()', timems, this.timeLine[thisslide].t)
+        this.ssc.slideTo(thisslide, false, false)
+      }
+    }
+    this.player.observeProgress().subscribe((time) => {
+      //console.log(time)
+      if (this.state.playing) {
+        if (time === -1 ) {
+          this.gestate.stopPlay()
+          this.changeState({playing: false, showControls: true})
+        } else {
+          let elapsedms = ~~(time*1000)
+          let newElapsed = this.getNiceTime(elapsedms) // getNiceTime wants ms
+          this.changeState({elapsed: newElapsed})
+          if (!this.ssc.isChanging()) {
+            checkPlaybackSlide(elapsedms)
+          }
+        }
+      }
+    })
   }
   //
   // Public Methods
@@ -161,24 +180,26 @@ export class ImageGestureVoice {
   //
   // Logic 
   //
-  slideChange(slide: number) {
-    this.currentIndex = slide // even if we are in transition
+  slideChangeEvent(slide: number) {
+    this.currentIndex = slide   
+    console.log('slideChangeEvent()', slide)
     if (this.state.mode === 'record') {
       if (this.state.recording) {
+        let el = this.ssc.getCurrentImageElement()
+        this.gestate.resize(el)
+        //this.gestate.record(el, 'attention', this.mic.getElapsed())
         this.registerSlideChange(this.mic.getElapsed(), this.currentIndex)
       }
-      if (this.state.playing) {
-        this.player.pause()
-        let timeMs = this.timeLine[this.currentIndex].t
-        this.player.playMs(timeMs)
-        this.gestate.playGestures(timeMs)
-      }
-    } else if (this.state.mode === 'play') {
+    } else if (this.state.mode === 'review') {
       let t = this.timeLine[slide].t
       if (this.state.playing) {
         this.player.pause()
+        console.log('playing from', t/1000)
         this.player.play(t/1000)
-        this.gestate.playGestures(t)
+        let el = this.ssc.getCurrentImageElement()
+        this.gestate.resize(el)
+        // let el = this.ssc.getCurrentImageElement()
+        // this.gestate.playGestures(el, t)
       } else {
         this.changeState({elapsed: this.getNiceTime(t)})
       }
@@ -198,6 +219,7 @@ export class ImageGestureVoice {
     await this.mic.stop()
     this.changeState({enableRecord: true, showControls: true})
     this.gestate.stopRecord()
+    console.log('gestures', this.gestate.getGestures())
     this.ssc.unlockPrevious()
   }
   stopPlaying() {
@@ -205,14 +227,12 @@ export class ImageGestureVoice {
     this.gestate.stopPlay()
     this.changeState({playing: false, showControls: true})
   }
-  slideTo(slide: number, instant: boolean = false): void {
-    this.ssc.slideTo(slide, instant)
-  }
+
   async enterReviewMode() {
     this.changeState({mode: 'review', showControls: false})
     await this.player.loadFromBlob(this.recording.audioBlob)
     this.changeState({elapsed: this.getNiceTime(0), showControls: true})
-    this.slideTo(0)
+    this.ssc.slideTo(0)
   }
 
   //
@@ -231,14 +251,24 @@ export class ImageGestureVoice {
     Object.assign(s, newStates)
     this.state = s
   }
-
+  // lifted from @ionic/core util
+  getClassMap(classes: string | undefined): CssClassMap {
+    const map: CssClassMap = {}
+    if (classes) {
+      classes
+        .split(' ')
+        .filter(c => c.trim() !== '')
+        .forEach(c => map[c] = true)
+    }
+    return map
+  }
   //
   //
   // Template Logic
   //
 
   canPlay(): boolean {
-    return this.mic.hasRecordedData()
+    return this.timeLine.length > 0
   }
   canRecord(): boolean {
     return true
@@ -254,7 +284,7 @@ export class ImageGestureVoice {
     }
   }
   // button presses
-  pressPlayRec(): void {
+  pressRec(): void {
     if (this.state.mode === 'record') {
       if (this.state.recording) {
         this.stopRecording()
@@ -263,10 +293,10 @@ export class ImageGestureVoice {
         if (this.timeLine.length) {
           // If we are somewhere other than the last slide, go back to the last slide
           this.currentIndex = this.timeLine.length - 1
-          this.slideTo(this.currentIndex, true)
+          this.ssc.slideTo(this.currentIndex, true, true)
         } else {
           // otherwise record first slide at 0
-          this.slideTo(0)
+          this.ssc.slideTo(0)
           this.registerSlideChange(this.mic.getElapsed(), 0)
         }      
         // Animate buttons out, begin microphone recording, start gesture recording
@@ -277,22 +307,27 @@ export class ImageGestureVoice {
         let el = this.ssc.getCurrentImageElement()
         this.gestate.record(el, 'attention', this.mic.getElapsed())
       }
-    } else if (this.state.mode === 'review') {
+    } 
+  }
+  pressPlay(): void {
+    if (this.state.mode === 'review') {
       if (this.state.playing) {
         this.stopPlaying()
       } else {
         // We were not playing
-        this.changeState({havePlayed: true, playing: true})
+        this.changeState({havePlayed: true, playing: true, showControls: false})
         if (this.player.ended) {
           // Playback had finished (end of slides)
-          this.slideTo(0)
+          this.ssc.slideTo(0)
           this.player.play(0)
-          this.gestate.playGestures(0)
+          let el = this.ssc.getCurrentImageElement()
+          this.gestate.playGestures(el, 0)
         } else {
           // Otherwise resume by restarting from this slide
           let time = this.timeLine[this.ssc.getCurrent()].t // milliseconds
           this.player.play(time/1000)
-          this.gestate.playGestures(time)
+          let el = this.ssc.getCurrentImageElement()
+          this.gestate.playGestures(el,time)
         }
       }
     }
@@ -301,7 +336,7 @@ export class ImageGestureVoice {
   async pressClear(): Promise<any> {
     const reset = () => {
       console.log('reset')
-      this.slideTo(0)
+      this.ssc.slideTo(0)
       this.ssc.highlightSlide(-1)
       this.mic.clear()
       this.changeState({elapsed: '', enableRecord: true})
@@ -328,7 +363,7 @@ export class ImageGestureVoice {
       this.recording.audioBlob = this.mic.exportAllWav()
       this.mic.clear()
       await this.enterReviewMode()
-      this.pressPlayRec()
+      this.pressPlay()
     } else if (this.state.mode === 'review') {
       if (this.state.restored && !this.state.madeChanges) {
         // just exit
@@ -348,16 +383,9 @@ export class ImageGestureVoice {
   // Render
   //
   render() {
-    return (
-<div class="igv">
-  <aikuma-modal></aikuma-modal>
-  <div class="slidewrapper">
-    <aikuma-slide-show></aikuma-slide-show>
-  </div>
-  <div class="controls">
-    {
-      this.state.enableRecord ?
-        <aikuma-buttony 
+    const getBigButton = () => {
+      if (this.state.mode === 'record') {
+        return <aikuma-buttony 
             disabled={!this.canRecord()} 
             id="record" size="85">
           <div class="recbutton">
@@ -366,20 +394,40 @@ export class ImageGestureVoice {
             </div>
             <div class="elapsed">{this.state.elapsed}</div>
           </div>
-        </aikuma-buttony> :
-        null
+        </aikuma-buttony> 
+      } else if (this.state.mode === 'review') {
+        return <aikuma-buttony 
+            disabled={!this.canPlay()} 
+            id="play" size="85" color="green">
+          <div class="recbutton">
+            <div class="buttonicon"
+              innerHTML={fontawesome.icon(this.state.playing ? faPause: faPlay).html[0]}>
+            </div>
+            <div class="elapsed">{this.state.elapsed}</div>
+          </div>
+        </aikuma-buttony> 
+      }
     }
-  
+    return (
+<div class="igv">
+  <aikuma-modal></aikuma-modal>
+  <div class="slidewrapper">
+    <aikuma-slide-show></aikuma-slide-show>
+  </div>
+  <div class="controls">
+    {
+      getBigButton()
+    }
     {
       this.state.showControls ? 
         <div class="ctrlwrapper">
-          <aikuma-buttony clear size="50" id="cancel" disabled={!this.canCancel()} >
+          <aikuma-buttony clear size="50" id="cancel" color="grey" disabled={!this.canCancel()} >
             <div class="clearbuttonicon" 
               innerHTML={fontawesome.icon(faTimesCircle).html[0]}>
             </div>
           </aikuma-buttony>
           <div class="spacer"></div>
-          <aikuma-buttony clear size="50" id="accept" disabled={!this.canAccept()}>
+          <aikuma-buttony clear size="50" id="accept" color="grey" disabled={!this.canAccept()}>
             <div class="clearbuttonicon" 
               innerHTML={fontawesome.icon(faCheckCircle).html[0]}>
             </div>
@@ -387,15 +435,7 @@ export class ImageGestureVoice {
         </div> :
         null
     }
-    {/* <aikuma-buttony 
-      disabled={!this.canPlay()} 
-      id="play" size="85">
-      <div class="buttonicon"
-        innerHTML={fontawesome.icon(this.state.playing ? faStop: faPlay).html[0]}>
-      </div>
-    </aikuma-buttony> */}
   </div>
-  
   <pre>{prettyprint(this.state)}</pre>
   <pre>{prettyprint([this.timeLine.length, this.numberOfSlides])}</pre>
 </div>
