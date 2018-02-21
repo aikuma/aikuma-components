@@ -156,7 +156,7 @@ export class SlideShow {
     } catch(e) {
       throw new Error('Could not cache images '+ e)
     }
-    let newSlides = []
+    let newSlides: Slide[] = []
     for (let i = 0; i < images.length; ++i) {
       newSlides.push({
         width: sizes[i].width,
@@ -167,6 +167,7 @@ export class SlideShow {
     }
     this.slides = newSlides
     this.updating = true
+    return this.slides
   }
 
   @Method()

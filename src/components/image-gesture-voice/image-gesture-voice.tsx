@@ -1,5 +1,5 @@
 import { Component, Element, State, Method, Listen, Event, EventEmitter } from '@stencil/core'
-import { SlideShowElement } from '../slide-show/slide-show'
+import { SlideShowElement, Slide } from '../slide-show/slide-show'
 import { Gesture, Gestate } from './gestate'
 import { Microphone, WebAudioPlayer } from 'aikumic'
 import prettyprint from 'prettyprint'
@@ -11,10 +11,17 @@ import { ModalElement } from '../modal/modal'
 import { CssClassMap } from '@stencil/core'
 fontawesome.library.add(faPlay, faStop, faPause, faCheckCircle, faTimesCircle)
 
+export interface IGVSegment {
+  promptId: string,
+  startMs: number,
+  endMs?: number
+  gestures?: Gesture[]
+}
+
 export interface IGVData {
-  timeLine: {id: string, url: string, ms: number}[]
-  gestures: Gesture[]
+  segments: IGVSegment[]
   audio: Blob
+  length: {ms: number, frames: number}
 }
 
 interface State {
@@ -40,7 +47,8 @@ export class ImageGestureVoice {
   gestate: Gestate
   modal: ModalElement
   mic: Microphone = new Microphone()
-  timeLine: {t: number}[] = []
+  slides: Slide[] = []
+  timeLine: IGVSegment[] = []
   @State() state: State = {
     recording: false,
     playing: false,
@@ -53,15 +61,14 @@ export class ImageGestureVoice {
     showControls: true
   }
   currentIndex: number = 0
-  numberOfSlides: number = 0
   player: WebAudioPlayer = new WebAudioPlayer()
   recObs: Observable<number>
   playProgressObs: Observable<number>
   completeSubject: Subject<any> = new Subject()
   recording: {
-    recordLength: number,
+    recordLength: {ms: number, frames: number},
     audioBlob: Blob
-  } = { recordLength: 0, audioBlob: null}
+  } = { recordLength: {ms: 0, frames: 0}, audioBlob: null}
   @Event() AikumaIGV: EventEmitter<string>
   @Listen('slideEvent')
   slideEvenHandler(event: CustomEvent) {
@@ -72,8 +79,13 @@ export class ImageGestureVoice {
     } else if (t === 'changestart') {
       console.log('slide change begin',v)
       if (this.state.recording) {
-        //this.gestate.stopRecord()
-      } 
+        console.log('stopping gesture recording')
+        this.gestate.stopRecord()
+      }
+      if (this.state.playing) {
+        console.log('stopping gesture playing')
+        this.gestate.stopPlay()
+      }
     } else if (t === 'changeend') {
       console.log('slide change end',v)
       this.slideChangeEvent(v)
@@ -117,21 +129,19 @@ export class ImageGestureVoice {
   init() {
     this.mic.connect()
     this.recObs = this.mic.observeProgress().subscribe((t) => {
-      console.log(t)
       this.changeState({elapsed: this.getNiceTime(t)})
     })
     this.changeState({'enableRecord': true})
     const checkPlaybackSlide = (timems: number): void => {
       let thisslide = 0
       for (let i = this.timeLine.length - 1; i > 0; --i ) {
-        if (timems > this.timeLine[i].t) {
+        if (timems > this.timeLine[i].startMs) {
           thisslide = i
           break
         }
       }
       if (thisslide !== this.currentIndex) {
-        //console.log('checkPlaybackSlide()', timems, this.timeLine[thisslide].t)
-        this.ssc.slideTo(thisslide, false, false)
+        this.ssc.slideTo(thisslide)
       }
     }
     this.player.observeProgress().subscribe((time) => {
@@ -155,9 +165,9 @@ export class ImageGestureVoice {
   // Public Methods
   //
   @Method()
-  loadFromImageURLs(images: string[]) {
-    this.ssc.loadImages(images)
-    this.numberOfSlides = images.length
+  async loadFromImageURLs(images: string[]) {
+    this.slides = await this.ssc.loadImages(images)
+    console.log('slides', this.slides)
     this.init()
   }
   @Method()
@@ -181,25 +191,29 @@ export class ImageGestureVoice {
   // Logic 
   //
   slideChangeEvent(slide: number) {
+    let priorIndex = this.currentIndex
     this.currentIndex = slide   
     console.log('slideChangeEvent()', slide)
     if (this.state.mode === 'record') {
       if (this.state.recording) {
-        let el = this.ssc.getCurrentImageElement()
-        this.gestate.resize(el)
-        //this.gestate.record(el, 'attention', this.mic.getElapsed())
+        this.timeLine[priorIndex].gestures = this.gestate.getGestures() // save to old slide
         this.registerSlideChange(this.mic.getElapsed(), this.currentIndex)
+        let el = this.ssc.getCurrentImageElement()
+        console.log('recording gestures')
+        this.gestate.clearAll()
+        this.gestate.record(el, 'attention', 0)
       }
     } else if (this.state.mode === 'review') {
-      let t = this.timeLine[slide].t
+      let t = this.timeLine[slide].startMs
       if (this.state.playing) {
         this.player.pause()
+        console.log('loading gestures', this.timeLine[slide].gestures)
+        this.gestate.loadGestures(this.timeLine[slide].gestures)
         console.log('playing from', t/1000)
         this.player.play(t/1000)
         let el = this.ssc.getCurrentImageElement()
-        this.gestate.resize(el)
-        // let el = this.ssc.getCurrentImageElement()
-        // this.gestate.playGestures(el, t)
+        console.log('playing gestures')
+        this.gestate.playGestures(el, 0)
       } else {
         this.changeState({elapsed: this.getNiceTime(t)})
       }
@@ -208,11 +222,11 @@ export class ImageGestureVoice {
 
   registerSlideChange (time: number, imageIndex: number) {
     this.timeLine.push({
-      t: time,
+      startMs: time,
+      promptId: this.slides[imageIndex].id
     })
     console.log('registerSlideChange, timeLine is', this.timeLine, imageIndex)
     this.ssc.highlightSlide(imageIndex)
-    
   }
   async stopRecording() {
     this.changeState({enableRecord: false, recording: false})
@@ -278,7 +292,7 @@ export class ImageGestureVoice {
   }
   canAccept(): boolean {
     if (this.state.mode === 'record') {
-      return (this.timeLine.length === this.numberOfSlides) 
+      return (this.timeLine.length === this.slides.length) 
     } else {
       return true
     }
@@ -318,16 +332,18 @@ export class ImageGestureVoice {
         this.changeState({havePlayed: true, playing: true, showControls: false})
         if (this.player.ended) {
           // Playback had finished (end of slides)
-          this.ssc.slideTo(0)
-          this.player.play(0)
+          this.ssc.slideTo(0, true, true)
+          this.gestate.loadGestures(this.timeLine[0].gestures)
           let el = this.ssc.getCurrentImageElement()
           this.gestate.playGestures(el, 0)
+          this.player.play(0)
         } else {
           // Otherwise resume by restarting from this slide
-          let time = this.timeLine[this.ssc.getCurrent()].t // milliseconds
+          let time = this.timeLine[this.currentIndex].startMs // milliseconds
           this.player.play(time/1000)
+          this.gestate.loadGestures(this.timeLine[this.currentIndex].gestures)
           let el = this.ssc.getCurrentImageElement()
-          this.gestate.playGestures(el,time)
+          this.gestate.playGestures(el, 0)
         }
       }
     }
@@ -359,7 +375,8 @@ export class ImageGestureVoice {
 
   async pressAccept(): Promise<any> {
     if (this.state.mode === 'record') {
-      this.recording.recordLength = this.mic.getTotalLength().ms
+      this.timeLine[this.currentIndex].gestures = this.gestate.getGestures()
+      this.recording.recordLength = this.mic.getTotalLength()
       this.recording.audioBlob = this.mic.exportAllWav()
       this.mic.clear()
       await this.enterReviewMode()
@@ -369,11 +386,12 @@ export class ImageGestureVoice {
         // just exit
         this.completeSubject.complete()
       } else {
-        this.completeSubject.next({
-          timeLine: [],
-          gestures: this.gestate.getGestures(),
-          audio: this.recording.audioBlob
-        })
+        let igvData: IGVData = {
+          segments: this.timeLine,
+          audio: this.recording.audioBlob,
+          length: this.recording.recordLength
+        }
+        this.completeSubject.next(igvData)
         this.completeSubject.complete()
       }
     }
@@ -437,7 +455,7 @@ export class ImageGestureVoice {
     }
   </div>
   <pre>{prettyprint(this.state)}</pre>
-  <pre>{prettyprint([this.timeLine.length, this.numberOfSlides])}</pre>
+  <pre>{prettyprint([this.timeLine.length, this.slides.length])}</pre>
 </div>
     )
   }

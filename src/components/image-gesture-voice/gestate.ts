@@ -115,6 +115,7 @@ export class Gestate {
   }
  
   loadGestures(gestures: Gesture[]): void {
+    console.log('loadGestures', gestures)
     this.gestures = gestures
   }
  
