@@ -14,26 +14,22 @@
 
   <script type="text/javascript">
     (function() {
-      document.addEventListener('AikumaIGV', (v) => {
-        // AikumaIGV init event received
+      document.addEventListener("DOMContentLoaded", async () => {
+        let igv = document.querySelector('aikuma-image-gesture-voice')
+        await igv.componentOnReady()
         let pics = [1,2,3].map((i) => {
           return 'http://members.iinet.net.au/~lurks/img/som-hand'+i.toString()+'.jpg'
         })
-        // Get the element
-        let igv = document.querySelector('aikuma-image-gesture-voice')
-        // Use the IGV API to load images
         igv.loadFromImageURLs(pics)
-        // wait for completion
-        igv.waitForComplete().then((igvdata) => {
-          if (igvdata) {
-            console.log('aikuma-image-gesture-voice returned',igvdata)
-            let anno = document.querySelector('aikuma-annotate')
-            anno.loadBlob(igvdata.audio)
-          } else {
-            console.log('aikuma-image-gesture-voice cancelled')
-          }
-        })
-      }, {once: true})
+        let igvdata = await igv.waitForComplete()
+        if (igvdata) {
+          console.log('aikuma-image-gesture-voice returned',igvdata)
+          let anno = document.querySelector('aikuma-annotate')
+          anno.loadBlob(igvdata.audio)
+        } else {
+          console.log('aikuma-image-gesture-voice cancelled')
+        }
+      })
     })();
  </script>
 
