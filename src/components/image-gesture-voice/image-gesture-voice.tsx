@@ -1,14 +1,13 @@
 import { Component, Element, State, Method, Listen, Event, EventEmitter } from '@stencil/core'
 import { SlideShowElement, Slide } from '../slide-show/slide-show'
 import { Gesture, Gestate } from './gestate'
-import { Microphone, WebAudioPlayer } from 'aikumic'
+import { Microphone, WebAudioPlayer } from '@aikuma/webaudio'
 import prettyprint from 'prettyprint'
 import fontawesome from '@fortawesome/fontawesome'
 import { faPlay, faStop, faPause, faCheckCircle, faTimesCircle } from '@fortawesome/fontawesome-free-solid'
 import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { ModalElement } from '../modal/modal'
-import { CssClassMap } from '@stencil/core'
 fontawesome.library.add(faPlay, faStop, faPause, faCheckCircle, faTimesCircle)
 
 export interface IGVSegment {
@@ -266,8 +265,8 @@ export class ImageGestureVoice {
     this.state = s
   }
   // lifted from @ionic/core util
-  getClassMap(classes: string | undefined): CssClassMap {
-    const map: CssClassMap = {}
+  getClassMap(classes: string | undefined) {
+    const map = {}
     if (classes) {
       classes
         .split(' ')
@@ -336,14 +335,14 @@ export class ImageGestureVoice {
           this.gestate.loadGestures(this.timeLine[0].gestures)
           let el = this.ssc.getCurrentImageElement()
           this.gestate.playGestures(el, 0)
-          this.player.play(0)
+          this.player.play()
         } else {
           // Otherwise resume by restarting from this slide
           let time = this.timeLine[this.currentIndex].startMs // milliseconds
-          this.player.play(time/1000)
           this.gestate.loadGestures(this.timeLine[this.currentIndex].gestures)
           let el = this.ssc.getCurrentImageElement()
           this.gestate.playGestures(el, 0)
+          this.player.play(time/1000)
         }
       }
     }

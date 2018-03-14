@@ -47,9 +47,9 @@ export class Gestate {
     this.canvas = document.createElement('canvas')
     this.canvas.classList.add('gestateoverlay')
     let style = "position: absolute; z-index: 100; user-select: none; -moz-user-select: none; -webkit-user-select: none;"
-    if (this.debug) {
-      style += " border: 1px solid red; box-sizing: border-box;"
-    }
+    // if (this.debug) {
+    //   style += " border: 1px solid red; box-sizing: border-box;"
+    // }
     this.canvas.setAttribute("style", style)
     this.canvas.addEventListener('touchstart', this.touchEvent.bind(this))
     this.canvas.addEventListener('touchmove', this.touchEvent.bind(this))

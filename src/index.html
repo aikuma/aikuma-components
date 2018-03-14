@@ -10,6 +10,7 @@
 <body>
 
   <aikuma-image-gesture-voice></aikuma-image-gesture-voice>
+  <aikuma-annotate></aikuma-annotate>
 
   <script type="text/javascript">
     (function() {
@@ -26,6 +27,8 @@
         igv.waitForComplete().then((igvdata) => {
           if (igvdata) {
             console.log('aikuma-image-gesture-voice returned',igvdata)
+            let anno = document.querySelector('aikuma-annotate')
+            anno.loadBlob(igvdata.audio)
           } else {
             console.log('aikuma-image-gesture-voice cancelled')
           }
