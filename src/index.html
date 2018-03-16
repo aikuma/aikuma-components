@@ -19,11 +19,10 @@
           console.log('componentOnReady() works!') // it will never work
         })
       } catch(e) {
-        console.log("oh no it didn't", e)
+        console.log("componentOnReady() failed", e)
       }
       window.addEventListener("load", async () => {             // this will *always* work
       //document.addEventListener("DOMContentLoaded", async () => { // this will work *most* of the time
-        //let igv = document.querySelector('aikuma-image-gesture-voice') // we need to get it again, I don't know why
         await igv.componentOnReady()
         let pics = [1,2,3].map((i) => {
           return 'http://members.iinet.net.au/~lurks/img/som-hand'+i.toString()+'.jpg'
