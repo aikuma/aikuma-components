@@ -10,12 +10,20 @@
 <body>
 
   <aikuma-image-gesture-voice></aikuma-image-gesture-voice>
-  <aikuma-annotate></aikuma-annotate>
 
   <script type="text/javascript">
     (function() {
-      document.addEventListener("DOMContentLoaded", async () => {
-        let igv = document.querySelector('aikuma-image-gesture-voice')
+      let igv = document.querySelector('aikuma-image-gesture-voice')
+      try {
+        igv.componentOnReady().then(() => {
+          console.log('componentOnReady() works!') // it will never work
+        })
+      } catch(e) {
+        console.log("oh no it didn't", e)
+      }
+      window.addEventListener("load", async () => {             // this will *always* work
+      //document.addEventListener("DOMContentLoaded", async () => { // this will work *most* of the time
+        //let igv = document.querySelector('aikuma-image-gesture-voice') // we need to get it again, I don't know why
         await igv.componentOnReady()
         let pics = [1,2,3].map((i) => {
           return 'http://members.iinet.net.au/~lurks/img/som-hand'+i.toString()+'.jpg'
@@ -24,8 +32,6 @@
         let igvdata = await igv.waitForComplete()
         if (igvdata) {
           console.log('aikuma-image-gesture-voice returned',igvdata)
-          let anno = document.querySelector('aikuma-annotate')
-          anno.loadBlob(igvdata.audio)
         } else {
           console.log('aikuma-image-gesture-voice cancelled')
         }
