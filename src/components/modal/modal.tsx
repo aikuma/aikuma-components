@@ -1,7 +1,5 @@
 import { Component, Element, State, Method } from '@stencil/core'
 
-export interface ModalElement extends HTMLElement, Modal {}
-
 interface State {
   showDialog: boolean
 }

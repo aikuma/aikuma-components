@@ -12,29 +12,20 @@
   <aikuma-image-gesture-voice></aikuma-image-gesture-voice>
 
   <script type="text/javascript">
-    (function() {
+    (async function() {
       let igv = document.querySelector('aikuma-image-gesture-voice')
-      try {
-        igv.componentOnReady().then(() => {
-          console.log('componentOnReady() works!') // it will never work
-        })
-      } catch(e) {
-        console.log("componentOnReady() failed", e)
-      }
-      window.addEventListener("load", async () => {             // this will *always* work
-      //document.addEventListener("DOMContentLoaded", async () => { // this will work *most* of the time
-        await igv.componentOnReady()
-        let pics = [1,2,3].map((i) => {
-          return 'http://members.iinet.net.au/~lurks/img/som-hand'+i.toString()+'.jpg'
-        })
-        igv.loadFromImageURLs(pics)
-        let igvdata = await igv.waitForComplete()
-        if (igvdata) {
-          console.log('aikuma-image-gesture-voice returned',igvdata)
-        } else {
-          console.log('aikuma-image-gesture-voice cancelled')
-        }
+      await igv.componentOnReady()
+      console.log('componentOnReady() fired!')
+      let pics = [1,2,3].map((i) => {
+        return 'http://members.iinet.net.au/~lurks/img/som-hand'+i.toString()+'.jpg'
       })
+      igv.loadFromImageURLs(pics)
+      let igvdata = await igv.waitForComplete()
+      if (igvdata) {
+        console.log('aikuma-image-gesture-voice returned',igvdata)
+      } else {
+        console.log('aikuma-image-gesture-voice cancelled')
+      }
     })();
  </script>
 

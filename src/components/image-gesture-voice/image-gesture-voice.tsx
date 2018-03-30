@@ -1,5 +1,5 @@
 import { Component, Element, State, Method, Listen, Event, EventEmitter } from '@stencil/core'
-import { SlideShowElement, Slide } from '../slide-show/slide-show'
+import { Slide } from '../slide-show/slide-show'
 import { Gesture, Gestate } from './gestate'
 import { Microphone, WebAudioPlayer } from '@aikuma/webaudio'
 import prettyprint from 'prettyprint'
@@ -7,7 +7,6 @@ import fontawesome from '@fortawesome/fontawesome'
 import { faPlay, faStop, faPause, faCheckCircle, faTimesCircle } from '@fortawesome/fontawesome-free-solid'
 import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
-import { ModalElement } from '../modal/modal'
 fontawesome.library.add(faPlay, faStop, faPause, faCheckCircle, faTimesCircle)
 
 export interface IGVSegment {
@@ -37,14 +36,16 @@ interface State {
 
 @Component({
   tag: 'aikuma-image-gesture-voice',
-  styleUrls: ['../../../node_modules/swiper/dist/css/swiper.css', 'image-gesture-voice.scss'],
+  //styleUrls: ['../../../node_modules/swiper/dist/css/swiper.css', 'image-gesture-voice.scss'],
+  styleUrls: ['image-gesture-voice.scss'],
   shadow: true
 })
 export class ImageGestureVoice {
   @Element() el: HTMLElement
-  ssc: SlideShowElement
+  //ssc: SlideShowElement 
+  ssc: HTMLAikumaSlideShowElement
   gestate: Gestate
-  modal: ModalElement
+  modal: HTMLAikumaModalElement
   mic: Microphone = new Microphone()
   slides: Slide[] = []
   timeLine: IGVSegment[] = []
@@ -68,7 +69,7 @@ export class ImageGestureVoice {
     recordLength: {ms: number, frames: number},
     audioBlob: Blob
   } = { recordLength: {ms: 0, frames: 0}, audioBlob: null}
-  @Event() AikumaIGV: EventEmitter<string>
+  @Event() aikumaIGV: EventEmitter<string>
   @Listen('slideEvent')
   slideEvenHandler(event: CustomEvent) {
     let t = event.detail.type
@@ -119,7 +120,7 @@ export class ImageGestureVoice {
     this.ssc = this.el.shadowRoot.querySelector('aikuma-slide-show')
     this.modal = this.el.shadowRoot.querySelector('aikuma-modal')
     this.gestate = new Gestate({debug: true})
-    this.AikumaIGV.emit('init')
+    this.aikumaIGV.emit('init')
   }
   // componentDidUnload() {
   //   console.log('The view has been removed from the DOM');

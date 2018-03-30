@@ -3,6 +3,9 @@
  * It contains typing information for all components that exist in this project
  * and imports for stencil collections that might be configured in your stencil.config.js file
  */
+
+import '@stencil/core';
+
 declare global {
   namespace JSX {
     interface Element {}
@@ -13,191 +16,197 @@ declare global {
   interface HTMLStencilElement extends HTMLElement {
     componentOnReady(): Promise<this>;
     componentOnReady(done: (ele?: this) => void): void;
+
+    forceUpdate(): void;
   }
 
   interface HTMLAttributes {}
 }
 
-
 import {
-  Annotate as AikumaAnnotate
-} from './components/annotate/annotate';
+  IGVData,
+} from './components/image-gesture-voice/image-gesture-voice';
+import {
+  Slide,
+} from './components/slide-show/slide-show';
 
 declare global {
-  interface HTMLAikumaAnnotateElement extends AikumaAnnotate, HTMLStencilElement {
+  interface HTMLAikumaAnnotateElement extends HTMLStencilElement {
+    'load': (url: string) => void;
+    'loadBlob': (b: Blob) => void;
   }
   var HTMLAikumaAnnotateElement: {
     prototype: HTMLAikumaAnnotateElement;
     new (): HTMLAikumaAnnotateElement;
   };
   interface HTMLElementTagNameMap {
-    "aikuma-annotate": HTMLAikumaAnnotateElement;
+    'aikuma-annotate': HTMLAikumaAnnotateElement;
   }
   interface ElementTagNameMap {
-    "aikuma-annotate": HTMLAikumaAnnotateElement;
+    'aikuma-annotate': HTMLAikumaAnnotateElement;
   }
   namespace JSX {
     interface IntrinsicElements {
-      "aikuma-annotate": JSXElements.AikumaAnnotateAttributes;
+      'aikuma-annotate': JSXElements.AikumaAnnotateAttributes;
     }
   }
   namespace JSXElements {
     export interface AikumaAnnotateAttributes extends HTMLAttributes {
-      
+      'onClickEvent'?: (event: CustomEvent<{id: string, type: string}>) => void;
     }
   }
 }
 
 
-import {
-  Buttony as AikumaButtony
-} from './components/buttony/buttony';
-
 declare global {
-  interface HTMLAikumaButtonyElement extends AikumaButtony, HTMLStencilElement {
+  interface HTMLAikumaButtonyElement extends HTMLStencilElement {
+    'clear': boolean;
+    'color': string;
+    'disabled': boolean;
+    'id': string;
+    'size': string;
   }
   var HTMLAikumaButtonyElement: {
     prototype: HTMLAikumaButtonyElement;
     new (): HTMLAikumaButtonyElement;
   };
   interface HTMLElementTagNameMap {
-    "aikuma-buttony": HTMLAikumaButtonyElement;
+    'aikuma-buttony': HTMLAikumaButtonyElement;
   }
   interface ElementTagNameMap {
-    "aikuma-buttony": HTMLAikumaButtonyElement;
+    'aikuma-buttony': HTMLAikumaButtonyElement;
   }
   namespace JSX {
     interface IntrinsicElements {
-      "aikuma-buttony": JSXElements.AikumaButtonyAttributes;
+      'aikuma-buttony': JSXElements.AikumaButtonyAttributes;
     }
   }
   namespace JSXElements {
     export interface AikumaButtonyAttributes extends HTMLAttributes {
-      clear?: boolean;
-      color?: string;
-      disabled?: boolean;
-      id?: string;
-      size?: string;
+      'clear'?: boolean;
+      'color'?: string;
+      'disabled'?: boolean;
+      'id'?: string;
+      'onClickEvent'?: (event: CustomEvent<{id: string, type: string}>) => void;
+      'size'?: string;
     }
   }
 }
 
 
-import {
-  ImageGestureVoice as AikumaImageGestureVoice
-} from './components/image-gesture-voice/image-gesture-voice';
-
 declare global {
-  interface HTMLAikumaImageGestureVoiceElement extends AikumaImageGestureVoice, HTMLStencilElement {
+  interface HTMLAikumaImageGestureVoiceElement extends HTMLStencilElement {
+    'loadFromImageURLs': (images: string[]) => Promise<void>;
+    'restoreFromIGVData': (igvd: IGVData) => void;
+    'waitForComplete': () => Promise<IGVData>;
   }
   var HTMLAikumaImageGestureVoiceElement: {
     prototype: HTMLAikumaImageGestureVoiceElement;
     new (): HTMLAikumaImageGestureVoiceElement;
   };
   interface HTMLElementTagNameMap {
-    "aikuma-image-gesture-voice": HTMLAikumaImageGestureVoiceElement;
+    'aikuma-image-gesture-voice': HTMLAikumaImageGestureVoiceElement;
   }
   interface ElementTagNameMap {
-    "aikuma-image-gesture-voice": HTMLAikumaImageGestureVoiceElement;
+    'aikuma-image-gesture-voice': HTMLAikumaImageGestureVoiceElement;
   }
   namespace JSX {
     interface IntrinsicElements {
-      "aikuma-image-gesture-voice": JSXElements.AikumaImageGestureVoiceAttributes;
+      'aikuma-image-gesture-voice': JSXElements.AikumaImageGestureVoiceAttributes;
     }
   }
   namespace JSXElements {
     export interface AikumaImageGestureVoiceAttributes extends HTMLAttributes {
-      
+      'onAikumaIGV'?: (event: CustomEvent<string>) => void;
     }
   }
 }
 
 
-import {
-  Modal as AikumaModal
-} from './components/modal/modal';
-
 declare global {
-  interface HTMLAikumaModalElement extends AikumaModal, HTMLStencilElement {
+  interface HTMLAikumaModalElement extends HTMLStencilElement {
+    'presentDialog': (title: string, message: string, confirm: string, cancel?: string) => Promise<boolean>;
   }
   var HTMLAikumaModalElement: {
     prototype: HTMLAikumaModalElement;
     new (): HTMLAikumaModalElement;
   };
   interface HTMLElementTagNameMap {
-    "aikuma-modal": HTMLAikumaModalElement;
+    'aikuma-modal': HTMLAikumaModalElement;
   }
   interface ElementTagNameMap {
-    "aikuma-modal": HTMLAikumaModalElement;
+    'aikuma-modal': HTMLAikumaModalElement;
   }
   namespace JSX {
     interface IntrinsicElements {
-      "aikuma-modal": JSXElements.AikumaModalAttributes;
+      'aikuma-modal': JSXElements.AikumaModalAttributes;
     }
   }
   namespace JSXElements {
     export interface AikumaModalAttributes extends HTMLAttributes {
-      
+
     }
   }
 }
 
 
-import {
-  SlideShow as AikumaSlideShow
-} from './components/slide-show/slide-show';
-
 declare global {
-  interface HTMLAikumaSlideShowElement extends AikumaSlideShow, HTMLStencilElement {
+  interface HTMLAikumaSlideShowElement extends HTMLStencilElement {
+    'getCurrent': () => number;
+    'getCurrentImageElement': () => HTMLImageElement;
+    'highlightSlide': (idx: number) => void;
+    'isChanging': () => boolean;
+    'loadImages': (images: string[]) => Promise<Slide[]>;
+    'lockPrevious': () => void;
+    'slideTo': (idx: number, instant?: boolean, skipCallback?: boolean) => void;
+    'unlockPrevious': () => void;
   }
   var HTMLAikumaSlideShowElement: {
     prototype: HTMLAikumaSlideShowElement;
     new (): HTMLAikumaSlideShowElement;
   };
   interface HTMLElementTagNameMap {
-    "aikuma-slide-show": HTMLAikumaSlideShowElement;
+    'aikuma-slide-show': HTMLAikumaSlideShowElement;
   }
   interface ElementTagNameMap {
-    "aikuma-slide-show": HTMLAikumaSlideShowElement;
+    'aikuma-slide-show': HTMLAikumaSlideShowElement;
   }
   namespace JSX {
     interface IntrinsicElements {
-      "aikuma-slide-show": JSXElements.AikumaSlideShowAttributes;
+      'aikuma-slide-show': JSXElements.AikumaSlideShowAttributes;
     }
   }
   namespace JSXElements {
     export interface AikumaSlideShowAttributes extends HTMLAttributes {
-      
+      'onSlideEvent'?: (event: CustomEvent<{type: string, val: any}>) => void;
+      'onSlideSize'?: (event: CustomEvent<{content: DOMRect, frame: DOMRect}>) => void;
     }
   }
 }
 
 
-import {
-  TranslateIGV as AikumaTranslateIgv
-} from './components/translate-igv/translate-igv';
-
 declare global {
-  interface HTMLAikumaTranslateIgvElement extends AikumaTranslateIgv, HTMLStencilElement {
+  interface HTMLAikumaTranslateIgvElement extends HTMLStencilElement {
+
   }
   var HTMLAikumaTranslateIgvElement: {
     prototype: HTMLAikumaTranslateIgvElement;
     new (): HTMLAikumaTranslateIgvElement;
   };
   interface HTMLElementTagNameMap {
-    "aikuma-translate-igv": HTMLAikumaTranslateIgvElement;
+    'aikuma-translate-igv': HTMLAikumaTranslateIgvElement;
   }
   interface ElementTagNameMap {
-    "aikuma-translate-igv": HTMLAikumaTranslateIgvElement;
+    'aikuma-translate-igv': HTMLAikumaTranslateIgvElement;
   }
   namespace JSX {
     interface IntrinsicElements {
-      "aikuma-translate-igv": JSXElements.AikumaTranslateIgvAttributes;
+      'aikuma-translate-igv': JSXElements.AikumaTranslateIgvAttributes;
     }
   }
   namespace JSXElements {
     export interface AikumaTranslateIgvAttributes extends HTMLAttributes {
-      
+
     }
   }
 }

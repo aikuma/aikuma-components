@@ -17,8 +17,6 @@ interface State {
   highlight?: number
 }
 
-export interface SlideShowElement extends HTMLElement, SlideShow {}
-
 @Component({
   tag: 'aikuma-slide-show',
   styleUrls: ['../../../node_modules/swiper/dist/css/swiper.css', 'slide-show.scss'],
