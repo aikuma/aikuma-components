@@ -75,7 +75,8 @@ Restore the component from previous <b>IGVData</b>. Returns a Promise that resol
 
 ### Types
 
-<b>IGVData</b>```
+<b>IGVData</b>
+```
 {
   segments: IGVSegment[]
   audio: Blob
