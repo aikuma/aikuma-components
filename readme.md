@@ -173,7 +173,8 @@ Returns a promise that resolves with <b>IGVTranslation</b> or `null` if the acti
 
 ### Types
 
-<b>IGVTranslation</b>```
+<b>IGVTranslation</b>
+```
 {
   segments: IGVSegment[]
   audio: Blob
