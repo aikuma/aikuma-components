@@ -1,6 +1,6 @@
 {
   "name": "@aikuma/webcomponents",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Web components for language apps",
   "main": "dist/aikuma.js",
   "types": "dist/types/index.d.ts",
@@ -18,10 +18,10 @@
     "test.watch": "jest --watch --no-cache"
   },
   "dependencies": {
-    "@aikuma/webaudio": "^0.3.0",
+    "@aikuma/webaudio": "^0.3.1",
     "@fortawesome/fontawesome": "^1.1.5",
     "@fortawesome/fontawesome-free-solid": "^5.0.9",
-    "@stencil/core": "^0.7.10",
+    "@stencil/core": "^0.7.24",
     "prettyprint": "^1.1.1",
     "randomcolor": "^0.5.3",
     "swiper": "^4.2.0",

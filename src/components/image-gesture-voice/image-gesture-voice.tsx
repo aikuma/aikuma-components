@@ -9,8 +9,14 @@ import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 fontawesome.library.add(faPlay, faStop, faPause, faCheckCircle, faTimesCircle)
 
+export interface IGVPrompt {
+  id: string,
+  type: string,
+  image?: Slide
+}
+
 export interface IGVSegment {
-  promptId: string,
+  prompt: IGVPrompt
   startMs: number,
   endMs?: number
   gestures?: Gesture[]
@@ -22,6 +28,10 @@ export interface IGVData {
   length: {ms: number, frames: number}
 }
 
+export interface IGVOptions {
+  debug: boolean
+}
+
 interface State {
   recording?: boolean,
   playing?: boolean,
@@ -31,7 +41,8 @@ interface State {
   havePlayed?: boolean,
   restored?: boolean,
   madeChanges?: boolean,
-  showControls?: boolean
+  showControls?: boolean,
+  debug?: boolean
 }
 
 @Component({
@@ -49,6 +60,9 @@ export class ImageGestureVoice {
   mic: Microphone = new Microphone()
   slides: Slide[] = []
   timeLine: IGVSegment[] = []
+  options: IGVOptions = {
+    debug: false
+  }
   @State() state: State = {
     recording: false,
     playing: false,
@@ -58,7 +72,8 @@ export class ImageGestureVoice {
     havePlayed: false,  // have ever played
     restored: false,    // restored complete slides (with recording)
     madeChanges: false,  // if we have made any changes
-    showControls: true
+    showControls: true,
+    debug: false
   }
   currentIndex: number = 0
   player: WebAudioPlayer = new WebAudioPlayer()
@@ -69,25 +84,27 @@ export class ImageGestureVoice {
     recordLength: {ms: number, frames: number},
     audioBlob: Blob
   } = { recordLength: {ms: 0, frames: 0}, audioBlob: null}
+  
   @Event() aikumaIGV: EventEmitter<string>
   @Listen('slideEvent')
   slideEvenHandler(event: CustomEvent) {
     let t = event.detail.type
     let v = event.detail.val
+    this.consoleLog('slide-show emited slideEvent', t)
     if (t === 'init') {
-      console.log('igv got slide init')
+      this.consoleLog('igv got slide init')
     } else if (t === 'changestart') {
-      console.log('slide change begin',v)
+      this.consoleLog('slide change begin', v)
       if (this.state.recording) {
-        console.log('stopping gesture recording')
+        this.consoleLog('stopping gesture recording')
         this.gestate.stopRecord()
       }
       if (this.state.playing) {
-        console.log('stopping gesture playing')
+        this.consoleLog('stopping gesture playing')
         this.gestate.stopPlay()
       }
     } else if (t === 'changeend') {
-      console.log('slide change end',v)
+      this.consoleLog('slide change end', v)
       this.slideChangeEvent(v)
     } 
   }
@@ -108,26 +125,34 @@ export class ImageGestureVoice {
       }
     }
   }
-  //faPlusIcon: fontawesome.Icon = fontawesome.icon(faPlus)
-  //
+  consoleLog(...args) {
+    if (this.options.debug) {
+      console.log('IGV:', ...args)
+    }
+  }
   // Lifecycle
   //
   // componentWillLoad() {
-  //   console.log('IGV componentWillLoad()')
+  //   this.consoleLog('IGV componentWillLoad()')
   // }
 
   componentDidLoad() {
     this.ssc = this.el.shadowRoot.querySelector('aikuma-slide-show')
     this.modal = this.el.shadowRoot.querySelector('aikuma-modal')
-    this.gestate = new Gestate({debug: true})
     this.aikumaIGV.emit('init')
   }
   // componentDidUnload() {
-  //   console.log('The view has been removed from the DOM');
+  //   this.consoleLog('The view has been removed from the DOM');
   // }
 
-  init() {
-    this.mic.connect()
+  async init(): Promise<any> {
+    this.gestate = new Gestate({debug: this.options.debug})
+    try {
+      await this.mic.connect()
+    } catch(e) {
+      // if we catch an error from a dependency, we should re-throw it to say what caused the error, and what that message was
+      throw new Error('Microphone.connect() failed with ' + e.message) 
+    }
     this.recObs = this.mic.observeProgress().subscribe((t) => {
       this.changeState({elapsed: this.getNiceTime(t)})
     })
@@ -145,7 +170,7 @@ export class ImageGestureVoice {
       }
     }
     this.player.observeProgress().subscribe((time) => {
-      //console.log(time)
+      //this.consoleLog(time)
       if (this.state.playing) {
         if (time === -1 ) {
           this.gestate.stopPlay()
@@ -165,10 +190,14 @@ export class ImageGestureVoice {
   // Public Methods
   //
   @Method()
-  async loadFromImageURLs(images: string[]) {
+  async loadFromImageURLs(images: string[], opts?: IGVOptions): Promise<any> {
+    if (opts) {
+      Object.assign(this.options, opts)
+      this.changeState({debug: this.options.debug})
+    }
     this.slides = await this.ssc.loadImages(images)
-    console.log('slides', this.slides)
-    this.init()
+    this.consoleLog('aikuma-slide-show loaded slides', this.slides)
+    await this.init()
   }
   @Method()
   restoreFromIGVData(igvd: IGVData) {
@@ -193,13 +222,13 @@ export class ImageGestureVoice {
   slideChangeEvent(slide: number) {
     let priorIndex = this.currentIndex
     this.currentIndex = slide   
-    console.log('slideChangeEvent()', slide)
+    this.consoleLog('slideChangeEvent()', slide)
     if (this.state.mode === 'record') {
       if (this.state.recording) {
         this.timeLine[priorIndex].gestures = this.gestate.getGestures() // save to old slide
         this.registerSlideChange(this.mic.getElapsed(), this.currentIndex)
         let el = this.ssc.getCurrentImageElement()
-        console.log('recording gestures')
+        this.consoleLog('recording gestures')
         this.gestate.clearAll()
         this.gestate.record(el, 'attention', 0)
       }
@@ -207,12 +236,12 @@ export class ImageGestureVoice {
       let t = this.timeLine[slide].startMs
       if (this.state.playing) {
         this.player.pause()
-        console.log('loading gestures', this.timeLine[slide].gestures)
+        this.consoleLog('loading gestures', this.timeLine[slide].gestures)
         this.gestate.loadGestures(this.timeLine[slide].gestures)
-        console.log('playing from', t/1000)
+        this.consoleLog('playing from', t/1000)
         this.player.play(t/1000)
         let el = this.ssc.getCurrentImageElement()
-        console.log('playing gestures')
+        this.consoleLog('playing gestures')
         this.gestate.playGestures(el, 0)
       } else {
         this.changeState({elapsed: this.getNiceTime(t)})
@@ -221,11 +250,16 @@ export class ImageGestureVoice {
   }
 
   registerSlideChange (time: number, imageIndex: number) {
+    let p: IGVPrompt = {
+      id: imageIndex.toString(),
+      type: 'image',
+      image: this.slides[imageIndex]
+    }
     this.timeLine.push({
       startMs: time,
-      promptId: this.slides[imageIndex].id
+      prompt: p
     })
-    console.log('registerSlideChange, timeLine is', this.timeLine, imageIndex)
+    this.consoleLog('registerSlideChange, timeLine is', this.timeLine, imageIndex)
     this.ssc.highlightSlide(imageIndex)
   }
   async stopRecording() {
@@ -233,7 +267,7 @@ export class ImageGestureVoice {
     await this.mic.stop()
     this.changeState({enableRecord: true, showControls: true})
     this.gestate.stopRecord()
-    console.log('gestures', this.gestate.getGestures())
+    this.consoleLog('gestures', this.gestate.getGestures())
     this.ssc.unlockPrevious()
   }
   stopPlaying() {
@@ -351,7 +385,7 @@ export class ImageGestureVoice {
 
   async pressClear(): Promise<any> {
     const reset = () => {
-      console.log('reset')
+      this.consoleLog('reset')
       this.ssc.slideTo(0)
       this.ssc.highlightSlide(-1)
       this.mic.clear()
@@ -454,8 +488,13 @@ export class ImageGestureVoice {
         null
     }
   </div>
-  <pre>{prettyprint(this.state)}</pre>
-  <pre>{prettyprint([this.timeLine.length, this.slides.length])}</pre>
+  {
+    this.options.debug ? 
+      <pre>{prettyprint(this.state)}<br/>
+      {prettyprint([this.timeLine.length, this.slides.length])}
+      </pre> :
+      null
+  }
 </div>
     )
   }

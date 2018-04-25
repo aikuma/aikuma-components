@@ -19,10 +19,15 @@
       let pics = [1,2,3].map((i) => {
         return 'http://members.iinet.net.au/~lurks/img/som-hand'+i.toString()+'.jpg'
       })
-      igv.loadFromImageURLs(pics)
+      try {
+        await igv.loadFromImageURLs(pics, {debug: true})
+      } catch(e) {
+        console.error('loadFromImageURLs() failed!')
+        console.error(e)
+      }
       let igvdata = await igv.waitForComplete()
       if (igvdata) {
-        console.log('aikuma-image-gesture-voice returned',igvdata)
+        console.log('aikuma-image-gesture-voice returned', igvdata)
       } else {
         console.log('aikuma-image-gesture-voice cancelled')
       }

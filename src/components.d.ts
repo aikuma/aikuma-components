@@ -25,16 +25,23 @@ declare global {
 
 import {
   IGVData,
+  IGVOptions,
 } from './components/image-gesture-voice/image-gesture-voice';
 import {
   Slide,
 } from './components/slide-show/slide-show';
 
 declare global {
-  interface HTMLAikumaAnnotateElement extends HTMLStencilElement {
-    'load': (url: string) => void;
-    'loadBlob': (b: Blob) => void;
+
+  namespace StencilComponents {
+    interface AikumaAnnotate {
+      'load': (url: string) => void;
+      'loadBlob': (b: Blob) => void;
+    }
   }
+
+  interface HTMLAikumaAnnotateElement extends StencilComponents.AikumaAnnotate, HTMLStencilElement {}
+
   var HTMLAikumaAnnotateElement: {
     prototype: HTMLAikumaAnnotateElement;
     new (): HTMLAikumaAnnotateElement;
@@ -59,13 +66,19 @@ declare global {
 
 
 declare global {
-  interface HTMLAikumaButtonyElement extends HTMLStencilElement {
-    'clear': boolean;
-    'color': string;
-    'disabled': boolean;
-    'id': string;
-    'size': string;
+
+  namespace StencilComponents {
+    interface AikumaButtony {
+      'clear': boolean;
+      'color': string;
+      'disabled': boolean;
+      'id': string;
+      'size': string;
+    }
   }
+
+  interface HTMLAikumaButtonyElement extends StencilComponents.AikumaButtony, HTMLStencilElement {}
+
   var HTMLAikumaButtonyElement: {
     prototype: HTMLAikumaButtonyElement;
     new (): HTMLAikumaButtonyElement;
@@ -95,11 +108,17 @@ declare global {
 
 
 declare global {
-  interface HTMLAikumaImageGestureVoiceElement extends HTMLStencilElement {
-    'loadFromImageURLs': (images: string[]) => Promise<void>;
-    'restoreFromIGVData': (igvd: IGVData) => void;
-    'waitForComplete': () => Promise<IGVData>;
+
+  namespace StencilComponents {
+    interface AikumaImageGestureVoice {
+      'loadFromImageURLs': (images: string[], opts?: IGVOptions) => Promise<any>;
+      'restoreFromIGVData': (igvd: IGVData) => void;
+      'waitForComplete': () => Promise<IGVData>;
+    }
   }
+
+  interface HTMLAikumaImageGestureVoiceElement extends StencilComponents.AikumaImageGestureVoice, HTMLStencilElement {}
+
   var HTMLAikumaImageGestureVoiceElement: {
     prototype: HTMLAikumaImageGestureVoiceElement;
     new (): HTMLAikumaImageGestureVoiceElement;
@@ -124,9 +143,15 @@ declare global {
 
 
 declare global {
-  interface HTMLAikumaModalElement extends HTMLStencilElement {
-    'presentDialog': (title: string, message: string, confirm: string, cancel?: string) => Promise<boolean>;
+
+  namespace StencilComponents {
+    interface AikumaModal {
+      'presentDialog': (title: string, message: string, confirm: string, cancel?: string) => Promise<boolean>;
+    }
   }
+
+  interface HTMLAikumaModalElement extends StencilComponents.AikumaModal, HTMLStencilElement {}
+
   var HTMLAikumaModalElement: {
     prototype: HTMLAikumaModalElement;
     new (): HTMLAikumaModalElement;
@@ -151,16 +176,22 @@ declare global {
 
 
 declare global {
-  interface HTMLAikumaSlideShowElement extends HTMLStencilElement {
-    'getCurrent': () => number;
-    'getCurrentImageElement': () => HTMLImageElement;
-    'highlightSlide': (idx: number) => void;
-    'isChanging': () => boolean;
-    'loadImages': (images: string[]) => Promise<Slide[]>;
-    'lockPrevious': () => void;
-    'slideTo': (idx: number, instant?: boolean, skipCallback?: boolean) => void;
-    'unlockPrevious': () => void;
+
+  namespace StencilComponents {
+    interface AikumaSlideShow {
+      'getCurrent': () => number;
+      'getCurrentImageElement': () => HTMLImageElement;
+      'highlightSlide': (idx: number) => void;
+      'isChanging': () => boolean;
+      'loadImages': (images: string[]) => Promise<Slide[]>;
+      'lockPrevious': () => void;
+      'slideTo': (idx: number, instant?: boolean, skipCallback?: boolean) => void;
+      'unlockPrevious': () => void;
+    }
   }
+
+  interface HTMLAikumaSlideShowElement extends StencilComponents.AikumaSlideShow, HTMLStencilElement {}
+
   var HTMLAikumaSlideShowElement: {
     prototype: HTMLAikumaSlideShowElement;
     new (): HTMLAikumaSlideShowElement;
@@ -186,9 +217,15 @@ declare global {
 
 
 declare global {
-  interface HTMLAikumaTranslateIgvElement extends HTMLStencilElement {
 
+  namespace StencilComponents {
+    interface AikumaTranslateIgv {
+
+    }
   }
+
+  interface HTMLAikumaTranslateIgvElement extends StencilComponents.AikumaTranslateIgv, HTMLStencilElement {}
+
   var HTMLAikumaTranslateIgvElement: {
     prototype: HTMLAikumaTranslateIgvElement;
     new (): HTMLAikumaTranslateIgvElement;
