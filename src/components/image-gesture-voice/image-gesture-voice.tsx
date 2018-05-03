@@ -1,6 +1,7 @@
 import { Component, Element, State, Method, Listen, Event, EventEmitter } from '@stencil/core'
 import { Slide } from '../slide-show/slide-show'
-import { Gesture, Gestate } from './gestate'
+//import { Gesture, Gestate } from './gestate'
+import { Gesture, Gestate } from '@aikuma/gestate'
 import { Microphone, WebAudioPlayer } from '@aikuma/webaudio'
 import prettyprint from 'prettyprint'
 import fontawesome from '@fortawesome/fontawesome'
@@ -53,7 +54,6 @@ interface State {
 })
 export class ImageGestureVoice {
   @Element() el: HTMLElement
-  //ssc: SlideShowElement 
   ssc: HTMLAikumaSlideShowElement
   gestate: Gestate
   modal: HTMLAikumaModalElement
@@ -298,17 +298,6 @@ export class ImageGestureVoice {
     let s = Object.assign({}, this.state)
     Object.assign(s, newStates)
     this.state = s
-  }
-  // lifted from @ionic/core util
-  getClassMap(classes: string | undefined) {
-    const map = {}
-    if (classes) {
-      classes
-        .split(' ')
-        .filter(c => c.trim() !== '')
-        .forEach(c => map[c] = true)
-    }
-    return map
   }
   //
   //

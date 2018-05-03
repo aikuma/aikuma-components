@@ -30,6 +30,13 @@ import {
 import {
   Slide,
 } from './components/slide-show/slide-show';
+import {
+  IGVData as IGVData2,
+  IGVOptions as IGVOptions2,
+} from './components/image-gesture-voice/image-gesture-voice';
+import {
+  IGVTranslation,
+} from './components/translate-igv/translate-igv';
 
 declare global {
 
@@ -181,9 +188,11 @@ declare global {
     interface AikumaSlideShow {
       'getCurrent': () => number;
       'getCurrentImageElement': () => HTMLImageElement;
+      'getSwiperInstances': () => { main: any; thumb: any; };
       'highlightSlide': (idx: number) => void;
       'isChanging': () => boolean;
       'loadImages': (images: string[]) => Promise<Slide[]>;
+      'loadSlides': (slides: Slide[]) => void;
       'lockPrevious': () => void;
       'slideTo': (idx: number, instant?: boolean, skipCallback?: boolean) => void;
       'unlockPrevious': () => void;
@@ -220,7 +229,8 @@ declare global {
 
   namespace StencilComponents {
     interface AikumaTranslateIgv {
-
+      'loadIGVData': (data: IGVData, opts?: IGVOptions) => Promise<any>;
+      'waitForComplete': () => Promise<IGVData>;
     }
   }
 

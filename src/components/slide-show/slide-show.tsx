@@ -145,7 +145,7 @@ export class SlideShow {
   }
 
   @Method()
-  async loadImages(images: string[]){
+  async loadImages(images: string[]): Promise<Slide[]> {
     //console.log('SlideShow loading images', images)
     let cache = new CacheImage()
     let sizes: {width: number, height: number}[]
@@ -163,9 +163,13 @@ export class SlideShow {
         id: this.makeShortId()
       })
     }
-    this.slides = newSlides
-    this.updating = true
+    this.initSlides(newSlides)
     return this.slides
+  }
+
+  @Method()
+  loadSlides(slides: Slide[]) {
+    this.initSlides(slides)
   }
 
   @Method()
@@ -182,6 +186,15 @@ export class SlideShow {
   @Method() 
   isChanging(): boolean {
     return this.changing
+  }
+  @Method()
+  getSwiperInstances(): {main: Swiper, thumb: Swiper} {
+    return this.swiper
+  }
+
+  initSlides(slides: Slide[]) {
+    this.slides = slides
+    this.updating = true // swiper initialized from componentDidUpdate()
   }
 
   componentDidUpdate() {

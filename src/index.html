@@ -15,22 +15,28 @@
     (async function() {
       let igv = document.querySelector('aikuma-image-gesture-voice')
       await igv.componentOnReady()
-      console.log('componentOnReady() fired!')
+      console.log('aikuma-image-gesture-voice componentOnReady()')
       let pics = [1,2,3].map((i) => {
         return 'http://members.iinet.net.au/~lurks/img/som-hand'+i.toString()+'.jpg'
       })
       try {
         await igv.loadFromImageURLs(pics, {debug: true})
       } catch(e) {
-        console.error('loadFromImageURLs() failed!')
+        console.error('aikuma-image-gesture-voice loadFromImageURLs() failed!')
         console.error(e)
       }
       let igvdata = await igv.waitForComplete()
-      if (igvdata) {
-        console.log('aikuma-image-gesture-voice returned', igvdata)
-      } else {
+      if (!igvdata) {
         console.log('aikuma-image-gesture-voice cancelled')
+        return
       }
+      igv.remove()
+      let transIGV = document.createElement('aikuma-translate-igv')
+      document.getElementsByTagName('body')[0].appendChild(transIGV)
+      await transIGV.componentOnReady()
+      console.log('aikuma-translate-igv componentOnReady()')
+      await transIGV.loadIGVData(igvdata)
+      let translation = await transIGV.waitForComplete()
     })();
  </script>
 

@@ -34,6 +34,10 @@ The API for the component is now available on the `igv` object, such as `igv.loa
 
 Another motivation for this pattern is that web components in this domain will need to be initialized from different contexts. In one context, the component is initialized with raw data such as images. In another context, we need to launch the component with the data that enables restoration of a previous working state. With a JavaScript API we support this via alternative initialisation methods.
 
+## General pattern
+
+Aikuma Web Components library adopts TypeScript, and for the purpose of this document, we assume that parent also uses TypeScript and/or modern ES6+ JavaScript features. The examples here use the `await` keyword for clarity, rather than the Promise pattern. This requires that the calling function is an async function.
+
 ## Image Gesture Voice (IGV)
 
 IGV is a process whereby we import a series of image prompts and then record a spoken description of the images and any touch or mouse gestures on the images as the operator speaks. IGV was designed as a method to document procedural discourse (how-to knowledge) but is flexible enough to be deployed in other contexts. 
@@ -42,7 +46,9 @@ The IGV Translate component, documented in the next section, provides the means 
 
 ### Example
 
-```let igv = document.querySelector('aikuma-image-gesture-voice')
+```
+let igv = document.querySelector('aikuma-image-gesture-voice')
+await igv.componentOnReady()
 igv.loadFromImageURLs(['http://...pic.jpg', 'http://...pic.jpg'...])
 igv.waitForComplete().then((igvdata) => {
   if (igvdata) {
@@ -150,6 +156,7 @@ The component offers a step-by-step translation procedure similar to the earlier
 
 ```
 let tigv = document.querySelector('aikuma-igv-translate')
+await tigv.componentOnReady()
 let igvData = ... previous IGVData
 tigv.loadIGVData(igvData)
 tigv.waitForComplete().then((tigvdata) => {
@@ -183,12 +190,71 @@ Returns a promise that resolves with <b>IGVTranslation</b> or `null` if the acti
 ```
 An IGVTranslation object represents a complete IGV translation. A binary `audio` Blob (wav file) of the audio recording in the process, and a `length` object that specifies milliseconds and frames (samples) properties.
 
-
 ### Dependencies
 
 * @aikuma/webaudio microphone web-audio player library 
 * @aikuma/gestate gesture recording library
 
+
+## Slide Show
+
+Slide Show is a wrapper around the Swiper JavaScript module.
+
+### Example
+
+```
+let ss = document.querySelector('aikuma-slide-show')
+await ss.componentOnReady()
+let slides = await ss.loadImages(['http://...image1.jpg', 'http://...image2.jpg' ...])
+})
+```
+
+### API
+
+`loadImages(images: string[]): Promise<Slide[]>`
+
+Initializes by taking an array of url strings for the slide images and returns a Promise that resolves with a Slide array. The Slide objects are useful because they add dimensions and a unique id for the image. 
+
+`loadSlides(slides: Slide[]): Promise<any>`
+
+Initializes by being passed an array of Slide objects, generated from loadImages, e.g. restoring a session. The returned Promise resolves when complete.
+
+`getCurrent(): number`
+
+Returns current slide index.
+
+`slideTo(idx: number, instant: boolean = false, skipCallback: boolean = false)`
+
+Transition the slide show to the current idx index. Optional boolean instant argument specifies if the transition should be instantaneous and the skipCallback boolean flag specifies if callbacks should be disabled. If they are, Slide Show will not emit slide transition events.
+
+`lockPrevious()`
+
+Stops the Slide Show from being navigated to the previous slide. Useful when recording IGV.
+
+`unlockPrevious()`
+
+Allows Slide Show to navigate backwards.
+
+`highlightSlide(idx: number)`
+
+Highlights the idx slide, as specified as an index of the current slides.
+
+`getCurrentImageElement(): HTMLImageElement`
+
+Obtains the actual image element for the currently displayed slide. Useful if we wish to, say, resize an overlay to the real dimensions of the image element.
+
+`isChanging(): boolean`
+
+Returns true if there is a transition underway. Useful to check for debouncing actions.
+
+`getSwiperInstances(): {main: Swiper, thumb: Swiper}`
+
+Returns an object with the main and thumbnail Swiper instances if direct control of Swiper is desired.
+Note that the thumb Swiper is not slaved to the main Swiper (because that's buggy), so operations will often need to be performed on both instances.
+
+### Dependencies
+
+* Swiper JavaScript module
 
 # Why?
 
