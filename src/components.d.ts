@@ -185,6 +185,48 @@ declare global {
 declare global {
 
   namespace StencilComponents {
+    interface AikumaProgress {
+      'completedColor': string;
+      'height': number;
+      'lineWidth': number;
+      'progressColor': string;
+      'setProgress': (progress: number) => void;
+      'strokeColor': string;
+    }
+  }
+
+  interface HTMLAikumaProgressElement extends StencilComponents.AikumaProgress, HTMLStencilElement {}
+
+  var HTMLAikumaProgressElement: {
+    prototype: HTMLAikumaProgressElement;
+    new (): HTMLAikumaProgressElement;
+  };
+  interface HTMLElementTagNameMap {
+    'aikuma-progress': HTMLAikumaProgressElement;
+  }
+  interface ElementTagNameMap {
+    'aikuma-progress': HTMLAikumaProgressElement;
+  }
+  namespace JSX {
+    interface IntrinsicElements {
+      'aikuma-progress': JSXElements.AikumaProgressAttributes;
+    }
+  }
+  namespace JSXElements {
+    export interface AikumaProgressAttributes extends HTMLAttributes {
+      'completedColor'?: string;
+      'height'?: number;
+      'lineWidth'?: number;
+      'progressColor'?: string;
+      'strokeColor'?: string;
+    }
+  }
+}
+
+
+declare global {
+
+  namespace StencilComponents {
     interface AikumaSlideShow {
       'getCurrent': () => number;
       'getCurrentImageElement': () => HTMLImageElement;
@@ -194,7 +236,7 @@ declare global {
       'loadImages': (images: string[]) => Promise<Slide[]>;
       'loadSlides': (slides: Slide[]) => void;
       'lockPrevious': () => void;
-      'slideTo': (idx: number, instant?: boolean, skipCallback?: boolean) => void;
+      'slideTo': (idx: number, instant?: boolean) => void;
       'unlockPrevious': () => void;
     }
   }

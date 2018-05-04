@@ -119,7 +119,8 @@ export class SlideShow {
     return this.swiper.main.activeIndex
   }
   @Method()
-  slideTo(idx: number, instant: boolean = false, skipCallback: boolean = false) {
+  slideTo(idx: number, instant: boolean = false) {
+
     if (idx === this.swiper.main.activeIndex) {
       return
     }
@@ -131,8 +132,8 @@ export class SlideShow {
         to: idx
       }
     })
-    this.swiper.thumb.slideTo(idx, instant ? 0 : this.transitionTime, !skipCallback)
-    this.swiper.main.slideTo(idx, instant ? 0 : this.transitionTime, !skipCallback)
+    this.swiper.thumb.slideTo(idx, instant ? 0 : this.transitionTime)
+    this.swiper.main.slideTo(idx, instant ? 0 : this.transitionTime)
   }
 
   @Method()

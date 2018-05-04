@@ -222,7 +222,8 @@ export class ImageGestureVoice {
   slideChangeEvent(slide: number) {
     let priorIndex = this.currentIndex
     this.currentIndex = slide   
-    this.consoleLog('slideChangeEvent()', slide)
+    let isNextSlide = priorIndex === 0 || this.currentIndex === priorIndex + 1 // stops the player pause / start occuring after player starts from 0
+    this.consoleLog('slideChangeEvent()', slide, isNextSlide)
     if (this.state.mode === 'record') {
       if (this.state.recording) {
         this.timeLine[priorIndex].gestures = this.gestate.getGestures() // save to old slide
@@ -232,14 +233,18 @@ export class ImageGestureVoice {
         this.gestate.clearAll()
         this.gestate.record(el, 'attention', 0)
       }
-    } else if (this.state.mode === 'review') {
+    } else if (this.state.mode === 'review') { 
       let t = this.timeLine[slide].startMs
       if (this.state.playing) {
-        this.player.pause()
+        if (!isNextSlide) {
+          this.player.pause()
+        }
         this.consoleLog('loading gestures', this.timeLine[slide].gestures)
         this.gestate.loadGestures(this.timeLine[slide].gestures)
-        this.consoleLog('playing from', t/1000)
-        this.player.play(t/1000)
+        if (!isNextSlide) {
+          this.consoleLog('playing from', t/1000)
+          this.player.play(t/1000)
+        }
         let el = this.ssc.getCurrentImageElement()
         this.consoleLog('playing gestures')
         this.gestate.playGestures(el, 0)
@@ -280,7 +285,8 @@ export class ImageGestureVoice {
     this.changeState({mode: 'review', showControls: false})
     await this.player.loadFromBlob(this.recording.audioBlob)
     this.changeState({elapsed: this.getNiceTime(0), showControls: true})
-    this.ssc.slideTo(0)
+    this.ssc.slideTo(0, false)
+    this.currentIndex = 0 // so play action will start from 0
   }
 
   //
@@ -330,7 +336,7 @@ export class ImageGestureVoice {
         if (this.timeLine.length) {
           // If we are somewhere other than the last slide, go back to the last slide
           this.currentIndex = this.timeLine.length - 1
-          this.ssc.slideTo(this.currentIndex, true, true)
+          this.ssc.slideTo(this.currentIndex, true)
         } else {
           // otherwise record first slide at 0
           this.ssc.slideTo(0)
@@ -355,11 +361,11 @@ export class ImageGestureVoice {
         this.changeState({havePlayed: true, playing: true, showControls: false})
         if (this.player.ended) {
           // Playback had finished (end of slides)
-          this.ssc.slideTo(0, true, true)
+          this.ssc.slideTo(0, true)
           this.gestate.loadGestures(this.timeLine[0].gestures)
           let el = this.ssc.getCurrentImageElement()
           this.gestate.playGestures(el, 0)
-          this.player.play()
+          this.player.play(0)
         } else {
           // Otherwise resume by restarting from this slide
           let time = this.timeLine[this.currentIndex].startMs // milliseconds

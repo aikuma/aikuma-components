@@ -14,12 +14,13 @@ The web component ports are built with Ionic's [StencilJS](http://www.stenciljs.
 * aikuma-slide-show
 * aikuma-buttony
 * aikuma-modal
+* aikuma-progress
 
 The first two components are higher order components that implement entire activities. Both use the the [@aikuma/gestate](https://github.com/aikuma/gestate) gesture record/playback library and [@aikuma/webaudio](https://github.com/aikuma/webaudio) web audio library.
 
 The aikuma-slide-show component is a web component wrapper of [Swiper](http://idangero.us/swiper/). 
 
-aikuma-buttony and aikuma-modal are low-level UI elements we intend to replace with components from the upcoming web component-implemented Ionic framework.
+aikuma-buttony and aikuma-modal are low-level UI elements we intend to replace with components from the upcoming web component-implemented Ionic framework. aikuma-progress renders a progress bar with optional segmentation.
 
 ## Consuming Web Components as APIs
 
