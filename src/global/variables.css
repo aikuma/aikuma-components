@@ -1,7 +1,7 @@
 :root {
   --app-primary-color: #da450f;
   --app-background-color: #f7d9cf;
-  --app-disabled-color: #cfcfcf;
+  --app-disabled-color: #bababa;
 }
 :root body {
   margin: 0px;

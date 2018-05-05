@@ -84,6 +84,7 @@ export class TranslateIGV {
         if (time === -1 ) {
           this.gestate.stopPlay()
           this.changeState({playing: false, showControls: true})
+          this.progress.setProgress(1) // set progress bar full when audio has ended
         } else {
           let elapsedms = ~~(time*1000)
           let newElapsed = this.getNiceTime(elapsedms) // getNiceTime wants ms
@@ -141,10 +142,10 @@ export class TranslateIGV {
   // Template Logic
   //
   canPlay() {
-    return true
+    return !this.state.recording
   }
   canRecord() {
-    return true
+    return !this.state.playing
   }
   @Listen('clickEvent')
   clickEventHandler(event: CustomEvent) {
@@ -159,6 +160,12 @@ export class TranslateIGV {
       this.consoleLog('play up')
       this.changeState({playing: false, showControls: true})
       this.player.pause()
+    } else if (id === 'record' && type === 'down') {
+      this.consoleLog('record down')
+      this.changeState({recording: true, showControls: false})
+    } else if (id === 'record' && type === 'up') {
+      this.consoleLog('record up')
+      this.changeState({recording: false, showControls: true})
     }
   }
 
@@ -178,7 +185,17 @@ export class TranslateIGV {
       <div class="buttonicon"
         innerHTML={fontawesome.icon(this.state.playing ? faPause : faPlay).html[0]}>
       </div>
-      <div class="elapsed">{this.state.elapsed}</div>
+      {/* <div class="elapsed">{this.state.elapsed}</div> */}
+    </div>
+  </aikuma-buttony> 
+  <aikuma-buttony 
+      disabled={!this.canRecord()} 
+      id="record" size="85" color="red">
+    <div class="recordbutton">
+      <div class="buttonicon"
+        innerHTML={fontawesome.icon(this.state.recording ? faPause : faStop).html[0]}>
+      </div>
+      {/* <div class="elapsed">{this.state.elapsed}</div> */}
     </div>
   </aikuma-buttony> 
   </div>

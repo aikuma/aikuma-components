@@ -55,11 +55,13 @@ export class Buttony {
     }
     let touch = evt.changedTouches[0]
     if (evt.type === 'touchstart' && !this.trackTouchIdentifier) {
+      console.log('t down')
       evt.preventDefault()
       this.sendEvent('down')
       this.doRipple(touch.pageX,touch.pageY)
       this.trackTouchIdentifier = touch.identifier
     } else if (evt.type === 'touchend') {
+      console.log('t up')
       let fTouch = Array.from(evt.changedTouches).find(x => x.identifier === this.trackTouchIdentifier)
       if (fTouch) {
         evt.preventDefault()

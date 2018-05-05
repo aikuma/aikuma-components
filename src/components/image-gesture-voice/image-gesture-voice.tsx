@@ -269,9 +269,9 @@ export class ImageGestureVoice {
   }
   async stopRecording() {
     this.changeState({enableRecord: false, recording: false})
+    this.gestate.stopRecord()
     await this.mic.stop()
     this.changeState({enableRecord: true, showControls: true})
-    this.gestate.stopRecord()
     this.consoleLog('gestures', this.gestate.getGestures())
     this.ssc.unlockPrevious()
   }

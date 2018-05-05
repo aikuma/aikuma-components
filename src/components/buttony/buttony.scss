@@ -30,6 +30,7 @@ aikuma-buttony {
       display: flex;
       justify-content: center;
       align-items: center;
+      pointer-events: none;
     }
     .contents.clear {
       color: var(--app-primary-color);
