@@ -12,15 +12,21 @@ interface State {
   recording?: boolean,
   playing?: boolean,
   elapsed?: string,
-  startplayms?: number,
   enableRecord?: boolean,
+  enablePlay?: boolean,
   havePlayed?: boolean,
   showControls?: boolean,
   debug?: boolean
+  reviewMode?: boolean,
+  lastAction?: string, 
+  playEnded?: boolean
 }
 
+export interface SegmentMap 
+  extends Array<{source: IGVSegment, map: {startMs: number, endMs?: number}}>{}
+
 export interface IGVTranslation {
-  segments: IGVSegment[]
+  segmentmap: SegmentMap 
   audio: Blob
   length: {ms: number, frames: number}
 }
@@ -44,15 +50,24 @@ export class TranslateIGV {
   completeSubject: Subject<IGVTranslation> = new Subject()
   player: WebAudioPlayer = new WebAudioPlayer()
   igvdata: IGVData
+  currentIndex: number = 0
+  translateSegments: {startMs: number, endMS?: number}[] = []
+  // respeak logic
+  playRegion: {start: number, end: number} = {start: 0, end: 0} // these are in seconds
+  playedRegions: {start: number, end: number}[] = [] // for progress bar
+  recordRegion: {start: number, end: number} = {start: 0, end: 0}
   @State() state: State = {
     recording: false,
     playing: false,
     elapsed: '0.0',
-    startplayms: 0,
     enableRecord: false, // show record buttons
+    enablePlay: false,
     havePlayed: false,  // have ever played
     showControls: true,
-    debug: false
+    debug: false,
+    reviewMode: false,
+    lastAction: 'start',
+    playEnded: false
   }
   consoleLog(...args) {
     if (this.options.debug) {
@@ -79,6 +94,36 @@ export class TranslateIGV {
     this.slides = data.segments.map(seg => seg.prompt.image)
     this.consoleLog('calling this.ssc.loadSlides with', this.slides)
     await this.ssc.loadSlides(this.slides)
+    this.gestate = new Gestate({debug: this.options.debug})
+    this.progress.setProgress(0)
+    try {
+      await this.mic.connect()
+    } catch(e) {
+      // if we catch an error from a dependency, we should re-throw it to say what caused the error, and what that message was
+      throw new Error('Microphone.connect() failed with ' + e.message) 
+    }
+    this.registerPlaybackObserver()
+    this.changeState({enablePlay: true})
+  }
+
+  registerPlaybackObserver() {
+    const checkSlide = (t: number) => {
+      let timeMs = ~~(t * 1000)
+      let thisslide = 0
+      // Use the estimated respeak timeline if we are in review mode
+      let segments = this.state.reviewMode ? 
+        this.translateSegments :
+        this.igvdata.segments
+      for (let i = segments.length - 1; i > 0; --i ) {
+        if (timeMs >segments[i].startMs) {
+          thisslide = i
+          break
+        }
+      }
+      if (thisslide !== this.currentIndex) {
+        this.ssc.slideTo(thisslide)
+      }
+    }
     this.player.observeProgress().subscribe((time) => {
       if (this.state.playing) {
         if (time === -1 ) {
@@ -90,17 +135,19 @@ export class TranslateIGV {
           let newElapsed = this.getNiceTime(elapsedms) // getNiceTime wants ms
           this.changeState({elapsed: newElapsed})
           this.progress.setProgress(elapsedms / this.igvdata.length.ms) // bar needs val from 0 to 1
-          if (!this.ssc.isChanging()) {
-            //checkPlaybackSlide(elapsedms)
+          if (!this.ssc.isChanging) {
+            checkSlide(time)
+          }
+          if (!this.state.reviewMode) {
+            this.playRegion.end = time // update play region end
           }
         }
       }
     })
-    this.gestate = new Gestate({debug: this.options.debug})
-    this.progress.setProgress(0)
   }
+
   @Method()
-  waitForComplete(): Promise<IGVData> {
+  waitForComplete(): Promise<IGVTranslation> {
     return new Promise((resolve) => {
       let retDat: IGVTranslation
       this.completeSubject.subscribe((d) => {
@@ -128,44 +175,83 @@ export class TranslateIGV {
     Object.assign(s, newStates)
     this.state = s
   }
+
   //
   // Logic 
   //
-  pressPlay() {
-
-  }
-  pressRecord() {
-
-  }
+  // async registerRegion() {
+  //   let rstats: {frames: number, offset: number, ms: number}
+  //   if (this.mic.isRecording()) {
+  //     rstats = await this.mic.stop()
+  //     this.consoleLog('recorded', rstats.frames, 'frames')
+  //   }
+  //   this.playedRegions.push({
+  //     start: (this.playRegion.start / (this.igvdata.length.ms / 1000)),
+  //     end: (this.playRegion.end / (this.igvdata.length.ms / 1000))
+  //   })
+  //   this.respeakTimeline.push({
+  //     source: {
+  //       start: ~~(this.playRegion.start * 1000),
+  //       end: ~~(this.playRegion.end * 1000)
+  //     },
+  //     secondary: {
+  //       start: this.recordRegion.start,
+  //       end: this.recordRegion.end
+  //     }
+  //   })
+  //   console.log('playedregions',this.playedRegions)
+  //   console.log('rtimeline', this.respeakTimeline)
+  // }
 
   //
   // Template Logic
   //
   canPlay() {
-    return !this.state.recording
+    return this.state.enablePlay
   }
   canRecord() {
-    return !this.state.playing
+    return this.state.enableRecord && this.mic.canRecord()
   }
   @Listen('clickEvent')
-  clickEventHandler(event: CustomEvent) {
+  async clickEventHandler(event: CustomEvent) {
     let id = event.detail.id
     let type = event.detail.type
     this.consoleLog('event', event)
     if (id === 'play' && type === 'down') {
       this.consoleLog('play down')
-      this.changeState({havePlayed: true, playing: true, showControls: false})
-      this.player.play(this.state.startplayms)
+      this.changeState({havePlayed: true, playing: true, playEnded: false, showControls: false})
+      if (this.state.lastAction === 'record') { 
+        //this.registerRegion()
+        this.playRegion.start = this.playRegion.end 
+        this.player.play()
+        this.gestate.playGestures(0)
+      } else {
+        this.player.play(this.playRegion.start)
+        this.gestate.playGestures(this.playRegion.start)
+      }
     } else if (id === 'play' && type === 'up') {
       this.consoleLog('play up')
-      this.changeState({playing: false, showControls: true})
-      this.player.pause()
+      if (this.state.playing) {
+        this.player.pause()
+        this.gestate.stopPlay()
+        this.changeState({playing: false})
+      }
+      if ((!this.state.playEnded) && ((this.playRegion.end - this.playRegion.start) < 1)) {
+        //this._showTooShortToast()
+        this.consoleLog('too short!')
+      } else {
+        this.changeState({enableRecord: true, lastAction: 'play'})
+      }
     } else if (id === 'record' && type === 'down') {
+      this.recordRegion.start = this.recordRegion.end 
+      this.mic.record()
       this.consoleLog('record down')
       this.changeState({recording: true, showControls: false})
     } else if (id === 'record' && type === 'up') {
       this.consoleLog('record up')
-      this.changeState({recording: false, showControls: true})
+      this.changeState({recording: false})
+      await this.mic.pause()
+      this.changeState({showControls: true, enablePlay: true})
     }
   }
 
@@ -203,3 +289,4 @@ export class TranslateIGV {
     )
   }
 }
+

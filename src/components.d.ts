@@ -272,7 +272,7 @@ declare global {
   namespace StencilComponents {
     interface AikumaTranslateIgv {
       'loadIGVData': (data: IGVData, opts?: IGVOptions) => Promise<any>;
-      'waitForComplete': () => Promise<IGVData>;
+      'waitForComplete': () => Promise<IGVTranslation>;
     }
   }
 
