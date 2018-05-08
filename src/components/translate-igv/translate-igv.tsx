@@ -42,13 +42,16 @@ export class TranslateIGV {
   gestate: Gestate
   modal: HTMLAikumaModalElement
   progress: HTMLAikumaProgressElement
-  mic: Microphone = new Microphone()
   slides: Slide[] = []
   options: IGVOptions = {
     debug: false
   }
   completeSubject: Subject<IGVTranslation> = new Subject()
-  player: WebAudioPlayer = new WebAudioPlayer()
+  // one Audio Context to rule them all: Because Chrome is now blocking playback unless you resume() a ctx in a gesture cb
+  audioCtx: AudioContext = new AudioContext()
+  mic: Microphone = new Microphone({audioContext: this.audioCtx})
+  player: WebAudioPlayer = new WebAudioPlayer({audioContext: this.audioCtx}) 
+  audioResumed: boolean = false // on first gesture, call audioCtx.resume() and then set this true
   igvdata: IGVData
   currentIndex: number = 0
   translateSegments: {startMs: number, endMS?: number}[] = []
@@ -214,6 +217,10 @@ export class TranslateIGV {
   }
   @Listen('clickEvent')
   async clickEventHandler(event: CustomEvent) {
+    if (!this.audioResumed) {
+      this.audioCtx.resume() // unlocks audio playback in Chrome
+      this.audioResumed = true
+    }
     let id = event.detail.id
     let type = event.detail.type
     this.consoleLog('event', event)

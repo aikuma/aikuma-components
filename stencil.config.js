@@ -5,6 +5,15 @@ exports.config = {
   globalStyle: 'src/global/variables.css',
   plugins: [
     sass()
+  ],
+  outputTargets:[
+    { 
+      type: 'dist' 
+    },
+    { 
+      type: 'www',
+      serviceWorker: false
+    }
   ]
 }
 

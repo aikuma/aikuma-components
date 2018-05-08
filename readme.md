@@ -22,6 +22,18 @@ The aikuma-slide-show component is a web component wrapper of [Swiper](http://id
 
 aikuma-buttony and aikuma-modal are low-level UI elements we intend to replace with components from the upcoming web component-implemented Ionic framework. aikuma-progress renders a progress bar with optional segmentation.
 
+## Using Web Components elsewhere
+
+The easiest way is to use a script tag and the unpkg.com unpacker/CDN service. See the demo/index.html file (just open in Chrome to run) for an example of this, e .g:
+
+```
+<script src='https://unpkg.com/@aikuma/webcomponents@0.0.6/dist/aikuma.js'></script>
+```
+
+A more realistic way to consume components in the longer term is to integrate them into a bundler such as Web Pack. This [Ionic Blog Post](https://blog.ionicframework.com/using-webpack-with-web-components-built-using-stencil/) has more information. This opens the door to selectively importing components from a collection.
+
+There might be some merit in publishing key components as separate NPM modules to smooth this process for people that just want to include a useful component on, say, a web page, archive or something, which otherwise doesn't use complicated web build tooling. This is best explored with real use cases, so get in touch if this affects you.
+
 ## Consuming Web Components as APIs
 
 A common way of interacting with custom components is via attribute properties. For example; `<custom-tag prop={{data}}>`. JavaScript frameworks allow binding of data to properties with differences in syntax. This method is supported in WebComponents by watching for attribute value changes. We believe this is sub-optimal because implementations vary across JavaScript frameworks, there's a risk of degraded performance, and finally, this pattern differs from the pattern of consuming JavaScript module APIs at large.
@@ -261,5 +273,7 @@ Note that the thumb Swiper is not slaved to the main Swiper (because that's bugg
 
 This project is motivated by the need to improve development productivity of knowledge preservation apps. Generally speaking, the environment of this genre is seriously resource constrained. We can ill afford continual cycles of reinventing the wheel. Reusing prior work is essential. Thematically we focus on knowledge preservation methods and applications which are intended to be operated by ordinary people rather than experts.
 
-This is part of Mat Bettinson's PhD research investigating suitable architecture and implementation pattern for reusable software components for language-related apps.
+Part of this work is Mat Bettinson's PhD research investigating suitable architecture and implementation pattern for reusable software components for language-related apps. 
+
+
 

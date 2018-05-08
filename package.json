@@ -1,6 +1,6 @@
 {
   "name": "@aikuma/webcomponents",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Web components for language apps",
   "main": "dist/aikuma.js",
   "types": "dist/types/index.d.ts",

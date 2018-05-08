@@ -57,7 +57,11 @@ export class ImageGestureVoice {
   ssc: HTMLAikumaSlideShowElement
   gestate: Gestate
   modal: HTMLAikumaModalElement
-  mic: Microphone = new Microphone()
+  // one Audio Context to rule them all: Because Chrome is now blocking playback unless you resume() a ctx in a gesture cb
+  audioCtx: AudioContext = new AudioContext()
+  mic: Microphone = new Microphone({audioContext: this.audioCtx})
+  player: WebAudioPlayer = new WebAudioPlayer({audioContext: this.audioCtx}) 
+  audioResumed: boolean = false // on first gesture, call audioCtx.resume() and then set this true
   slides: Slide[] = []
   timeLine: IGVSegment[] = []
   options: IGVOptions = {
@@ -76,7 +80,6 @@ export class ImageGestureVoice {
     debug: false
   }
   currentIndex: number = 0
-  player: WebAudioPlayer = new WebAudioPlayer()
   recObs: Observable<number>
   playProgressObs: Observable<number>
   completeSubject: Subject<any> = new Subject()
@@ -110,6 +113,10 @@ export class ImageGestureVoice {
   }
   @Listen('clickEvent')
   clickEventHandler(event: CustomEvent) {
+    if (!this.audioResumed) {
+      this.audioCtx.resume() // unlocks audio playback in Chrome
+      this.audioResumed = true
+    }
     let id = event.detail.id
     let type = event.detail.type
     if (type === 'up') {
