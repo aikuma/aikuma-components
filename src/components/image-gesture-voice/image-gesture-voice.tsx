@@ -6,7 +6,7 @@ import { Microphone, WebAudioPlayer } from '@aikuma/webaudio'
 import prettyprint from 'prettyprint'
 import fontawesome from '@fortawesome/fontawesome'
 import { faPlay, faStop, faPause, faCheckCircle, faTimesCircle } from '@fortawesome/fontawesome-free-solid'
-import { Observable } from 'rxjs/Observable'
+//import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 fontawesome.library.add(faPlay, faStop, faPause, faCheckCircle, faTimesCircle)
