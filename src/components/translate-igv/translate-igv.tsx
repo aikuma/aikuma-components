@@ -227,14 +227,15 @@ export class TranslateIGV {
     if (id === 'play' && type === 'down') {
       this.consoleLog('play down')
       this.changeState({havePlayed: true, playing: true, playEnded: false, showControls: false})
+      let el = this.ssc.getCurrentImageElement()
       if (this.state.lastAction === 'record') { 
         //this.registerRegion()
         this.playRegion.start = this.playRegion.end 
         this.player.play()
-        this.gestate.playGestures(0)
+        this.gestate.playGestures(el, 0)
       } else {
         this.player.play(this.playRegion.start)
-        this.gestate.playGestures(this.playRegion.start)
+        this.gestate.playGestures(el, this.playRegion.start)
       }
     } else if (id === 'play' && type === 'up') {
       this.consoleLog('play up')

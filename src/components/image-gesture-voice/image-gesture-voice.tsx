@@ -8,6 +8,7 @@ import fontawesome from '@fortawesome/fontawesome'
 import { faPlay, faStop, faPause, faCheckCircle, faTimesCircle } from '@fortawesome/fontawesome-free-solid'
 import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
+import { Subscription } from 'rxjs/Subscription'
 fontawesome.library.add(faPlay, faStop, faPause, faCheckCircle, faTimesCircle)
 
 export interface IGVPrompt {
@@ -80,8 +81,8 @@ export class ImageGestureVoice {
     debug: false
   }
   currentIndex: number = 0
-  recObs: Observable<number>
-  playProgressObs: Observable<number>
+  recSub: Subscription
+  playProgressSub: Subscription
   completeSubject: Subject<any> = new Subject()
   recording: {
     recordLength: {ms: number, frames: number},
@@ -148,9 +149,15 @@ export class ImageGestureVoice {
     this.modal = this.el.shadowRoot.querySelector('aikuma-modal')
     this.aikumaIGV.emit('init')
   }
-  // componentDidUnload() {
-  //   this.consoleLog('The view has been removed from the DOM');
-  // }
+  componentDidUnload() {
+    // might not need to do this
+    if (this.playProgressSub) {
+      this.playProgressSub.unsubscribe()
+    }
+    if (this.recSub) {
+      this.recSub.unsubscribe()
+    }
+  }
 
   async init(): Promise<any> {
     this.gestate = new Gestate({debug: this.options.debug})
@@ -160,7 +167,7 @@ export class ImageGestureVoice {
       // if we catch an error from a dependency, we should re-throw it to say what caused the error, and what that message was
       throw new Error('Microphone.connect() failed with ' + e.message) 
     }
-    this.recObs = this.mic.observeProgress().subscribe((t) => {
+    this.recSub = this.mic.observeProgress().subscribe((t) => {
       this.changeState({elapsed: this.getNiceTime(t)})
     })
     this.changeState({'enableRecord': true})
@@ -176,7 +183,7 @@ export class ImageGestureVoice {
         this.ssc.slideTo(thisslide)
       }
     }
-    this.player.observeProgress().subscribe((time) => {
+    this.playProgressSub = this.player.observeProgress().subscribe((time) => {
       //this.consoleLog(time)
       if (this.state.playing) {
         if (time === -1 ) {

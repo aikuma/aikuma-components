@@ -1,6 +1,6 @@
 {
   "name": "@aikuma/webcomponents",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Web components for language apps",
   "main": "dist/aikuma.js",
   "types": "dist/types/index.d.ts",
@@ -23,7 +23,7 @@
     "@stencil/dev-server": "latest",
     "@stencil/sass": "latest",
     "@stencil/utils": "latest",
-    "@stencil/core": "^0.8.0",
+    "@stencil/core": "^0.9.7",
     "@types/jest": "^21.1.1",
     "jest": "^21.2.1",
     "tslib": "^1.9.0",
@@ -40,7 +40,7 @@
     "type": "git",
     "url": "git+https://github.com/Lingomat/aikuma-components.git"
   },
-  "author": "mat Bettinson",
+  "author": "Mat Bettinson",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/Lingomat/aikuma-components"
