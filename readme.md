@@ -15,19 +15,20 @@ The web component ports are built with Ionic's [StencilJS](http://www.stenciljs.
 * aikuma-buttony
 * aikuma-modal
 * aikuma-progress
+* aikuma-camera
 
 The first two components are higher order components that implement entire activities. Both use the the [@aikuma/gestate](https://github.com/aikuma/gestate) gesture record/playback library and [@aikuma/webaudio](https://github.com/aikuma/webaudio) web audio library.
 
 The aikuma-slide-show component is a web component wrapper of [Swiper](http://idangero.us/swiper/). 
 
-aikuma-buttony and aikuma-modal are low-level UI elements we intend to replace with components from the upcoming web component-implemented Ionic framework. aikuma-progress renders a progress bar with optional segmentation.
+aikuma-buttony and aikuma-modal are low-level UI elements we intend to replace with components from the upcoming web component-implemented Ionic framework. aikuma-progress renders a progress bar with optional segmentation. aikuma-camera is a simple video feed with camera capture functionality.
 
 ## Using Web Components elsewhere
 
 The easiest way is to use a script tag and the unpkg.com unpacker/CDN service. See the demo/index.html file (just open in Chrome to run) for an example of this, e .g:
 
 ```
-<script src='https://unpkg.com/@aikuma/webcomponents@0.0.6/dist/aikuma.js'></script>
+<script src='https://unpkg.com/@aikuma/webcomponents@0.1.0/dist/aikuma.js'></script>
 ```
 
 A more realistic way to consume components in the longer term is to integrate them into a bundler such as Web Pack. This [Ionic Blog Post](https://blog.ionicframework.com/using-webpack-with-web-components-built-using-stencil/) has more information. This opens the door to selectively importing components from a collection.
@@ -72,7 +73,7 @@ igv.waitForComplete().then((igvdata) => {
 })
 ```
 
-See also src/index.html for the demo source.
+See also src/index.html for the demo source. There may be things commented out.
 
 ### Demo
 
@@ -268,6 +269,26 @@ Note that the thumb Swiper is not slaved to the main Swiper (because that's bugg
 ### Dependencies
 
 * Swiper JavaScript module
+
+## Camera
+
+Uses getUserMedia to get a video stream and displays it.
+No on-screen UI, all control is via methods. 
+
+### Properties
+
+image-type: string = 'jpeg', 'png' or 'webp
+image-quality: number = between 0 and 1, only for jpeg and webp
+width: x resolution
+height: y resolution
+facing-mode: string = 'environment or 'user'
+
+### API
+
+takePicture(pause: boolean) - returns Promise that resolves with Blob of image. Pause flag specifies if video should pause on photo.
+resume() - resumes video if it's paused
+pause() - pauses video if it's not paused
+switchCamera() - attempts to switch between cameras if there is more than 1
 
 # Why?
 

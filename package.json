@@ -1,6 +1,6 @@
 {
   "name": "@aikuma/webcomponents",
-  "version": "0.0.7",
+  "version": "0.1.0",
   "description": "Web components for language apps",
   "main": "dist/index.js",
   "module": "dist/esm/index.js",
@@ -10,22 +10,15 @@
     "dist/"
   ],
   "scripts": {
-    "build": "stencil build",
-    "dev": "sd concurrent \"stencil build --dev --watch\" \"stencil-dev-server\" ",
-    "serve": "stencil-dev-server",
-    "start": "npm run dev",
-    "test": "jest --no-cache",
-    "test.watch": "jest --watch --no-cache"
+    "build": "stencil build --docs",
+    "start": "stencil build --dev --watch --serve",
+    "test": "stencil test --spec --e2e",
+    "test.watch": "stencil test --spec --e2e --watchAll"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
-    "@stencil/dev-server": "latest",
     "@stencil/sass": "latest",
-    "@stencil/utils": "latest",
-    "@stencil/core": "^0.9.7",
-    "@types/jest": "^21.1.1",
-    "jest": "^21.2.1",
+    "@stencil/core": "~0.16.2",
     "tslib": "^1.9.0",
     "@aikuma/webaudio": "^0.4.0",
     "@aikuma/gestate": "^0.3.2",
@@ -46,22 +39,6 @@
     "url": "https://github.com/Lingomat/aikuma-components"
   },
   "homepage": "https://github.com/Lingomat/aikuma-components",
-  "jest": {
-    "transform": {
-      "^.+\\.(ts|tsx)$": "<rootDir>/node_modules/@stencil/core/testing/jest.preprocessor.js"
-    },
-    "transformIgnorePatterns": [
-      "<rootDir>/node_modules/(?!aikumic)"
-    ],
-    "testRegex": "(/__tests__/.*|\\.(test|spec))\\.(tsx?|jsx?)$",
-    "moduleFileExtensions": [
-      "ts",
-      "tsx",
-      "js",
-      "json",
-      "jsx"
-    ]
-  },
   "keywords": [
     "web",
     "components",

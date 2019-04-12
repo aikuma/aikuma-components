@@ -1,17 +1,11 @@
 import { Component, Element, Method, State, Event, EventEmitter } from '@stencil/core'
 import Swiper from 'swiper'
 import { CacheImage } from './cacheimage'
+import { Slide } from '../../interface'
 
 //import { Swiper, Navigation, Lazy, Pagination, Controller, EffectCoverflow } from 'swiper/dist/js/swiper.esm.js'
 
 //Swiper.use([Navigation, Lazy, Pagination, Controller, EffectCoverflow])
-
-export interface Slide {
-  url: string
-  width: number
-  height: number
-  id: string
-}
 
 interface State {
   highlight?: number

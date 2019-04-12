@@ -1,7 +1,6 @@
 import { Component, State, Method, Listen, Element } from '@stencil/core'
-import { IGVData, IGVOptions, IGVSegment } from '../image-gesture-voice/image-gesture-voice'
+import { IGVData, IGVOptions, IGVTranslation, Slide } from '../../interface'
 import { Subject } from 'rxjs/Subject'
-import { Slide } from '../slide-show/slide-show'
 import { Gestate } from '@aikuma/gestate'
 import { Microphone, WebAudioPlayer } from '@aikuma/webaudio'
 import fontawesome from '@fortawesome/fontawesome'
@@ -20,15 +19,6 @@ interface State {
   reviewMode?: boolean,
   lastAction?: string, 
   playEnded?: boolean
-}
-
-export interface SegmentMap 
-  extends Array<{source: IGVSegment, map: {startMs: number, endMs?: number}}>{}
-
-export interface IGVTranslation {
-  segmentmap: SegmentMap 
-  audio: Blob
-  length: {ms: number, frames: number}
 }
 
 @Component({

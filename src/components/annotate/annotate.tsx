@@ -5,7 +5,7 @@ import TimelinePlugin from 'wavesurfer.js/dist/plugin/wavesurfer.timeline.min.js
 import MinimapPlugin from 'wavesurfer.js/dist/plugin/wavesurfer.minimap.min.js'
 import RegionsPlugin from 'wavesurfer.js/dist/plugin/wavesurfer.regions.min.js'
 
-export interface AnnotateElement extends HTMLElement, Annotate {}
+//export interface AnnotateElement extends HTMLElement, Annotate {}
 
 @Component({
   tag: 'aikuma-annotate',

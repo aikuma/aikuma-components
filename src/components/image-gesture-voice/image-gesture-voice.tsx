@@ -1,7 +1,5 @@
 import { Component, Element, State, Method, Listen, Event, EventEmitter } from '@stencil/core'
-import { Slide } from '../slide-show/slide-show'
-//import { Gesture, Gestate } from './gestate'
-import { Gesture, Gestate } from '@aikuma/gestate'
+import { Gestate } from '@aikuma/gestate'
 import { Microphone, WebAudioPlayer } from '@aikuma/webaudio'
 import prettyprint from 'prettyprint'
 import fontawesome from '@fortawesome/fontawesome'
@@ -9,30 +7,8 @@ import { faPlay, faStop, faPause, faCheckCircle, faTimesCircle } from '@fortawes
 //import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
+import { IGVOptions, IGVSegment, IGVData, IGVPrompt, Slide } from '../../interface'
 fontawesome.library.add(faPlay, faStop, faPause, faCheckCircle, faTimesCircle)
-
-export interface IGVPrompt {
-  id: string,
-  type: string,
-  image?: Slide
-}
-
-export interface IGVSegment {
-  prompt: IGVPrompt
-  startMs: number,
-  endMs?: number
-  gestures?: Gesture[]
-}
-
-export interface IGVData {
-  segments: IGVSegment[]
-  audio: Blob
-  length: {ms: number, frames: number}
-}
-
-export interface IGVOptions {
-  debug: boolean
-}
 
 interface State {
   recording?: boolean,

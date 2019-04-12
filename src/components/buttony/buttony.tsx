@@ -1,6 +1,6 @@
 import { Component, Element, Prop, Event, EventEmitter } from '@stencil/core'
 
-export interface ButtonyElement extends HTMLElement, Buttony {}
+//export interface ButtonyElement extends HTMLElement, Buttony {}
 
 @Component({
   tag: 'aikuma-buttony',
