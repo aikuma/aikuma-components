@@ -424,7 +424,8 @@ export class ImageGestureVoice {
       if (this.state.mode === 'record') {
         return <aikuma-buttony 
             disabled={!this.canRecord()} 
-            id="record" size="85">
+            id="record" size="85"
+            color={ this.state.recording ? 'red': 'orange' }>
           <div class="recbutton">
             <div class="buttonicon"
               innerHTML={fontawesome.icon(this.state.recording ? faPause: faStop).html[0]}>

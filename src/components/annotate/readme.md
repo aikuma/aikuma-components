@@ -7,15 +7,43 @@
 
 ## Events
 
-#### clickEvent
+| Event        | Description | Type                                      |
+| ------------ | ----------- | ----------------------------------------- |
+| `clickEvent` |             | `CustomEvent<{id: string, type: string}>` |
 
 
 ## Methods
 
-#### load()
+### `load(url: string) => void`
 
 
-#### loadBlob()
+
+#### Parameters
+
+| Name  | Type     | Description |
+| ----- | -------- | ----------- |
+| `url` | `string` |             |
+
+#### Returns
+
+Type: `void`
+
+
+
+### `loadBlob(b: Blob) => void`
+
+
+
+#### Parameters
+
+| Name | Type   | Description |
+| ---- | ------ | ----------- |
+| `b`  | `Blob` |             |
+
+#### Returns
+
+Type: `void`
+
 
 
 

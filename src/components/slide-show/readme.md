@@ -7,36 +7,137 @@
 
 ## Events
 
-#### slideEvent
-
-
-#### slideSize
+| Event        | Description | Type                                              |
+| ------------ | ----------- | ------------------------------------------------- |
+| `slideEvent` |             | `CustomEvent<{type: string, val: any}>`           |
+| `slideSize`  |             | `CustomEvent<{content: DOMRect, frame: DOMRect}>` |
 
 
 ## Methods
 
-#### getCurrent()
+### `getCurrent() => number`
 
 
-#### getCurrentImageElement()
+
+#### Returns
+
+Type: `number`
 
 
-#### highlightSlide()
+
+### `getCurrentImageElement() => HTMLImageElement`
 
 
-#### isChanging()
+
+#### Returns
+
+Type: `HTMLImageElement`
 
 
-#### loadImages()
+
+### `getSwiperInstances() => { main: any; thumb: any; }`
 
 
-#### lockPrevious()
+
+#### Returns
+
+Type: `{ main: any; thumb: any; }`
 
 
-#### slideTo()
+
+### `highlightSlide(idx: number) => void`
 
 
-#### unlockPrevious()
+
+#### Parameters
+
+| Name  | Type     | Description |
+| ----- | -------- | ----------- |
+| `idx` | `number` |             |
+
+#### Returns
+
+Type: `void`
+
+
+
+### `isChanging() => boolean`
+
+
+
+#### Returns
+
+Type: `boolean`
+
+
+
+### `loadImages(images: string[]) => Promise<Slide[]>`
+
+
+
+#### Parameters
+
+| Name     | Type       | Description |
+| -------- | ---------- | ----------- |
+| `images` | `string[]` |             |
+
+#### Returns
+
+Type: `Promise<Slide[]>`
+
+
+
+### `loadSlides(slides: Slide[]) => void`
+
+
+
+#### Parameters
+
+| Name     | Type      | Description |
+| -------- | --------- | ----------- |
+| `slides` | `Slide[]` |             |
+
+#### Returns
+
+Type: `void`
+
+
+
+### `lockPrevious() => void`
+
+
+
+#### Returns
+
+Type: `void`
+
+
+
+### `slideTo(idx: number, instant?: boolean) => void`
+
+
+
+#### Parameters
+
+| Name      | Type      | Description |
+| --------- | --------- | ----------- |
+| `idx`     | `number`  |             |
+| `instant` | `boolean` |             |
+
+#### Returns
+
+Type: `void`
+
+
+
+### `unlockPrevious() => void`
+
+
+
+#### Returns
+
+Type: `void`
+
 
 
 

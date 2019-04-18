@@ -7,62 +7,20 @@
 
 ## Properties
 
-#### clear
-
-boolean
-
-
-#### color
-
-string
-
-
-#### disabled
-
-boolean
-
-
-#### id
-
-string
-
-
-#### size
-
-string
-
-
-## Attributes
-
-#### clear
-
-boolean
-
-
-#### color
-
-string
-
-
-#### disabled
-
-boolean
-
-
-#### id
-
-string
-
-
-#### size
-
-string
+| Property   | Attribute  | Description | Type      | Default     |
+| ---------- | ---------- | ----------- | --------- | ----------- |
+| `clear`    | `clear`    |             | `boolean` | `false`     |
+| `color`    | `color`    |             | `string`  | `undefined` |
+| `disabled` | `disabled` |             | `boolean` | `undefined` |
+| `id`       | `id`       |             | `string`  | `null`      |
+| `size`     | `size`     |             | `string`  | `'50'`      |
 
 
 ## Events
 
-#### clickEvent
-
+| Event        | Description | Type                                      |
+| ------------ | ----------- | ----------------------------------------- |
+| `clickEvent` |             | `CustomEvent<{id: string, type: string}>` |
 
 
 ----------------------------------------------
