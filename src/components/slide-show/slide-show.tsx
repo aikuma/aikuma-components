@@ -36,10 +36,10 @@ export class SlideShow {
   @State() state: State = {highlight: -1}
 
   componentDidLoad() {
-    //this.init() // is now done with loadImages()
+    //this.initSwiper()
   }
 
-  init() {
+  initSwiper(): void {
     // main swiper
     let smainel = this.el.shadowRoot.querySelector('.swiper-container.main')
     this.swiper.main = new Swiper(smainel, { 
@@ -91,7 +91,6 @@ export class SlideShow {
         allowTouchMove: false
       })
     }
-
     // this.swiper.main.on('slideChangeTransitionStart', async () => {
     //   this.slideEvent.emit({type: 'changeslide', val: {slide: this.swiper.main.activeIndex}})
     //   //console.log('slide show emitting changeslide slideChangeTransitionStart')
@@ -101,6 +100,7 @@ export class SlideShow {
     //   this.slideEvent.emit({type: 'newslide', val: this.swiper.main.activeIndex})
     // })
     this.swiper.main.on('init', () => {
+      this.initialized = true
       this.slideEvent.emit({type:'init', val: this.swiper})
     })
     this.swiper.main.on('slideChange', (e) => {
@@ -111,7 +111,17 @@ export class SlideShow {
         this.changing = false
       }, this.transitionTime)
     })
+    console.log('swiper main', this.swiper.main)
   }
+
+  waitMs(ms: number): Promise<any> {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve()
+      }, ms)
+    })
+  }
+
   @Method()
   async getCurrent(): Promise<number> {
     return this.swiper.main.activeIndex
@@ -147,9 +157,8 @@ export class SlideShow {
 
   @Method()
   async loadImages(images: string[], settings: SlideshowSettings = {}): Promise<Slide[]> {
-    //console.log('SlideShow loading images', images)
     Object.assign(this.settings, settings)
-    this.init()
+    this.initSwiper()
     let cache = new CacheImage()
     let sizes: {width: number, height: number}[]
     try {
@@ -167,6 +176,11 @@ export class SlideShow {
       })
     }
     this.initSlides(newSlides)
+    await this.waitMs(100)
+    this.swiper.main.update()
+    if (this.settings.showThumbs) {
+      this.swiper.thumb.update()
+    }
     return this.slides
   }
 
@@ -201,12 +215,13 @@ export class SlideShow {
   }
 
   componentDidUpdate() {
+    console.log('slideshow update', this.updating, this.initialized)
     if (this.updating && !this.initialized) {
       this.swiper.main.init()
       if (this.settings.showThumbs) {
         this.swiper.thumb.init()
       }
-      this.initialized = true
+      
     }
     this.updating = false
   }
@@ -234,6 +249,17 @@ export class SlideShow {
   getSlideFrameSize(): DOMRect {
     let slideEl = this.el.shadowRoot.querySelector('.swiper-container.main .swiper-slide.swiper-slide-active')
     return slideEl ? slideEl.getBoundingClientRect() as DOMRect : null
+  }
+
+  // Lifecycle 
+  componentDidUnload() {
+    console.log('unloaded slideshow')
+    if (this.swiper.main) {
+      this.swiper.main.destroy(true)
+    }
+    if (this.swiper.thumb) {
+      this.swiper.thumb.destroy(true)
+    }
   }
 
   //
@@ -292,9 +318,9 @@ export class SlideShow {
         </div>
       )}
     </div>
-    <div class="swiper-pagination"></div>
-    <div class="swiper-button-prev"></div>
-    <div class="swiper-button-next"></div>
+    { this.slides.length > 1 ? <div class="swiper-pagination"></div> : '' }
+    { this.slides.length > 1 ? <div class="swiper-button-prev"></div> : '' }
+    { this.slides.length > 1 ? <div class="swiper-button-next"></div> : '' }
   </div>
   {this.getThumbJSX()}
 </div>

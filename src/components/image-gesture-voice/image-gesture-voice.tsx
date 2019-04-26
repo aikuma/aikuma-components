@@ -1,5 +1,6 @@
 import { Component, Element, State, Method, Listen, Event, EventEmitter } from '@stencil/core'
-import { Gestate } from '@aikuma/gestate'
+//import { Gestate } from '@aikuma/gestate'
+import { Gestate } from '../../../../gestate/dist'
 import { Microphone, WebAudioPlayer } from '@aikuma/webaudio'
 import prettyprint from 'prettyprint'
 import fontawesome from '@fortawesome/fontawesome'
@@ -138,6 +139,7 @@ export class ImageGestureVoice {
   }
 
   async init(): Promise<any> {
+    this.consoleLog('init()')
     this.gestate = new Gestate({debug: this.options.debug})
     try {
       await this.mic.connect()
@@ -187,10 +189,12 @@ export class ImageGestureVoice {
       Object.assign(this.options, opts)
       this.changeState({debug: this.options.debug})
     }
+    this.consoleLog('aikuma-slide-show loading images', images)
     this.slides = await this.ssc.loadImages(images, {showThumbs: images.length > 1})
     this.consoleLog('aikuma-slide-show loaded slides', this.slides)
     await this.init()
   }
+
   @Method()
   restoreFromIGVData(igvd: IGVData) {
     
@@ -221,7 +225,7 @@ export class ImageGestureVoice {
         this.timeLine[priorIndex].gestures = this.gestate.getGestures() // save to old slide
         this.registerSlideChange(this.mic.getElapsed(), this.currentIndex)
         let el = await this.ssc.getCurrentImageElement()
-        this.consoleLog('recording gestures')
+        this.consoleLog('recording gestures for element',el)
         this.gestate.clearAll()
         this.gestate.record(el, 'attention', 0)
       }
@@ -340,6 +344,7 @@ export class ImageGestureVoice {
         this.changeState({recording: true, showControls: false})
         this.ssc.lockPrevious()
         let el = await this.ssc.getCurrentImageElement()
+        this.consoleLog('recording gestures for element', el)
         this.gestate.record(el, 'attention', this.mic.getElapsed())
       }
     } 
