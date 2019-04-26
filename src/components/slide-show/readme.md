@@ -15,37 +15,37 @@
 
 ## Methods
 
-### `getCurrent() => number`
+### `getCurrent() => Promise<number>`
 
 
 
 #### Returns
 
-Type: `number`
+Type: `Promise<number>`
 
 
 
-### `getCurrentImageElement() => HTMLImageElement`
-
-
-
-#### Returns
-
-Type: `HTMLImageElement`
-
-
-
-### `getSwiperInstances() => { main: any; thumb: any; }`
+### `getCurrentImageElement() => Promise<HTMLImageElement>`
 
 
 
 #### Returns
 
-Type: `{ main: any; thumb: any; }`
+Type: `Promise<HTMLImageElement>`
 
 
 
-### `highlightSlide(idx: number) => void`
+### `getSwiperInstances() => Promise<{ main?: any; thumb?: any; }>`
+
+
+
+#### Returns
+
+Type: `Promise<{ main?: any; thumb?: any; }>`
+
+
+
+### `highlightSlide(idx: number) => Promise<void>`
 
 
 
@@ -57,29 +57,30 @@ Type: `{ main: any; thumb: any; }`
 
 #### Returns
 
-Type: `void`
+Type: `Promise<void>`
 
 
 
-### `isChanging() => boolean`
+### `isChanging() => Promise<boolean>`
 
 
 
 #### Returns
 
-Type: `boolean`
+Type: `Promise<boolean>`
 
 
 
-### `loadImages(images: string[]) => Promise<Slide[]>`
+### `loadImages(images: string[], settings?: SlideshowSettings) => Promise<Slide[]>`
 
 
 
 #### Parameters
 
-| Name     | Type       | Description |
-| -------- | ---------- | ----------- |
-| `images` | `string[]` |             |
+| Name       | Type                | Description |
+| ---------- | ------------------- | ----------- |
+| `images`   | `string[]`          |             |
+| `settings` | `SlideshowSettings` |             |
 
 #### Returns
 
@@ -87,7 +88,7 @@ Type: `Promise<Slide[]>`
 
 
 
-### `loadSlides(slides: Slide[]) => void`
+### `loadSlides(slides: Slide[]) => Promise<void>`
 
 
 
@@ -99,21 +100,21 @@ Type: `Promise<Slide[]>`
 
 #### Returns
 
-Type: `void`
+Type: `Promise<void>`
 
 
 
-### `lockPrevious() => void`
+### `lockPrevious() => Promise<void>`
 
 
 
 #### Returns
 
-Type: `void`
+Type: `Promise<void>`
 
 
 
-### `slideTo(idx: number, instant?: boolean) => void`
+### `slideTo(idx: number, instant?: boolean) => Promise<void>`
 
 
 
@@ -126,17 +127,17 @@ Type: `void`
 
 #### Returns
 
-Type: `void`
+Type: `Promise<void>`
 
 
 
-### `unlockPrevious() => void`
+### `unlockPrevious() => Promise<void>`
 
 
 
 #### Returns
 
-Type: `void`
+Type: `Promise<void>`
 
 
 

@@ -126,6 +126,7 @@ export class ImageGestureVoice {
     this.aikumaIGV.emit('init')
   }
   componentDidUnload() {
+    this.consoleLog('destroying')
     // might not need to do this
     if (this.playProgressSub) {
       this.playProgressSub.unsubscribe()
@@ -133,6 +134,7 @@ export class ImageGestureVoice {
     if (this.recSub) {
       this.recSub.unsubscribe()
     }
+    this.gestate.destroy()
   }
 
   async init(): Promise<any> {
@@ -185,7 +187,7 @@ export class ImageGestureVoice {
       Object.assign(this.options, opts)
       this.changeState({debug: this.options.debug})
     }
-    this.slides = await this.ssc.loadImages(images)
+    this.slides = await this.ssc.loadImages(images, {showThumbs: images.length > 1})
     this.consoleLog('aikuma-slide-show loaded slides', this.slides)
     await this.init()
   }
@@ -209,7 +211,7 @@ export class ImageGestureVoice {
   //
   // Logic 
   //
-  slideChangeEvent(slide: number) {
+  async slideChangeEvent(slide: number) {
     let priorIndex = this.currentIndex
     this.currentIndex = slide   
     let isNextSlide = priorIndex === 0 || this.currentIndex === priorIndex + 1 // stops the player pause / start occuring after player starts from 0
@@ -218,7 +220,7 @@ export class ImageGestureVoice {
       if (this.state.recording) {
         this.timeLine[priorIndex].gestures = this.gestate.getGestures() // save to old slide
         this.registerSlideChange(this.mic.getElapsed(), this.currentIndex)
-        let el = this.ssc.getCurrentImageElement()
+        let el = await this.ssc.getCurrentImageElement()
         this.consoleLog('recording gestures')
         this.gestate.clearAll()
         this.gestate.record(el, 'attention', 0)
@@ -235,7 +237,7 @@ export class ImageGestureVoice {
           this.consoleLog('playing from', t/1000)
           this.player.play(t/1000)
         }
-        let el = this.ssc.getCurrentImageElement()
+        let el = await this.ssc.getCurrentImageElement()
         this.consoleLog('playing gestures')
         this.gestate.playGestures(el, 0)
       } else {
@@ -304,7 +306,7 @@ export class ImageGestureVoice {
     return this.timeLine.length > 0
   }
   canRecord(): boolean {
-    return true
+    return (!this.state.recording && this.state.enableRecord) // latter bit is to account for recording overrrun
   }
   canCancel(): boolean {
     return this.state.mode === 'record' ? this.timeLine.length > 0 : true
@@ -317,7 +319,7 @@ export class ImageGestureVoice {
     }
   }
   // button presses
-  pressRec(): void {
+  async pressRec(): Promise<void>{
     if (this.state.mode === 'record') {
       if (this.state.recording) {
         this.stopRecording()
@@ -337,12 +339,12 @@ export class ImageGestureVoice {
         this.state.recording = true
         this.changeState({recording: true, showControls: false})
         this.ssc.lockPrevious()
-        let el = this.ssc.getCurrentImageElement()
+        let el = await this.ssc.getCurrentImageElement()
         this.gestate.record(el, 'attention', this.mic.getElapsed())
       }
     } 
   }
-  pressPlay(): void {
+  async pressPlay(): Promise<void> {
     if (this.state.mode === 'review') {
       if (this.state.playing) {
         this.stopPlaying()
@@ -353,14 +355,14 @@ export class ImageGestureVoice {
           // Playback had finished (end of slides)
           this.ssc.slideTo(0, true)
           this.gestate.loadGestures(this.timeLine[0].gestures)
-          let el = this.ssc.getCurrentImageElement()
+          let el = await this.ssc.getCurrentImageElement()
           this.gestate.playGestures(el, 0)
           this.player.play(0)
         } else {
           // Otherwise resume by restarting from this slide
           let time = this.timeLine[this.currentIndex].startMs // milliseconds
           this.gestate.loadGestures(this.timeLine[this.currentIndex].gestures)
-          let el = this.ssc.getCurrentImageElement()
+          let el = await this.ssc.getCurrentImageElement()
           this.gestate.playGestures(el, 0)
           this.player.play(time/1000)
         }
@@ -423,7 +425,7 @@ export class ImageGestureVoice {
     const getBigButton = () => {
       if (this.state.mode === 'record') {
         return <aikuma-buttony 
-            disabled={!this.canRecord()} 
+            // disabled={!this.canRecord()} 
             id="record" size="85"
             color={ this.state.recording ? 'red': 'orange' }>
           <div class="recbutton">

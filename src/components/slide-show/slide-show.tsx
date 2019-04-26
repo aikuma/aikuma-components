@@ -1,7 +1,7 @@
 import { Component, Element, Method, State, Event, EventEmitter } from '@stencil/core'
 import Swiper from 'swiper'
 import { CacheImage } from './cacheimage'
-import { Slide } from '../../interface'
+import { Slide, SlideshowSettings } from '../../interface'
 
 //import { Swiper, Navigation, Lazy, Pagination, Controller, EffectCoverflow } from 'swiper/dist/js/swiper.esm.js'
 
@@ -22,23 +22,27 @@ export class SlideShow {
   @Event() slideSize: EventEmitter<{content: DOMRect, frame: DOMRect}>;
   @Event() slideEvent: EventEmitter<{type: string, val: any}>;
   swiper: {
-    main: Swiper,
-    thumb: Swiper
-  }
+    main?: Swiper,
+    thumb?: Swiper
+  } = {}
   updating: boolean = false
   initialized: boolean = false
   prevLocked: boolean = false
   transitionTime: number = 300
   changing: boolean = false
+  settings: SlideshowSettings = {
+    showThumbs: true
+  }
   @State() state: State = {highlight: -1}
 
   componentDidLoad() {
-    this.init()
+    //this.init() // is now done with loadImages()
   }
 
   init() {
+    // main swiper
     let smainel = this.el.shadowRoot.querySelector('.swiper-container.main')
-    let smainctrl = new Swiper(smainel, { 
+    this.swiper.main = new Swiper(smainel, { 
       init: false,
       loop: false,
       longSwipes: false,
@@ -70,24 +74,24 @@ export class SlideShow {
       autoHeight: false,
       allowTouchMove: false
     })
+    // thumb swiper
     let sthumbel = this.el.shadowRoot.querySelector('.swiper-container.thumb')
-    let sthumbctrl = new Swiper(sthumbel, {
-      init: false,
-      loop: false,
-      longSwipes: false,
-      direction: 'horizontal',
-      slidesPerView: 'auto',
-      watchSlidesVisibility: true,
-      centeredSlides: true, // tying two sliders together is bugged without this
-      spaceBetween: 5,
-      touchRatio: 0.3,
-      slideToClickedSlide: false,
-      allowTouchMove: false
-    })
-    this.swiper = {
-      main: smainctrl,
-      thumb: sthumbctrl
+    if (this.settings.showThumbs) {
+      this.swiper.thumb = new Swiper(sthumbel, {
+        init: false,
+        loop: false,
+        longSwipes: false,
+        direction: 'horizontal',
+        slidesPerView: 'auto',
+        watchSlidesVisibility: true,
+        centeredSlides: true, // tying two sliders together is bugged without this
+        spaceBetween: 5,
+        touchRatio: 0.3,
+        slideToClickedSlide: false,
+        allowTouchMove: false
+      })
     }
+
     // this.swiper.main.on('slideChangeTransitionStart', async () => {
     //   this.slideEvent.emit({type: 'changeslide', val: {slide: this.swiper.main.activeIndex}})
     //   //console.log('slide show emitting changeslide slideChangeTransitionStart')
@@ -109,11 +113,11 @@ export class SlideShow {
     })
   }
   @Method()
-  getCurrent(): number {
+  async getCurrent(): Promise<number> {
     return this.swiper.main.activeIndex
   }
   @Method()
-  slideTo(idx: number, instant: boolean = false) {
+  async slideTo(idx: number, instant: boolean = false): Promise<void> {
 
     if (idx === this.swiper.main.activeIndex) {
       return
@@ -126,22 +130,26 @@ export class SlideShow {
         to: idx
       }
     })
-    this.swiper.thumb.slideTo(idx, instant ? 0 : this.transitionTime)
+    if (this.settings.showThumbs) {
+      this.swiper.thumb.slideTo(idx, instant ? 0 : this.transitionTime)
+    }
     this.swiper.main.slideTo(idx, instant ? 0 : this.transitionTime)
   }
 
   @Method()
-  lockPrevious() {
+  async lockPrevious(): Promise<void> {
     this.prevLocked = true
   }
   @Method()
-  unlockPrevious() {
+  async unlockPrevious(): Promise<void> {
     this.prevLocked = false
   }
 
   @Method()
-  async loadImages(images: string[]): Promise<Slide[]> {
+  async loadImages(images: string[], settings: SlideshowSettings = {}): Promise<Slide[]> {
     //console.log('SlideShow loading images', images)
+    Object.assign(this.settings, settings)
+    this.init()
     let cache = new CacheImage()
     let sizes: {width: number, height: number}[]
     try {
@@ -163,27 +171,27 @@ export class SlideShow {
   }
 
   @Method()
-  loadSlides(slides: Slide[]) {
+  async loadSlides(slides: Slide[]): Promise<void> {
     this.initSlides(slides)
   }
 
   @Method()
-  highlightSlide(idx: number) {
+  async highlightSlide(idx: number): Promise<void> {
     if (idx > this.slides.length -1) {
       throw new Error('slide out of range')
     }
     this.changeState({highlight: idx})
   }
   @Method()
-  getCurrentImageElement(): HTMLImageElement {
-    return this.el.shadowRoot.querySelector('.swiper-container.main .swiper-slide.swiper-slide-active img')
+  async getCurrentImageElement(): Promise<HTMLImageElement> {
+    return this.el.shadowRoot.querySelector('.swiper-container.main .swiper-slide.swiper-slide-active img') as HTMLImageElement
   }
   @Method() 
-  isChanging(): boolean {
+  async isChanging(): Promise<boolean> {
     return this.changing
   }
   @Method()
-  getSwiperInstances(): {main: Swiper, thumb: Swiper} {
+  async getSwiperInstances(): Promise<{main?: Swiper, thumb?: Swiper}> {
     return this.swiper
   }
 
@@ -195,7 +203,9 @@ export class SlideShow {
   componentDidUpdate() {
     if (this.updating && !this.initialized) {
       this.swiper.main.init()
-      this.swiper.thumb.init()
+      if (this.settings.showThumbs) {
+        this.swiper.thumb.init()
+      }
       this.initialized = true
     }
     this.updating = false
@@ -242,16 +252,35 @@ export class SlideShow {
     this.slideTo(idx)
   }
 
-  render() {
-    const getAspectClass = (s: Slide) => {
-      let frame = this.getSlideFrameSize()
-      if (!frame) {
-        return 'fitheight'
-      }
-      let ar_slide = frame.width / frame.height 
-      let ar_img = s.width / s.height
-      return ar_img > ar_slide ? 'fitwidth' : 'fitheight'
+  getAspectClass = (s: Slide) => {
+    let frame = this.getSlideFrameSize()
+    if (!frame) {
+      return 'fitheight'
     }
+    let ar_slide = frame.width / frame.height 
+    let ar_img = s.width / s.height
+    return ar_img > ar_slide ? 'fitwidth' : 'fitheight'
+  }
+
+  getThumbJSX() {
+    if (!this.settings.showThumbs) {
+      return ''
+    }
+    return (
+      <div class="swiper-container thumb">
+        <div class="swiper-wrapper">
+          {this.slides.map((slide, index) => 
+            <div class={"swiper-slide" + (this.state.highlight >= index ? ' highlight' : '')}
+                onClick={ (event: UIEvent) => this.handleClick(event, index)}>
+              <img class={this.getAspectClass(slide)} src={slide.url} />
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  render() {
     return (
 <div>
   <div class="swiper-container main">
@@ -259,7 +288,7 @@ export class SlideShow {
       {this.slides.map((slide, index) => 
         <div class={"swiper-slide" + (this.state.highlight === index ? ' highlight' : '')}
             onClick={ (event: UIEvent) => this.handleClick(event, index)}>
-          <img class={getAspectClass(slide)}  src={slide.url}/>
+          <img class={this.getAspectClass(slide)}  src={slide.url}/>
         </div>
       )}
     </div>
@@ -267,16 +296,7 @@ export class SlideShow {
     <div class="swiper-button-prev"></div>
     <div class="swiper-button-next"></div>
   </div>
-  <div class="swiper-container thumb">
-    <div class="swiper-wrapper">
-      {this.slides.map((slide, index) => 
-        <div class={"swiper-slide" + (this.state.highlight >= index ? ' highlight' : '')}
-            onClick={ (event: UIEvent) => this.handleClick(event, index)}>
-          <img class={getAspectClass(slide)} src={slide.url} />
-        </div>
-      )}
-    </div>
-  </div>
+  {this.getThumbJSX()}
 </div>
     )
   }

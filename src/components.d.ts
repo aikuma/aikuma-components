@@ -13,6 +13,7 @@ import {
   IGVOptions,
   IGVTranslation,
   Slide,
+  SlideshowSettings,
 } from './interface';
 
 
@@ -92,16 +93,16 @@ export namespace Components {
   }
 
   interface AikumaSlideShow {
-    'getCurrent': () => number;
-    'getCurrentImageElement': () => HTMLImageElement;
-    'getSwiperInstances': () => { main: any; thumb: any; };
-    'highlightSlide': (idx: number) => void;
-    'isChanging': () => boolean;
-    'loadImages': (images: string[]) => Promise<Slide[]>;
-    'loadSlides': (slides: Slide[]) => void;
-    'lockPrevious': () => void;
-    'slideTo': (idx: number, instant?: boolean) => void;
-    'unlockPrevious': () => void;
+    'getCurrent': () => Promise<number>;
+    'getCurrentImageElement': () => Promise<HTMLImageElement>;
+    'getSwiperInstances': () => Promise<{ main?: any; thumb?: any; }>;
+    'highlightSlide': (idx: number) => Promise<void>;
+    'isChanging': () => Promise<boolean>;
+    'loadImages': (images: string[], settings?: SlideshowSettings) => Promise<Slide[]>;
+    'loadSlides': (slides: Slide[]) => Promise<void>;
+    'lockPrevious': () => Promise<void>;
+    'slideTo': (idx: number, instant?: boolean) => Promise<void>;
+    'unlockPrevious': () => Promise<void>;
   }
   interface AikumaSlideShowAttributes extends StencilHTMLAttributes {
     'onSlideEvent'?: (event: CustomEvent<{type: string, val: any}>) => void;

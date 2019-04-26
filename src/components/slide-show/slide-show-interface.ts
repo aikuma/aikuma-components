@@ -4,3 +4,7 @@ export interface Slide {
   height: number
   id: string
 }
+
+export interface SlideshowSettings {
+  showThumbs?: boolean
+}

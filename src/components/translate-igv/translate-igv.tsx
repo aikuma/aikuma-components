@@ -77,6 +77,10 @@ export class TranslateIGV {
     this.progress = this.el.shadowRoot.querySelector('aikuma-progress')
   }
 
+  componentDidUnload() {
+    this.gestate.destroy()
+  }
+
   //
   // Public Methods
   //
@@ -217,7 +221,7 @@ export class TranslateIGV {
     if (id === 'play' && type === 'down') {
       this.consoleLog('play down')
       this.changeState({havePlayed: true, playing: true, playEnded: false, showControls: false})
-      let el = this.ssc.getCurrentImageElement()
+      let el = await this.ssc.getCurrentImageElement()
       if (this.state.lastAction === 'record') { 
         //this.registerRegion()
         this.playRegion.start = this.playRegion.end 
