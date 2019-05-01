@@ -9,6 +9,7 @@ import '@stencil/core';
 
 
 import {
+  IGVBundle,
   IGVData,
   IGVOptions,
   IGVTranslation,
@@ -76,6 +77,13 @@ export namespace Components {
   }
   interface AikumaModalAttributes extends StencilHTMLAttributes {}
 
+  interface AikumaPlayIgv {
+    'restoreFromIGVBundle': (igvb: IGVBundle) => Promise<void>;
+  }
+  interface AikumaPlayIgvAttributes extends StencilHTMLAttributes {
+    'onAikumaIGV'?: (event: CustomEvent<string>) => void;
+  }
+
   interface AikumaProgress {
     'completedColor': string;
     'height': number;
@@ -123,6 +131,7 @@ declare global {
     'AikumaCamera': Components.AikumaCamera;
     'AikumaImageGestureVoice': Components.AikumaImageGestureVoice;
     'AikumaModal': Components.AikumaModal;
+    'AikumaPlayIgv': Components.AikumaPlayIgv;
     'AikumaProgress': Components.AikumaProgress;
     'AikumaSlideShow': Components.AikumaSlideShow;
     'AikumaTranslateIgv': Components.AikumaTranslateIgv;
@@ -134,6 +143,7 @@ declare global {
     'aikuma-camera': Components.AikumaCameraAttributes;
     'aikuma-image-gesture-voice': Components.AikumaImageGestureVoiceAttributes;
     'aikuma-modal': Components.AikumaModalAttributes;
+    'aikuma-play-igv': Components.AikumaPlayIgvAttributes;
     'aikuma-progress': Components.AikumaProgressAttributes;
     'aikuma-slide-show': Components.AikumaSlideShowAttributes;
     'aikuma-translate-igv': Components.AikumaTranslateIgvAttributes;
@@ -170,6 +180,12 @@ declare global {
     new (): HTMLAikumaModalElement;
   };
 
+  interface HTMLAikumaPlayIgvElement extends Components.AikumaPlayIgv, HTMLStencilElement {}
+  var HTMLAikumaPlayIgvElement: {
+    prototype: HTMLAikumaPlayIgvElement;
+    new (): HTMLAikumaPlayIgvElement;
+  };
+
   interface HTMLAikumaProgressElement extends Components.AikumaProgress, HTMLStencilElement {}
   var HTMLAikumaProgressElement: {
     prototype: HTMLAikumaProgressElement;
@@ -194,6 +210,7 @@ declare global {
     'aikuma-camera': HTMLAikumaCameraElement
     'aikuma-image-gesture-voice': HTMLAikumaImageGestureVoiceElement
     'aikuma-modal': HTMLAikumaModalElement
+    'aikuma-play-igv': HTMLAikumaPlayIgvElement
     'aikuma-progress': HTMLAikumaProgressElement
     'aikuma-slide-show': HTMLAikumaSlideShowElement
     'aikuma-translate-igv': HTMLAikumaTranslateIgvElement
@@ -205,6 +222,7 @@ declare global {
     'aikuma-camera': HTMLAikumaCameraElement;
     'aikuma-image-gesture-voice': HTMLAikumaImageGestureVoiceElement;
     'aikuma-modal': HTMLAikumaModalElement;
+    'aikuma-play-igv': HTMLAikumaPlayIgvElement;
     'aikuma-progress': HTMLAikumaProgressElement;
     'aikuma-slide-show': HTMLAikumaSlideShowElement;
     'aikuma-translate-igv': HTMLAikumaTranslateIgvElement;

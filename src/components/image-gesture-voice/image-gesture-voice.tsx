@@ -135,7 +135,9 @@ export class ImageGestureVoice {
     if (this.recSub) {
       this.recSub.unsubscribe()
     }
-    this.gestate.destroy()
+    if (this.gestate) {
+      this.gestate.destroy()
+    }
   }
 
   async init(): Promise<any> {

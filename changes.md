@@ -15,3 +15,6 @@
 * Migrated @Methods to async (stencil change, shrug)
 * Update Stencil to 0.18
 
+## 0.2.0
+
+* Added IGV playback component

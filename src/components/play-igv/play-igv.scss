@@ -1,0 +1,60 @@
+.igv {
+
+  .slidewrapper {
+    position: relative;
+    margin-bottom: 10px;
+  }
+  .slidewrapper aikuma-gestate {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+  }
+  .controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    .ctrlwrapper {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: flex;
+      flex-direction: row;
+      //justify-content: space-between;
+      align-items: center;
+      justify-content: center;
+      .spacer {
+        width: 120px;
+      }
+    }
+    .recbutton {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      .elapsed {
+        position: absolute;
+        font-size: 0.75rem;
+        font-weight: bold;
+        color: white;
+        top: auto;
+        bottom: 5px;
+      }
+    }
+  }
+  .buttonicon {
+    width: 25px;
+    height: 25px;
+  }
+  .clearbuttonicon {
+    width: 50px;
+    height: 50px;
+  }
+}
