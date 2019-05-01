@@ -8,7 +8,7 @@ import { faPlay, faPause } from '@fortawesome/fontawesome-free-solid'
 //import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
-import { IGVOptions, IGVBundle, Slide } from '../../interface'
+import { IGVOptions, IGVBundle, Slide, SlideshowSettings } from '../../interface'
 fontawesome.library.add(faPlay, faPause)
 
 interface State {
@@ -152,7 +152,16 @@ export class PlayIGV {
   async restoreFromIGVBundle(igvb: IGVBundle) {
     await this.player.load(igvb.audiourls[0])
     this.timeLine = igvb.segments
-    this.slides = await this.ssc.loadImages(igvb.imageurls, {showThumbs: igvb.imageurls.length > 1})
+    let sssettings: SlideshowSettings = {
+      showThumbs: igvb.imageurls.length > 1
+    }
+    if (igvb.imageurls.length === 1) {
+      sssettings.ssizeLandscape = {
+        width: '75vw',
+        height: '56vw'
+      }
+    }
+    this.slides = await this.ssc.loadImages(igvb.imageurls, sssettings)
     this.changeState({elapsed: this.getNiceTime(0)})
     this.ssc.slideTo(0, false)
     this.currentIndex = 0 // so play action will start from 0

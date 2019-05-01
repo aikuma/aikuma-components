@@ -8,7 +8,8 @@ import { Slide, SlideshowSettings } from '../../interface'
 //Swiper.use([Navigation, Lazy, Pagination, Controller, EffectCoverflow])
 
 interface State {
-  highlight?: number
+  highlight?: number,
+  portrait?: boolean 
 }
 
 @Component({
@@ -31,12 +32,25 @@ export class SlideShow {
   transitionTime: number = 300
   changing: boolean = false
   settings: SlideshowSettings = {
-    showThumbs: true
+    showThumbs: true,
   }
-  @State() state: State = {highlight: -1}
+  orientlistener: any
+  @State() state: State = {
+    highlight: -1,
+    portrait: window.innerHeight > window.innerWidth
+  }
 
   componentDidLoad() {
     //this.initSwiper()
+    const orientlistener = () => {
+      this.orientationChange()
+    }
+    this.orientlistener = orientlistener
+    window.addEventListener("orientationchange", this.orientlistener)
+  }
+
+  orientationChange() {
+    this.changeState({portrait: screen.orientation.angle === 0})
   }
 
   initSwiper(): void {
@@ -215,7 +229,7 @@ export class SlideShow {
   }
 
   componentDidUpdate() {
-    console.log('slideshow update', this.updating, this.initialized)
+    //console.log('slideshow update', this.updating, this.initialized)
     if (this.updating && !this.initialized) {
       this.swiper.main.init()
       if (this.settings.showThumbs) {
@@ -253,13 +267,14 @@ export class SlideShow {
 
   // Lifecycle 
   componentDidUnload() {
-    console.log('unloaded slideshow')
+    //console.log('unloaded slideshow')
     if (this.swiper.main) {
       this.swiper.main.destroy(true)
     }
     if (this.swiper.thumb) {
       this.swiper.thumb.destroy(true)
     }
+    window.removeEventListener("orientationchange", this.orientlistener)
   }
 
   //
@@ -306,6 +321,21 @@ export class SlideShow {
     )
   }
 
+  getSlideStyle() {
+    let ss = {}
+    if (this.state.portrait) {
+      ss = this.settings.ssizePortrait ? 
+        this.settings.ssizePortrait :
+        {}
+    } else {
+      ss = this.settings.ssizeLandscape ? 
+        this.settings.ssizeLandscape :
+        {}
+    }
+    //console.log('slide style', this.state.portrait, ss)
+    return ss
+  }
+
   render() {
     return (
 <div>
@@ -313,6 +343,7 @@ export class SlideShow {
     <div  class="swiper-wrapper">
       {this.slides.map((slide, index) => 
         <div class={"swiper-slide" + (this.state.highlight === index ? ' highlight' : '')}
+            style={this.getSlideStyle()}
             onClick={ (event: UIEvent) => this.handleClick(event, index)}>
           <img class={this.getAspectClass(slide)}  src={slide.url}/>
         </div>

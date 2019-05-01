@@ -18,3 +18,5 @@
 ## 0.2.0
 
 * Added IGV playback component
+* Added slide show settings for slide size
+
