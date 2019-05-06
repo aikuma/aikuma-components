@@ -261,35 +261,17 @@ export class PlayIGV {
   <div class="slidewrapper">
     <aikuma-slide-show></aikuma-slide-show>
   </div>
-  <div class="controls">
-    <aikuma-buttony 
-        disabled={!this.state.canplay} 
-        id="play" size="85" color="green">
-      <div class="recbutton">
-        <div class="buttonicon"
-          innerHTML={fontawesome.icon(this.state.playing ? faPause: faPlay).html[0]}>
-        </div>
-        <div class="elapsed">{this.state.elapsed}</div>
+  <aikuma-buttony 
+      disabled={!this.state.canplay} 
+      id="play" size="85" color="green">
+    <div class="recbutton">
+      <div class="buttonicon"
+        innerHTML={fontawesome.icon(this.state.playing ? faPause: faPlay).html[0]}>
       </div>
-    </aikuma-buttony>
-    {/* {
-      this.state.showControls ? 
-        <div class="ctrlwrapper">
-          <aikuma-buttony clear size="50" id="cancel" color="grey" disabled={!this.canCancel()} >
-            <div class="clearbuttonicon" 
-              innerHTML={fontawesome.icon(faTimesCircle).html[0]}>
-            </div>
-          </aikuma-buttony>
-          <div class="spacer"></div>
-          <aikuma-buttony clear size="50" id="accept" color="grey" disabled={!this.canAccept()}>
-            <div class="clearbuttonicon" 
-              innerHTML={fontawesome.icon(faCheckCircle).html[0]}>
-            </div>
-          </aikuma-buttony>
-        </div> :
-        null
-    } */}
-  </div>
+      <div class="elapsed">{this.state.elapsed}</div>
+    </div>
+  </aikuma-buttony>
+
   {
     this.options.debug ? 
       <pre>{prettyprint(this.state)}<br/>

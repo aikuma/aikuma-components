@@ -11,44 +11,30 @@
     top: 0;
     left: 0;
   }
-  .controls {
+
+  aikuma-buttony {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+  }
+  .recbutton {
+    position: relative;
+    width: 100%;
+    height: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
-    position: relative;
-    .ctrlwrapper {
-      width: 100%;
-      height: 100%;
+    justify-content: center;
+    .elapsed {
       position: absolute;
-      top: 0;
-      left: 0;
-      display: flex;
-      flex-direction: row;
-      //justify-content: space-between;
-      align-items: center;
-      justify-content: center;
-      .spacer {
-        width: 120px;
-      }
-    }
-    .recbutton {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      .elapsed {
-        position: absolute;
-        font-size: 0.75rem;
-        font-weight: bold;
-        color: white;
-        top: auto;
-        bottom: 5px;
-      }
+      font-size: 0.75rem;
+      font-weight: bold;
+      color: white;
+      top: auto;
+      bottom: 5px;
     }
   }
+  
   .buttonicon {
     width: 25px;
     height: 25px;
