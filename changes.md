@@ -20,3 +20,6 @@
 * Added IGV playback component
 * Added slide show settings for slide size
 
+## 0.2.1
+
+* Camera improvements --- adapts to parent container size, ready() promise etc.

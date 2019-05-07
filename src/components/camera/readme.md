@@ -28,6 +28,16 @@ Type: `void`
 
 
 
+### `ready() => Promise<any>`
+
+
+
+#### Returns
+
+Type: `Promise<any>`
+
+
+
 ### `resume() => void`
 
 

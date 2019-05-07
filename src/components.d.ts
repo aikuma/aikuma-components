@@ -50,6 +50,7 @@ export namespace Components {
     'imageQuality': number;
     'imageType': string;
     'pause': () => void;
+    'ready': () => Promise<any>;
     'resume': () => void;
     'switchCamera': () => Promise<void>;
     'takePicture': (pause?: boolean) => Promise<Blob>;

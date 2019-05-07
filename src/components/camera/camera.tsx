@@ -1,5 +1,6 @@
 import { Component, Prop, Element, Watch, Method } from '@stencil/core';
 //import { format } from '../../utils/utils';
+import { Subject } from 'rxjs'
 
 @Component({
   tag: 'aikuma-camera',
@@ -17,8 +18,10 @@ export class Camera {
   manualCamera: boolean = false 
   devices: string[] = []
   selectedDevice: number = 0
-
+  aspectratio: number = 75
+  readySubject: Subject<any> = new Subject()
   @Prop() imageType: string = 'webp'
+  orientlistener: any
   @Watch('imageType')
   validateImageType(newValue: string) {
     if (newValue !== 'webp' && newValue !== 'png' && newValue !=='jpg') {
@@ -33,6 +36,15 @@ export class Camera {
     } else if (newValue < 0 || newValue > 1) {
       throw new Error('image-quality must be between 0 and 1.')
     }
+  }
+
+  @Method()
+  ready(): Promise<any> {
+    return new Promise((resolve) => {
+      this.readySubject.subscribe(null, null, () => {
+        resolve()
+      })
+    })
   }
 
   @Element() private element: HTMLElement;
@@ -103,19 +115,25 @@ export class Camera {
     this.videoElement.srcObject = this.stream
     this.videoElement.addEventListener('canplay', () => {
         if (!this.streaming) {
+          this.aspectratio = this.videoElement.videoHeight / this.videoElement.videoWidth
           console.log('videodim', this.videoElement.videoWidth, this.videoElement.videoHeight)
-          this.videoElement.style.width = this.width+'px'
-          this.videoElement.style.height = this.videoElement.videoHeight+'px'
-          this.canvasElement.style.width = this.width+'px'
-          this.canvasElement.setAttribute('width', this.width.toString())
-          this.canvasElement.style.height = this.videoElement.videoHeight+'px'
-          this.canvasElement.setAttribute('height', this.height.toString())
+          this.canvasElement.setAttribute('width', this.stream.getVideoTracks()[0].getSettings().width.toString()) 
+          this.canvasElement.setAttribute('height', this.stream.getVideoTracks()[0].getSettings().height.toString()) 
+          this.resizeVisibles()
           this.streaming = true
+          this.readySubject.complete()
         }
       },
       {once: true}
     )
     this.videoElement.play()
+  }
+
+  resizeVisibles() {
+    this.videoElement.style.width = this.divElement.offsetWidth.toString() + 'px'
+    this.canvasElement.style.width = this.divElement.offsetWidth.toString() + 'px'
+    this.videoElement.style.height = (this.divElement.offsetWidth * this.aspectratio).toString() + 'px'
+    this.canvasElement.style.height = (this.divElement.offsetWidth * this.aspectratio).toString() + 'px'
   }
 
   async stopVideo() {
@@ -125,10 +143,12 @@ export class Camera {
     this.streaming = false
   }
 
+    // Lifecycle 
+
   async componentDidLoad() {
     this.divElement = this.element.shadowRoot.querySelector('#camera');
-    this.divElement.style.width = this.width+'px'
-    this.divElement.style.height = this.height+'px'
+    //this.divElement.style.width = this.width+'px'
+    //this.divElement.style.height = this.height+'px'
     this.videoElement = this.element.shadowRoot.querySelector('#video');
     this.canvasElement = this.element.shadowRoot.querySelector('#canvas');
     this.ctx = this.canvasElement.getContext('2d')
@@ -139,16 +159,26 @@ export class Camera {
       throw new Error('No video devices.')
     }
     this.startVideo()
+    const orientlistener = () => {
+      this.orientationChange()
+    }
+    this.orientlistener = orientlistener
+    window.addEventListener("resize", this.orientlistener)
+  }
+
+  orientationChange() {
+    this.resizeVisibles()
   }
 
   componentDidUnload() {
     if (this.streaming) {
       this.stopVideo()
     }
+    window.removeEventListener("orientationchange", this.orientlistener)
   }
 
   render() {
-    return <div id="camera">
+    return <div id="camera" style={{paddingTop: this.aspectratio.toString()+'%'}}>
       <video id="video"></video>
       <canvas id="canvas"></canvas>
     </div>
