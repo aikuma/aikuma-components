@@ -4,12 +4,13 @@ import { Gestate } from '../../../../gestate/dist'
 import { Microphone, WebAudioPlayer } from '@aikuma/webaudio'
 import prettyprint from 'prettyprint'
 import fontawesome from '@fortawesome/fontawesome'
-import { faPlay, faStop, faPause, faCheckCircle, faTimesCircle } from '@fortawesome/fontawesome-free-solid'
+import { faPlay, faStop, faPause, faCheck, faTimes } from '@fortawesome/fontawesome-free-solid'
 //import { Observable } from 'rxjs/Observable'
 import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { IGVOptions, IGVSegment, IGVData, IGVPrompt, Slide } from '../../interface'
-fontawesome.library.add(faPlay, faStop, faPause, faCheckCircle, faTimesCircle)
+fontawesome.library.add(faPlay, faStop, faPause, faCheck, faTimes)
+import { classList } from 'dynamic-class-list'
 
 interface State {
   recording?: boolean,
@@ -43,7 +44,8 @@ export class ImageGestureVoice {
   slides: Slide[] = []
   timeLine: IGVSegment[] = []
   options: IGVOptions = {
-    debug: false
+    debug: false,
+    colors: null
   }
   @State() state: State = {
     recording: false,
@@ -142,7 +144,7 @@ export class ImageGestureVoice {
 
   async init(): Promise<any> {
     this.consoleLog('init()')
-    this.gestate = new Gestate({debug: this.options.debug})
+    this.gestate = new Gestate({debug: this.options.debug, colors: this.options.colors})
     try {
       await this.mic.connect()
     } catch(e) {
@@ -315,9 +317,15 @@ export class ImageGestureVoice {
     return (!this.state.recording && this.state.enableRecord) // latter bit is to account for recording overrrun
   }
   canCancel(): boolean {
+    if (this.state.recording || this.state.playing) {
+      return false
+    }
     return this.state.mode === 'record' ? this.timeLine.length > 0 : true
   }
   canAccept(): boolean {
+    if (this.state.recording || this.state.playing) {
+      return false
+    }
     if (this.state.mode === 'record') {
       return (this.timeLine.length === this.slides.length) 
     } else {
@@ -433,8 +441,8 @@ export class ImageGestureVoice {
       if (this.state.mode === 'record') {
         return <aikuma-buttony 
             // disabled={!this.canRecord()} 
-            id="record" size="85"
-            color={ this.state.recording ? 'red': 'orange' }>
+            id="record" size="100"
+            class={ classList({'recordbutton': true, 'recording': this.state.recording})}>
           <div class="recbutton">
             <div class="buttonicon"
               innerHTML={fontawesome.icon(this.state.recording ? faPause: faStop).html[0]}>
@@ -445,7 +453,8 @@ export class ImageGestureVoice {
       } else if (this.state.mode === 'review') {
         return <aikuma-buttony 
             disabled={!this.canPlay()} 
-            id="play" size="85" color="green">
+            id="play" size="100"
+            class="playbutton">
           <div class="recbutton">
             <div class="buttonicon"
               innerHTML={fontawesome.icon(this.state.playing ? faPause: faPlay).html[0]}>
@@ -461,28 +470,47 @@ export class ImageGestureVoice {
   <div class="slidewrapper">
     <aikuma-slide-show></aikuma-slide-show>
   </div>
-  <div class="controls">
+  {/* <div class="controls"> */}
     {
       getBigButton()
     }
-    {
+    {/* {
       this.state.showControls ? 
         <div class="ctrlwrapper">
-          <aikuma-buttony clear size="50" id="cancel" color="grey" disabled={!this.canCancel()} >
+          <aikuma-buttony clear size="50" id="cancel" class="side" disabled={!this.canCancel()} >
             <div class="clearbuttonicon" 
               innerHTML={fontawesome.icon(faTimesCircle).html[0]}>
             </div>
           </aikuma-buttony>
           <div class="spacer"></div>
-          <aikuma-buttony clear size="50" id="accept" color="grey" disabled={!this.canAccept()}>
+          <aikuma-buttony clear size="50" id="accept" class="side" disabled={!this.canAccept()}>
             <div class="clearbuttonicon" 
               innerHTML={fontawesome.icon(faCheckCircle).html[0]}>
             </div>
           </aikuma-buttony>
         </div> :
         null
+    } */}
+    {
+      this.canCancel() ?
+        <aikuma-buttony size="100" id="cancel" class="side clear">
+          <div class="clearbuttonicon" 
+            innerHTML={fontawesome.icon(faTimes).html[0]}>
+          </div>
+        </aikuma-buttony> :
+        null
     }
-  </div>
+    <div class="spacer"></div>
+    {
+      this.canAccept() ?
+        <aikuma-buttony size="100" id="accept" class="side accept">
+        <div class="clearbuttonicon" 
+          innerHTML={fontawesome.icon(faCheck).html[0]}>
+        </div>
+      </aikuma-buttony> :
+      null
+    }
+  {/* </div> */}
   {
     this.options.debug ? 
       <pre>{prettyprint(this.state)}<br/>

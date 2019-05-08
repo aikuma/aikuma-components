@@ -8,7 +8,6 @@ import { Component, Element, Prop, Event, EventEmitter } from '@stencil/core'
 })
 export class Buttony {
   @Element() el: HTMLElement
-  @Prop() color: string
   @Prop() disabled: boolean
   @Prop() size: string = '50'
   @Prop() id: string = null
@@ -113,17 +112,11 @@ export class Buttony {
   }>
   { 
     !this.clear ?
-      <div class="background"
-        style={
-          this.color && !this.disabled ? {backgroundColor: this.color} : {}
-        }>
+      <div class="background">
       </div> :
       null
   }
-  <div class={'contents ' + (this.clear ? 'clear' : '')}
-    style={
-      this.clear && !this.disabled ? {color: this.color} : {}
-    }>
+  <div class={'contents ' + (this.clear ? 'clear' : '')}>
     <slot />
   </div>
 </div>   

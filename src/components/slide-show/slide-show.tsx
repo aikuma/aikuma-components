@@ -337,25 +337,23 @@ export class SlideShow {
   }
 
   render() {
-    return (
-<div>
-  <div class="swiper-container main">
-    <div  class="swiper-wrapper">
-      {this.slides.map((slide, index) => 
-        <div class={"swiper-slide" + (this.state.highlight === index ? ' highlight' : '')}
-            style={this.getSlideStyle()}
-            onClick={ (event: UIEvent) => this.handleClick(event, index)}>
-          <img class={this.getAspectClass(slide)}  src={slide.url}/>
+    return ([
+      <div class="swiper-container main">
+        <div  class="swiper-wrapper">
+          {this.slides.map((slide, index) => 
+            <div class={"swiper-slide" + (this.state.highlight === index ? ' highlight' : '')}
+                style={this.getSlideStyle()}
+                onClick={ (event: UIEvent) => this.handleClick(event, index)}>
+              <img class={this.getAspectClass(slide)}  src={slide.url}/>
+            </div>
+          )}
         </div>
-      )}
-    </div>
-    { this.slides.length > 1 ? <div class="swiper-pagination"></div> : '' }
-    { this.slides.length > 1 ? <div class="swiper-button-prev"></div> : '' }
-    { this.slides.length > 1 ? <div class="swiper-button-next"></div> : '' }
-  </div>
-  {this.getThumbJSX()}
-</div>
-    )
+        { this.slides.length > 1 ? <div class="swiper-pagination"></div> : '' }
+        { this.slides.length > 1 ? <div class="swiper-button-prev"></div> : '' }
+        { this.slides.length > 1 ? <div class="swiper-button-next"></div> : '' }
+      </div>,
+      this.getThumbJSX()
+    ])
   }
 }
 

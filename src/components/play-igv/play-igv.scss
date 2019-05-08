@@ -14,8 +14,11 @@
 
   aikuma-buttony {
     position: absolute;
-    right: 10px;
-    bottom: 10px;
+    right: 15px;
+    bottom: 15px;
+    --button-color: var(--app-primary-color);
+    --button-text: var(--app-contrast-color);
+    --button-disabled-color: var(--app-disabled-color);
   }
   .recbutton {
     position: relative;
@@ -29,15 +32,18 @@
       position: absolute;
       font-size: 0.75rem;
       font-weight: bold;
-      color: white;
+      color: var(--app-contrast-color, white);
       top: auto;
       bottom: 5px;
     }
   }
+  aikuma-buttony.playing {
+    --button-color: var(--play-color, green);
+  }
   
   .buttonicon {
-    width: 25px;
-    height: 25px;
+    width: 30px;
+    height: 30px;
   }
   .clearbuttonicon {
     width: 50px;

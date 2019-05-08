@@ -23,3 +23,5 @@
 ## 0.2.1
 
 * Camera improvements --- adapts to parent container size, ready() promise etc.
+* Remove color attributes from buttony, now use css vars button-color, app-primary-color and button-disabled-color, app-disabled-color
+* IGV updated to use css vars, implements record-color, play-color and others.

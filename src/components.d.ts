@@ -30,14 +30,12 @@ export namespace Components {
 
   interface AikumaButtony {
     'clear': boolean;
-    'color': string;
     'disabled': boolean;
     'id': string;
     'size': string;
   }
   interface AikumaButtonyAttributes extends StencilHTMLAttributes {
     'clear'?: boolean;
-    'color'?: string;
     'disabled'?: boolean;
     'id'?: string;
     'onClickEvent'?: (event: CustomEvent<{id: string, type: string}>) => void;

@@ -10,6 +10,7 @@ import { Subject } from 'rxjs/Subject'
 import { Subscription } from 'rxjs/Subscription'
 import { IGVOptions, IGVBundle, Slide, SlideshowSettings } from '../../interface'
 fontawesome.library.add(faPlay, faPause)
+import { classList } from 'dynamic-class-list'
 
 interface State {
   playing?: boolean,
@@ -156,10 +157,10 @@ export class PlayIGV {
       showThumbs: igvb.imageurls.length > 1
     }
     if (igvb.imageurls.length === 1) {
-      sssettings.ssizeLandscape = {
-        width: '75vw',
-        height: '56vw'
-      }
+      // sssettings.ssizeLandscape = {
+      //   width: '75vw',
+      //   height: '56vw'
+      // }
     }
     this.slides = await this.ssc.loadImages(igvb.imageurls, sssettings)
     this.changeState({elapsed: this.getNiceTime(0)})
@@ -263,7 +264,7 @@ export class PlayIGV {
   </div>
   <aikuma-buttony 
       disabled={!this.state.canplay} 
-      id="play" size="85" color="green">
+      id="play" size="100" class={ classList({'playing': this.state.playing})}>
     <div class="recbutton">
       <div class="buttonicon"
         innerHTML={fontawesome.icon(this.state.playing ? faPause: faPlay).html[0]}>

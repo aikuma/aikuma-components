@@ -1,5 +1,5 @@
 .igv {
-
+  height: 100%;
   .slidewrapper {
     position: relative;
     margin-bottom: 10px;
@@ -11,50 +11,94 @@
     top: 0;
     left: 0;
   }
-  .controls {
+//   .controls {
+//     display: flex;
+//     flex-direction: column;
+//     align-items: center;
+//     position: relative;
+//     .ctrlwrapper {
+//       width: 100%;
+//       height: 100%;
+//       position: absolute;
+//       top: 0;
+//       left: 0;
+//       display: flex;
+//       flex-direction: row;
+//       //justify-content: space-between;
+//       align-items: center;
+//       justify-content: center;
+//       .spacer {
+//         width: 120px;
+//       }
+//     }
+//   }
+//   .buttonicon {
+//     width: 25px;
+//     height: 25px;
+//   }
+//   .clearbuttonicon {
+//     width: 50px;
+//     height: 50px;
+//   }
+}
+
+aikuma-buttony {
+  --button-color: var(--app-primary-color);
+  --button-text: var(--app-contrast-color);
+  --button-disabled-color: var(--app-disabled-color);
+}
+
+aikuma-buttony.side {
+  position: absolute;
+  left: 15px;
+  .clearbuttonicon {
+    width: 30px;
+    height: 30px;
+  }
+}
+aikuma-buttony.side.clear {
+  bottom: 125px;
+  .clearbuttonicon {
+    margin-top: -8px;
+  }
+
+}
+aikuma-buttony.side.accept {
+  bottom: 15px;
+  .clearbuttonicon {
+    margin-top: 3px;
+  }
+}
+
+aikuma-buttony.recordbutton {
+  position: absolute;
+  bottom: 15px;
+  right: 15px;
+  .recbutton {
+    position: relative;
+    width: 100%;
+    height: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
-    position: relative;
-    .ctrlwrapper {
-      width: 100%;
-      height: 100%;
+    justify-content: center;
+    .elapsed {
       position: absolute;
-      top: 0;
-      left: 0;
-      display: flex;
-      flex-direction: row;
-      //justify-content: space-between;
-      align-items: center;
-      justify-content: center;
-      .spacer {
-        width: 120px;
-      }
-    }
-    .recbutton {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      .elapsed {
-        position: absolute;
-        font-size: 0.75rem;
-        font-weight: bold;
-        color: white;
-        top: auto;
-        bottom: 5px;
-      }
+      font-size: 0.75rem;
+      font-weight: bold;
+      color: var(--app-contrast-color, white);
+      top: auto;
+      bottom: 5px;
     }
   }
   .buttonicon {
-    width: 25px;
-    height: 25px;
+    width: 30px;
+    height: 30px;
   }
-  .clearbuttonicon {
-    width: 50px;
-    height: 50px;
-  }
+}
+aikuma-buttony.recordbutton.recording {
+  --button-color: var(--record-color, red);
+}
+aikuma-buttony.playbutton {
+  --button-color: var(--play-color, green);
 }

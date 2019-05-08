@@ -21,5 +21,6 @@ export interface IGVData {
 }
 
 export interface IGVOptions {
-  debug: boolean
+  debug?: boolean
+  colors?: string[]
 }

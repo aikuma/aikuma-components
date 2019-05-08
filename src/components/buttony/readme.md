@@ -10,7 +10,6 @@
 | Property   | Attribute  | Description | Type      | Default     |
 | ---------- | ---------- | ----------- | --------- | ----------- |
 | `clear`    | `clear`    |             | `boolean` | `false`     |
-| `color`    | `color`    |             | `string`  | `undefined` |
 | `disabled` | `disabled` |             | `boolean` | `undefined` |
 | `id`       | `id`       |             | `string`  | `null`      |
 | `size`     | `size`     |             | `string`  | `'50'`      |
