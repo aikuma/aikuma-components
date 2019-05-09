@@ -438,31 +438,25 @@ export class ImageGestureVoice {
   //
   render() {
     const getBigButton = () => {
-      if (this.state.mode === 'record') {
-        return <aikuma-buttony 
-            // disabled={!this.canRecord()} 
-            id="record" size="100"
-            class={ classList({'recordbutton': true, 'recording': this.state.recording})}>
-          <div class="recbutton">
-            <div class="buttonicon"
-              innerHTML={fontawesome.icon(this.state.recording ? faPause: faStop).html[0]}>
-            </div>
-            <div class="elapsed">{this.state.elapsed}</div>
+      let classes = classList({
+        'recordbutton': true, 
+        'recording': this.state.recording,
+        'playing': this.state.playing
+      })
+      let iconhtml: string = (this.state.mode ==='record') ?
+        fontawesome.icon(this.state.recording ? faPause: faStop).html[0] :
+        fontawesome.icon(this.state.playing ? faPause: faPlay).html[0]
+      return <aikuma-buttony 
+          id={this.state.mode === 'record' ? 'record' : 'play'} 
+          size="100"
+          class={classes}>
+        <div class="recbutton">
+          <div class="buttonicon"
+            innerHTML={iconhtml}>
           </div>
-        </aikuma-buttony> 
-      } else if (this.state.mode === 'review') {
-        return <aikuma-buttony 
-            disabled={!this.canPlay()} 
-            id="play" size="100"
-            class="playbutton">
-          <div class="recbutton">
-            <div class="buttonicon"
-              innerHTML={fontawesome.icon(this.state.playing ? faPause: faPlay).html[0]}>
-            </div>
-            <div class="elapsed">{this.state.elapsed}</div>
-          </div>
-        </aikuma-buttony> 
-      }
+          <div class="elapsed">{this.state.elapsed}</div>
+        </div>
+      </aikuma-buttony>
     }
     return (
 <div class="igv">
@@ -474,23 +468,6 @@ export class ImageGestureVoice {
     {
       getBigButton()
     }
-    {/* {
-      this.state.showControls ? 
-        <div class="ctrlwrapper">
-          <aikuma-buttony clear size="50" id="cancel" class="side" disabled={!this.canCancel()} >
-            <div class="clearbuttonicon" 
-              innerHTML={fontawesome.icon(faTimesCircle).html[0]}>
-            </div>
-          </aikuma-buttony>
-          <div class="spacer"></div>
-          <aikuma-buttony clear size="50" id="accept" class="side" disabled={!this.canAccept()}>
-            <div class="clearbuttonicon" 
-              innerHTML={fontawesome.icon(faCheckCircle).html[0]}>
-            </div>
-          </aikuma-buttony>
-        </div> :
-        null
-    } */}
     {
       this.canCancel() ?
         <aikuma-buttony size="100" id="cancel" class="side clear">
@@ -510,7 +487,6 @@ export class ImageGestureVoice {
       </aikuma-buttony> :
       null
     }
-  {/* </div> */}
   {
     this.options.debug ? 
       <pre>{prettyprint(this.state)}<br/>

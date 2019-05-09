@@ -25,3 +25,10 @@
 * Camera improvements --- adapts to parent container size, ready() promise etc.
 * Remove color attributes from buttony, now use css vars button-color, app-primary-color and button-disabled-color, app-disabled-color
 * IGV updated to use css vars, implements record-color, play-color and others.
+
+## 0.2.2
+
+* Buttons are now full frame (absolute) positioned and larger to suit mobile devices
+* Slideshow slide frame background lightened
+* simplified IGV's JSX
+
