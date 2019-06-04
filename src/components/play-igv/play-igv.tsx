@@ -1,6 +1,6 @@
 import { Component, Element, State, Method, Listen, Event, EventEmitter } from '@stencil/core'
-//import { Gestate } from '@aikuma/gestate'
-import { Gestate, Gesture } from '../../../../gestate/dist'
+import { Gestate, Gesture } from '@aikuma/gestate'
+//import { Gestate, Gesture } from '../../../../gestate/dist'
 import { WebAudioPlayer } from '@aikuma/webaudio'
 import prettyprint from 'prettyprint'
 import fontawesome from '@fortawesome/fontawesome'
@@ -11,6 +11,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { IGVOptions, IGVBundle, Slide, SlideshowSettings } from '../../interface'
 fontawesome.library.add(faPlay, faPause)
 import { classList } from 'dynamic-class-list'
+import { h } from '@stencil/core'
 
 interface State {
   playing?: boolean,

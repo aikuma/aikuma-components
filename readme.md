@@ -62,7 +62,6 @@ The IGV Translate component, documented in the next section, provides the means 
 
 ```
 let igv = document.querySelector('aikuma-image-gesture-voice')
-await igv.componentOnReady()
 igv.loadFromImageURLs(['http://...pic.jpg', 'http://...pic.jpg'...])
 igv.waitForComplete().then((igvdata) => {
   if (igvdata) {

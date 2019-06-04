@@ -1,6 +1,6 @@
 import { Component, Element, State, Method, Listen, Event, EventEmitter } from '@stencil/core'
-//import { Gestate } from '@aikuma/gestate'
-import { Gestate } from '../../../../gestate/dist'
+import { Gestate } from '@aikuma/gestate'
+//import { Gestate } from '../../../../gestate/dist'
 import { Microphone, WebAudioPlayer } from '@aikuma/webaudio'
 import prettyprint from 'prettyprint'
 import fontawesome from '@fortawesome/fontawesome'
@@ -11,6 +11,7 @@ import { Subscription } from 'rxjs/Subscription'
 import { IGVOptions, IGVSegment, IGVData, IGVPrompt, Slide } from '../../interface'
 fontawesome.library.add(faPlay, faStop, faPause, faCheck, faTimes)
 import { classList } from 'dynamic-class-list'
+import { h } from '@stencil/core'
 
 interface State {
   recording?: boolean,
@@ -200,7 +201,7 @@ export class ImageGestureVoice {
   }
 
   @Method()
-  restoreFromIGVData(igvd: IGVData) {
+  async restoreFromIGVData(igvd: IGVData) {
     
   }
   @Method()

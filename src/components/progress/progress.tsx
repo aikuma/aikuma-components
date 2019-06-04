@@ -1,5 +1,5 @@
 import { Component, Element, Prop, Method } from '@stencil/core'
-
+import { h } from '@stencil/core'
 
 @Component({
   tag: 'aikuma-progress',
@@ -53,7 +53,7 @@ export class Progress {
   // Methods 
   // 
   @Method()
-  setProgress(progress: number) {
+  async setProgress(progress: number) {
     if (progress < 0 || progress > 1) {
       throw new Error("setProgress() must be between 0 and 1")
     }

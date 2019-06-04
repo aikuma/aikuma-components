@@ -1,6 +1,7 @@
 import { Component, Prop, Element, Watch, Method } from '@stencil/core';
 //import { format } from '../../utils/utils';
 import { Subject } from 'rxjs'
+import { h } from '@stencil/core'
 
 @Component({
   tag: 'aikuma-camera',
@@ -76,13 +77,13 @@ export class Camera {
   }
 
   @Method()
-  pause() {
+  async pause() {
     this.ctx.drawImage(this.videoElement, 0, 0, this.videoElement.videoWidth, this.videoElement.videoHeight)
     this.paused = true
   }
 
   @Method()
-  resume() {
+  async resume() {
     this.ctx.clearRect(0,0,this.videoElement.videoWidth,this.videoElement.videoHeight)
     this.paused = false
   }

@@ -1,4 +1,5 @@
 import { Component, Element, State, Method } from '@stencil/core'
+import { h } from '@stencil/core'
 
 interface State {
   showDialog: boolean

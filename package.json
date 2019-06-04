@@ -1,9 +1,12 @@
 {
   "name": "@aikuma/webcomponents",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Web components for language apps",
   "main": "dist/index.js",
-  "module": "dist/esm/index.js",
+  "module": "dist/index.mjs",
+  "es2015": "dist/esm/index.mjs",
+  "es2017": "dist/esm/index.mjs",
+  "jsnext:main": "dist/esm/index.mjs",
   "types": "dist/types/index.d.ts",
   "collection": "dist/collection/collection-manifest.json",
   "files": [
@@ -19,11 +22,11 @@
     "dynamic-class-list": "^1.0.82"
   },
   "devDependencies": {
-    "@aikuma/gestate": "^0.4.0",
+    "@aikuma/gestate": "^0.5.1",
     "@aikuma/webaudio": "^0.4.0",
     "@fortawesome/fontawesome": "^1.1.8",
     "@fortawesome/fontawesome-free-solid": "^5.0.13",
-    "@stencil/core": "~0.18.1",
+    "@stencil/core": "^1.0.0",
     "@stencil/sass": "latest",
     "prettyprint": "^1.1.2",
     "randomcolor": "^0.5.4",

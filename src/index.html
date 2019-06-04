@@ -4,22 +4,30 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0">
   <title>Stencil Component Starter</title>
-  <script src="/build/aikuma.js"></script>
+  <script type="module" src="/build/aikuma.esm.js"></script>
+  <script nomodule src="/build/aikuma.js"></script>
   <link rel="stylesheet" type="text/css" href="build/aikuma.css">
 </head>
 <body>
 
-  <!-- <aikuma-image-gesture-voice></aikuma-image-gesture-voice> -->
-  <aikuma-camera width="320" height="240"></aikuma-camera>
+  <aikuma-image-gesture-voice></aikuma-image-gesture-voice>
+  <!-- <aikuma-camera width="320" height="240"></aikuma-camera> -->
 
-  <!-- <script type="text/javascript">
+  <script type="text/javascript">
     (async function() {
+      function waitMs(num)  {
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            resolve()
+          }, num)
+        })
+      }
+      await waitMs(1000)
       let igv = document.querySelector('aikuma-image-gesture-voice')
-      await igv.componentOnReady()
-      console.log('aikuma-image-gesture-voice componentOnReady()')
-      let pics = [1,2,3].map((i) => {
-        return 'http://members.iinet.net.au/~lurks/img/som-hand'+i.toString()+'.jpg'
-      })
+      // let pics = [1,2,3].map((i) => {
+      //   return 'http://members.iinet.net.au/~lurks/img/som-hand'+i.toString()+'.jpg'
+      // })
+      let pics = ['https://knowpathology.com.au/app/uploads/2018/07/Happy-Test-Screen-01-825x510.png']
       try {
         await igv.loadFromImageURLs(pics, {debug: true})
       } catch(e) {
@@ -39,7 +47,7 @@
       await transIGV.loadIGVData(igvdata)
       let translation = await transIGV.waitForComplete()
     })();
- </script> -->
+ </script>
 
   
 

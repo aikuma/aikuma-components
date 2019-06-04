@@ -32,3 +32,7 @@
 * Slideshow slide frame background lightened
 * simplified IGV's JSX
 
+## 0.3.0
+
+* Migrated to Stencil 1.0 --- many breaking changes
+* start/test code in index.html changed to start IGV

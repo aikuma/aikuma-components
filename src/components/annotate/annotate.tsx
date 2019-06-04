@@ -4,6 +4,7 @@ import WaveSurfer from 'wavesurfer.js'
 import TimelinePlugin from 'wavesurfer.js/dist/plugin/wavesurfer.timeline.min.js'
 import MinimapPlugin from 'wavesurfer.js/dist/plugin/wavesurfer.minimap.min.js'
 import RegionsPlugin from 'wavesurfer.js/dist/plugin/wavesurfer.regions.min.js'
+import { h } from '@stencil/core';
 
 //export interface AnnotateElement extends HTMLElement, Annotate {}
 
@@ -50,11 +51,11 @@ export class Annotate {
   
   // Public
   @Method()
-  load(url: string) {
+  async load(url: string) {
     this.wavesurfer.load(url)
   }
   @Method()
-  loadBlob(b: Blob) {
+  async loadBlob(b: Blob) {
     this.wavesurfer.loadBlob(b)
   }
 

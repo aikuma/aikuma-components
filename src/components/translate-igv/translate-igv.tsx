@@ -1,12 +1,13 @@
 import { Component, State, Method, Listen, Element } from '@stencil/core'
 import { IGVData, IGVOptions, IGVTranslation, Slide } from '../../interface'
 import { Subject } from 'rxjs/Subject'
-//import { Gestate } from '@aikuma/gestate'
-import { Gestate } from '../../../../gestate/dist'
+import { Gestate } from '@aikuma/gestate'
+//import { Gestate } from '../../../../gestate/dist'
 import { Microphone, WebAudioPlayer } from '@aikuma/webaudio'
 import fontawesome from '@fortawesome/fontawesome'
 import { faPlay, faStop, faPause, faCheckCircle, faTimesCircle } from '@fortawesome/fontawesome-free-solid'
 fontawesome.library.add(faPlay, faStop, faPause, faCheckCircle, faTimesCircle)
+import { h } from '@stencil/core'
 
 interface State {
   recording?: boolean,

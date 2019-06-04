@@ -5,9 +5,7 @@
  */
 
 
-import '@stencil/core';
-
-
+import { HTMLStencilElement, JSXBase } from '@stencil/core/internal';
 import {
   IGVBundle,
   IGVData,
@@ -19,86 +17,47 @@ import {
 
 
 export namespace Components {
-
   interface AikumaAnnotate {
-    'load': (url: string) => void;
-    'loadBlob': (b: Blob) => void;
+    'load': (url: string) => Promise<void>;
+    'loadBlob': (b: Blob) => Promise<void>;
   }
-  interface AikumaAnnotateAttributes extends StencilHTMLAttributes {
-    'onClickEvent'?: (event: CustomEvent<{id: string, type: string}>) => void;
-  }
-
   interface AikumaButtony {
     'clear': boolean;
     'disabled': boolean;
     'id': string;
     'size': string;
   }
-  interface AikumaButtonyAttributes extends StencilHTMLAttributes {
-    'clear'?: boolean;
-    'disabled'?: boolean;
-    'id'?: string;
-    'onClickEvent'?: (event: CustomEvent<{id: string, type: string}>) => void;
-    'size'?: string;
-  }
-
   interface AikumaCamera {
     'facingMode': string;
     'height': number;
     'imageQuality': number;
     'imageType': string;
-    'pause': () => void;
+    'pause': () => Promise<void>;
     'ready': () => Promise<any>;
-    'resume': () => void;
+    'resume': () => Promise<void>;
     'switchCamera': () => Promise<void>;
     'takePicture': (pause?: boolean) => Promise<Blob>;
     'width': number;
   }
-  interface AikumaCameraAttributes extends StencilHTMLAttributes {
-    'facingMode'?: string;
-    'height'?: number;
-    'imageQuality'?: number;
-    'imageType'?: string;
-    'width'?: number;
-  }
-
   interface AikumaImageGestureVoice {
     'loadFromImageURLs': (images: string[], opts?: IGVOptions) => Promise<any>;
-    'restoreFromIGVData': (igvd: IGVData) => void;
+    'restoreFromIGVData': (igvd: IGVData) => Promise<void>;
     'waitForComplete': () => Promise<IGVData>;
   }
-  interface AikumaImageGestureVoiceAttributes extends StencilHTMLAttributes {
-    'onAikumaIGV'?: (event: CustomEvent<string>) => void;
-  }
-
   interface AikumaModal {
     'presentDialog': (title: string, message: string, confirm: string, cancel?: string) => Promise<boolean>;
   }
-  interface AikumaModalAttributes extends StencilHTMLAttributes {}
-
   interface AikumaPlayIgv {
     'restoreFromIGVBundle': (igvb: IGVBundle) => Promise<void>;
   }
-  interface AikumaPlayIgvAttributes extends StencilHTMLAttributes {
-    'onAikumaIGV'?: (event: CustomEvent<string>) => void;
-  }
-
   interface AikumaProgress {
     'completedColor': string;
     'height': number;
     'lineWidth': number;
     'progressColor': string;
-    'setProgress': (progress: number) => void;
+    'setProgress': (progress: number) => Promise<void>;
     'strokeColor': string;
   }
-  interface AikumaProgressAttributes extends StencilHTMLAttributes {
-    'completedColor'?: string;
-    'height'?: number;
-    'lineWidth'?: number;
-    'progressColor'?: string;
-    'strokeColor'?: string;
-  }
-
   interface AikumaSlideShow {
     'getCurrent': () => Promise<number>;
     'getCurrentImageElement': () => Promise<HTMLImageElement>;
@@ -111,42 +70,13 @@ export namespace Components {
     'slideTo': (idx: number, instant?: boolean) => Promise<void>;
     'unlockPrevious': () => Promise<void>;
   }
-  interface AikumaSlideShowAttributes extends StencilHTMLAttributes {
-    'onSlideEvent'?: (event: CustomEvent<{type: string, val: any}>) => void;
-    'onSlideSize'?: (event: CustomEvent<{content: DOMRect, frame: DOMRect}>) => void;
-  }
-
   interface AikumaTranslateIgv {
     'loadIGVData': (data: IGVData, opts?: IGVOptions) => Promise<any>;
     'waitForComplete': () => Promise<IGVTranslation>;
   }
-  interface AikumaTranslateIgvAttributes extends StencilHTMLAttributes {}
 }
 
 declare global {
-  interface StencilElementInterfaces {
-    'AikumaAnnotate': Components.AikumaAnnotate;
-    'AikumaButtony': Components.AikumaButtony;
-    'AikumaCamera': Components.AikumaCamera;
-    'AikumaImageGestureVoice': Components.AikumaImageGestureVoice;
-    'AikumaModal': Components.AikumaModal;
-    'AikumaPlayIgv': Components.AikumaPlayIgv;
-    'AikumaProgress': Components.AikumaProgress;
-    'AikumaSlideShow': Components.AikumaSlideShow;
-    'AikumaTranslateIgv': Components.AikumaTranslateIgv;
-  }
-
-  interface StencilIntrinsicElements {
-    'aikuma-annotate': Components.AikumaAnnotateAttributes;
-    'aikuma-buttony': Components.AikumaButtonyAttributes;
-    'aikuma-camera': Components.AikumaCameraAttributes;
-    'aikuma-image-gesture-voice': Components.AikumaImageGestureVoiceAttributes;
-    'aikuma-modal': Components.AikumaModalAttributes;
-    'aikuma-play-igv': Components.AikumaPlayIgvAttributes;
-    'aikuma-progress': Components.AikumaProgressAttributes;
-    'aikuma-slide-show': Components.AikumaSlideShowAttributes;
-    'aikuma-translate-igv': Components.AikumaTranslateIgvAttributes;
-  }
 
 
   interface HTMLAikumaAnnotateElement extends Components.AikumaAnnotate, HTMLStencilElement {}
@@ -202,20 +132,7 @@ declare global {
     prototype: HTMLAikumaTranslateIgvElement;
     new (): HTMLAikumaTranslateIgvElement;
   };
-
   interface HTMLElementTagNameMap {
-    'aikuma-annotate': HTMLAikumaAnnotateElement
-    'aikuma-buttony': HTMLAikumaButtonyElement
-    'aikuma-camera': HTMLAikumaCameraElement
-    'aikuma-image-gesture-voice': HTMLAikumaImageGestureVoiceElement
-    'aikuma-modal': HTMLAikumaModalElement
-    'aikuma-play-igv': HTMLAikumaPlayIgvElement
-    'aikuma-progress': HTMLAikumaProgressElement
-    'aikuma-slide-show': HTMLAikumaSlideShowElement
-    'aikuma-translate-igv': HTMLAikumaTranslateIgvElement
-  }
-
-  interface ElementTagNameMap {
     'aikuma-annotate': HTMLAikumaAnnotateElement;
     'aikuma-buttony': HTMLAikumaButtonyElement;
     'aikuma-camera': HTMLAikumaCameraElement;
@@ -226,14 +143,66 @@ declare global {
     'aikuma-slide-show': HTMLAikumaSlideShowElement;
     'aikuma-translate-igv': HTMLAikumaTranslateIgvElement;
   }
-
-
-  export namespace JSX {
-    export interface Element {}
-    export interface IntrinsicElements extends StencilIntrinsicElements {
-      [tagName: string]: any;
-    }
-  }
-  export interface HTMLAttributes extends StencilHTMLAttributes {}
-
 }
+
+declare namespace LocalJSX {
+  interface AikumaAnnotate extends JSXBase.HTMLAttributes<HTMLAikumaAnnotateElement> {
+    'onClickEvent'?: (event: CustomEvent<{id: string, type: string}>) => void;
+  }
+  interface AikumaButtony extends JSXBase.HTMLAttributes<HTMLAikumaButtonyElement> {
+    'clear'?: boolean;
+    'disabled'?: boolean;
+    'id'?: string;
+    'onClickEvent'?: (event: CustomEvent<{id: string, type: string}>) => void;
+    'size'?: string;
+  }
+  interface AikumaCamera extends JSXBase.HTMLAttributes<HTMLAikumaCameraElement> {
+    'facingMode'?: string;
+    'height'?: number;
+    'imageQuality'?: number;
+    'imageType'?: string;
+    'width'?: number;
+  }
+  interface AikumaImageGestureVoice extends JSXBase.HTMLAttributes<HTMLAikumaImageGestureVoiceElement> {
+    'onAikumaIGV'?: (event: CustomEvent<string>) => void;
+  }
+  interface AikumaModal extends JSXBase.HTMLAttributes<HTMLAikumaModalElement> {}
+  interface AikumaPlayIgv extends JSXBase.HTMLAttributes<HTMLAikumaPlayIgvElement> {
+    'onAikumaIGV'?: (event: CustomEvent<string>) => void;
+  }
+  interface AikumaProgress extends JSXBase.HTMLAttributes<HTMLAikumaProgressElement> {
+    'completedColor'?: string;
+    'height'?: number;
+    'lineWidth'?: number;
+    'progressColor'?: string;
+    'strokeColor'?: string;
+  }
+  interface AikumaSlideShow extends JSXBase.HTMLAttributes<HTMLAikumaSlideShowElement> {
+    'onSlideEvent'?: (event: CustomEvent<{type: string, val: any}>) => void;
+    'onSlideSize'?: (event: CustomEvent<{content: DOMRect, frame: DOMRect}>) => void;
+  }
+  interface AikumaTranslateIgv extends JSXBase.HTMLAttributes<HTMLAikumaTranslateIgvElement> {}
+
+  interface IntrinsicElements {
+    'aikuma-annotate': AikumaAnnotate;
+    'aikuma-buttony': AikumaButtony;
+    'aikuma-camera': AikumaCamera;
+    'aikuma-image-gesture-voice': AikumaImageGestureVoice;
+    'aikuma-modal': AikumaModal;
+    'aikuma-play-igv': AikumaPlayIgv;
+    'aikuma-progress': AikumaProgress;
+    'aikuma-slide-show': AikumaSlideShow;
+    'aikuma-translate-igv': AikumaTranslateIgv;
+  }
+}
+
+export { LocalJSX as JSX };
+
+
+declare module "@stencil/core" {
+  export namespace JSX {
+    interface IntrinsicElements extends LocalJSX.IntrinsicElements {}
+  }
+}
+
+

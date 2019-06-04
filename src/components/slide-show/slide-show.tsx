@@ -2,6 +2,7 @@ import { Component, Element, Method, State, Event, EventEmitter } from '@stencil
 import Swiper from 'swiper'
 import { CacheImage } from './cacheimage'
 import { Slide, SlideshowSettings } from '../../interface'
+import { h } from '@stencil/core'
 
 //import { Swiper, Navigation, Lazy, Pagination, Controller, EffectCoverflow } from 'swiper/dist/js/swiper.esm.js'
 

@@ -1,4 +1,5 @@
 import { Component, Element, Prop, Event, EventEmitter } from '@stencil/core'
+import { h } from '@stencil/core'
 
 //export interface ButtonyElement extends HTMLElement, Buttony {}
 
