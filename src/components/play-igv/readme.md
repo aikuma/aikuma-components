@@ -18,18 +18,29 @@
 
 
 
-#### Parameters
-
-| Name   | Type        | Description |
-| ------ | ----------- | ----------- |
-| `igvb` | `IGVBundle` |             |
-
 #### Returns
 
 Type: `Promise<void>`
 
 
 
+
+## Dependencies
+
+### Depends on
+
+- [aikuma-modal](..\modal)
+- [aikuma-slide-show](..\slide-show)
+- [aikuma-buttony](..\buttony)
+
+### Graph
+```mermaid
+graph TD;
+  aikuma-play-igv --> aikuma-modal
+  aikuma-play-igv --> aikuma-slide-show
+  aikuma-play-igv --> aikuma-buttony
+  style aikuma-play-igv fill:#f9f,stroke:#333,stroke-width:4px
+```
 
 ----------------------------------------------
 

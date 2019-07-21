@@ -7,10 +7,10 @@
 
 ## Events
 
-| Event        | Description | Type                                              |
-| ------------ | ----------- | ------------------------------------------------- |
-| `slideEvent` |             | `CustomEvent<{type: string, val: any}>`           |
-| `slideSize`  |             | `CustomEvent<{content: DOMRect, frame: DOMRect}>` |
+| Event        | Description | Type                                                 |
+| ------------ | ----------- | ---------------------------------------------------- |
+| `slideEvent` |             | `CustomEvent<{ type: string; val: any; }>`           |
+| `slideSize`  |             | `CustomEvent<{ content: DOMRect; frame: DOMRect; }>` |
 
 
 ## Methods
@@ -49,12 +49,6 @@ Type: `Promise<{ main?: any; thumb?: any; }>`
 
 
 
-#### Parameters
-
-| Name  | Type     | Description |
-| ----- | -------- | ----------- |
-| `idx` | `number` |             |
-
 #### Returns
 
 Type: `Promise<void>`
@@ -75,13 +69,6 @@ Type: `Promise<boolean>`
 
 
 
-#### Parameters
-
-| Name       | Type                | Description |
-| ---------- | ------------------- | ----------- |
-| `images`   | `string[]`          |             |
-| `settings` | `SlideshowSettings` |             |
-
 #### Returns
 
 Type: `Promise<Slide[]>`
@@ -91,12 +78,6 @@ Type: `Promise<Slide[]>`
 ### `loadSlides(slides: Slide[]) => Promise<void>`
 
 
-
-#### Parameters
-
-| Name     | Type      | Description |
-| -------- | --------- | ----------- |
-| `slides` | `Slide[]` |             |
 
 #### Returns
 
@@ -118,13 +99,6 @@ Type: `Promise<void>`
 
 
 
-#### Parameters
-
-| Name      | Type      | Description |
-| --------- | --------- | ----------- |
-| `idx`     | `number`  |             |
-| `instant` | `boolean` |             |
-
 #### Returns
 
 Type: `Promise<void>`
@@ -141,6 +115,23 @@ Type: `Promise<void>`
 
 
 
+
+## Dependencies
+
+### Used by
+
+ - [aikuma-image-gesture-voice](..\image-gesture-voice)
+ - [aikuma-play-igv](..\play-igv)
+ - [aikuma-translate-igv](..\translate-igv)
+
+### Graph
+```mermaid
+graph TD;
+  aikuma-image-gesture-voice --> aikuma-slide-show
+  aikuma-play-igv --> aikuma-slide-show
+  aikuma-translate-igv --> aikuma-slide-show
+  style aikuma-slide-show fill:#f9f,stroke:#333,stroke-width:4px
+```
 
 ----------------------------------------------
 

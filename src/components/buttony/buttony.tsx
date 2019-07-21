@@ -9,7 +9,7 @@ import { h } from '@stencil/core'
 })
 export class Buttony {
   @Element() el: HTMLElement
-  @Prop() disabled: boolean
+  @Prop() disabled: boolean = false
   @Prop() size: string = '50'
   @Prop() id: string = null
   @Prop() clear: boolean = false

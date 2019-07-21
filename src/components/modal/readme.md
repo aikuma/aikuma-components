@@ -11,21 +11,29 @@
 
 
 
-#### Parameters
-
-| Name      | Type     | Description |
-| --------- | -------- | ----------- |
-| `title`   | `string` |             |
-| `message` | `string` |             |
-| `confirm` | `string` |             |
-| `cancel`  | `string` |             |
-
 #### Returns
 
 Type: `Promise<boolean>`
 
 
 
+
+## Dependencies
+
+### Used by
+
+ - [aikuma-image-gesture-voice](..\image-gesture-voice)
+ - [aikuma-play-igv](..\play-igv)
+ - [aikuma-translate-igv](..\translate-igv)
+
+### Graph
+```mermaid
+graph TD;
+  aikuma-image-gesture-voice --> aikuma-modal
+  aikuma-play-igv --> aikuma-modal
+  aikuma-translate-igv --> aikuma-modal
+  style aikuma-modal fill:#f9f,stroke:#333,stroke-width:4px
+```
 
 ----------------------------------------------
 

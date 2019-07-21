@@ -18,22 +18,29 @@
 
 ## Methods
 
-### `setProgress(progress: number) => void`
+### `setProgress(progress: number) => Promise<void>`
 
 
-
-#### Parameters
-
-| Name       | Type     | Description |
-| ---------- | -------- | ----------- |
-| `progress` | `number` |             |
 
 #### Returns
 
-Type: `void`
+Type: `Promise<void>`
 
 
 
+
+## Dependencies
+
+### Used by
+
+ - [aikuma-translate-igv](..\translate-igv)
+
+### Graph
+```mermaid
+graph TD;
+  aikuma-translate-igv --> aikuma-progress
+  style aikuma-progress fill:#f9f,stroke:#333,stroke-width:4px
+```
 
 ----------------------------------------------
 

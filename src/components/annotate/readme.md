@@ -7,42 +7,30 @@
 
 ## Events
 
-| Event        | Description | Type                                      |
-| ------------ | ----------- | ----------------------------------------- |
-| `clickEvent` |             | `CustomEvent<{id: string, type: string}>` |
+| Event        | Description | Type                                         |
+| ------------ | ----------- | -------------------------------------------- |
+| `clickEvent` |             | `CustomEvent<{ id: string; type: string; }>` |
 
 
 ## Methods
 
-### `load(url: string) => void`
+### `load(url: string) => Promise<void>`
 
 
-
-#### Parameters
-
-| Name  | Type     | Description |
-| ----- | -------- | ----------- |
-| `url` | `string` |             |
 
 #### Returns
 
-Type: `void`
+Type: `Promise<void>`
 
 
 
-### `loadBlob(b: Blob) => void`
+### `loadBlob(b: Blob) => Promise<void>`
 
 
-
-#### Parameters
-
-| Name | Type   | Description |
-| ---- | ------ | ----------- |
-| `b`  | `Blob` |             |
 
 #### Returns
 
-Type: `void`
+Type: `Promise<void>`
 
 
 

@@ -18,13 +18,13 @@
 
 ## Methods
 
-### `pause() => void`
+### `pause() => Promise<void>`
 
 
 
 #### Returns
 
-Type: `void`
+Type: `Promise<void>`
 
 
 
@@ -38,13 +38,13 @@ Type: `Promise<any>`
 
 
 
-### `resume() => void`
+### `resume() => Promise<void>`
 
 
 
 #### Returns
 
-Type: `void`
+Type: `Promise<void>`
 
 
 
@@ -61,12 +61,6 @@ Type: `Promise<void>`
 ### `takePicture(pause?: boolean) => Promise<Blob>`
 
 
-
-#### Parameters
-
-| Name    | Type      | Description |
-| ------- | --------- | ----------- |
-| `pause` | `boolean` |             |
 
 #### Returns
 

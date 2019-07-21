@@ -1,6 +1,6 @@
 import { Component, Element, State, Method, Listen, Event, EventEmitter } from '@stencil/core'
-import { Gestate } from '@aikuma/gestate'
-//import { Gestate } from '../../../../gestate/dist'
+//import { Gestate } from '@aikuma/gestate'
+import { Gestate } from '../../../../gestate/dist'
 import { Microphone, WebAudioPlayer } from '@aikuma/webaudio'
 import prettyprint from 'prettyprint'
 import fontawesome from '@fortawesome/fontawesome'
@@ -144,7 +144,8 @@ export class ImageGestureVoice {
   }
 
   async init(): Promise<any> {
-    this.consoleLog('init()')
+    this.consoleLog('init()', this.options.colors)
+
     this.gestate = new Gestate({debug: this.options.debug, colors: this.options.colors})
     try {
       await this.mic.connect()

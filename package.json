@@ -1,6 +1,6 @@
 {
   "name": "@aikuma/webcomponents",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Web components for language apps",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -22,7 +22,7 @@
     "dynamic-class-list": "^1.0.82"
   },
   "devDependencies": {
-    "@aikuma/gestate": "^0.5.1",
+    "@aikuma/gestate": "^0.5.2",
     "@aikuma/webaudio": "^0.4.0",
     "@fortawesome/fontawesome": "^1.1.8",
     "@fortawesome/fontawesome-free-solid": "^5.0.13",

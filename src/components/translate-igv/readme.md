@@ -11,13 +11,6 @@
 
 
 
-#### Parameters
-
-| Name   | Type         | Description |
-| ------ | ------------ | ----------- |
-| `data` | `IGVData`    |             |
-| `opts` | `IGVOptions` |             |
-
 #### Returns
 
 Type: `Promise<any>`
@@ -34,6 +27,25 @@ Type: `Promise<IGVTranslation>`
 
 
 
+
+## Dependencies
+
+### Depends on
+
+- [aikuma-modal](..\modal)
+- [aikuma-slide-show](..\slide-show)
+- [aikuma-progress](..\progress)
+- [aikuma-buttony](..\buttony)
+
+### Graph
+```mermaid
+graph TD;
+  aikuma-translate-igv --> aikuma-modal
+  aikuma-translate-igv --> aikuma-slide-show
+  aikuma-translate-igv --> aikuma-progress
+  aikuma-translate-igv --> aikuma-buttony
+  style aikuma-translate-igv fill:#f9f,stroke:#333,stroke-width:4px
+```
 
 ----------------------------------------------
 

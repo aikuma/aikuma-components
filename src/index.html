@@ -28,8 +28,17 @@
       //   return 'http://members.iinet.net.au/~lurks/img/som-hand'+i.toString()+'.jpg'
       // })
       let pics = ['https://knowpathology.com.au/app/uploads/2018/07/Happy-Test-Screen-01-825x510.png']
+      let colors = []
+      function toHex(d) {
+        return  ("0"+(Number(d).toString(16))).slice(-2).toUpperCase()
+      }
+      for (let c = 0; c < 16; ++c) {
+        let h = toHex(c*16)
+        colors.push('#'+h+h+h)
+      }
+      console.log('colors', colors)
       try {
-        await igv.loadFromImageURLs(pics, {debug: true})
+        await igv.loadFromImageURLs(pics, {debug: true, colors: colors})
       } catch(e) {
         console.error('aikuma-image-gesture-voice loadFromImageURLs() failed!')
         console.error(e)
