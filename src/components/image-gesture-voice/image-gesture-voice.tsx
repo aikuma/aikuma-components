@@ -169,7 +169,7 @@ export class ImageGestureVoice {
         this.ssc.slideTo(thisslide)
       }
     }
-    this.playProgressSub = this.player.observeProgress().subscribe((time) => {
+    this.playProgressSub = this.player.observeProgress().subscribe(async (time) => {
       //this.consoleLog(time)
       if (this.state.playing) {
         if (time === -1 ) {
@@ -179,7 +179,8 @@ export class ImageGestureVoice {
           let elapsedms = ~~(time*1000)
           let newElapsed = this.getNiceTime(elapsedms) // getNiceTime wants ms
           this.changeState({elapsed: newElapsed})
-          if (!this.ssc.isChanging()) {
+          //checkPlaybackSlide(elapsedms)
+          if (! (await this.ssc.isChanging())) {
             checkPlaybackSlide(elapsedms)
           }
         }
@@ -417,6 +418,7 @@ export class ImageGestureVoice {
       this.recording.recordLength = this.mic.getTotalLength()
       this.recording.audioBlob = this.mic.exportAllWav()
       this.mic.clear()
+      this.consoleLog('timeline:', this.timeLine)
       await this.enterReviewMode()
       this.pressPlay()
     } else if (this.state.mode === 'review') {

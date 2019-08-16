@@ -25,8 +25,8 @@ export class Camera {
   orientlistener: any
   @Watch('imageType')
   validateImageType(newValue: string) {
-    if (newValue !== 'webp' && newValue !== 'png' && newValue !=='jpg') {
-      throw new Error("image-type can only be 'webp' (default), 'png' or 'jpg'.")
+    if (newValue !== 'webp' && newValue !== 'png' && newValue !=='jpeg') {
+      throw new Error("image-type can only be 'webp' (default), 'png' or 'jpeg'.")
     }
   }
   @Prop() imageQuality: number = 0.7

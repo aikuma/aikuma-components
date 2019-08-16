@@ -129,7 +129,7 @@ export class PlayIGV {
         this.ssc.slideTo(thisslide)
       }
     }
-    this.playProgressSub = this.player.observeProgress().subscribe((time) => {
+    this.playProgressSub = this.player.observeProgress().subscribe(async (time) => {
       //this.consoleLog(time)
       if (this.state.playing) {
         if (time === -1 ) {
@@ -139,7 +139,7 @@ export class PlayIGV {
           let elapsedms = ~~(time*1000)
           let newElapsed = this.getNiceTime(elapsedms) // getNiceTime wants ms
           this.changeState({elapsed: newElapsed})
-          if (!this.ssc.isChanging()) {
+          if (!(await this.ssc.isChanging())) {
             checkPlaybackSlide(elapsedms)
           }
         }
