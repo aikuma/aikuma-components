@@ -30,7 +30,7 @@
     "@stencil/sass": "latest",
     "prettyprint": "^1.1.2",
     "randomcolor": "^0.5.4",
-    "swiper": "^4.5.0",
+    "swiper": "^6.5.1",
     "tslib": "^1.9.3",
     "wavesurfer.js": "^2.2.1"
   },
